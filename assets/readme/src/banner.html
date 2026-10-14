@@ -1,0 +1,56 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@500;600&family=Funnel+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --page:#e8e9ec; --paper:#fdfdfc; --paper-2:#f3f4f6; --ink:#0d0e12; --muted:#5b606b; --faint:#8b909a; --line:#e2e4e8;
+          --cobalt:#2c46e8; --cobalt-soft:#e5e9fd; --proof:#e0392c; --proof-soft:#fde6e3; --marker:#ffe24a; --marker-soft:#fff4b0; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 2560px; height: 1180px; background: var(--page); font-family: 'Funnel Sans', sans-serif; color: var(--ink); }
+  .slab { position:absolute; inset: 32px; background: var(--paper); border-radius: 48px; overflow: hidden;
+          background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 63px, rgb(13 14 18 / .045) 63px, rgb(13 14 18 / .045) 64px); }
+  .brand { position:absolute; left: 120px; top: 108px; display:flex; align-items:center; gap: 22px; }
+  .brand span { font-family:'Funnel Display'; font-weight:600; font-size: 52px; letter-spacing:-0.035em; }
+  h1 { position:absolute; left:120px; top: 260px; width: 1180px; font-family:'Funnel Display'; font-weight:600; font-size: 136px; letter-spacing:-0.045em; line-height: .98; }
+  .marker { background: linear-gradient(to bottom, transparent 22%, var(--marker) 22%, var(--marker) 90%, transparent 90%); padding: 0 .08em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  .sub { position:absolute; left:120px; top: 760px; width: 1000px; font-size: 38px; line-height: 1.45; color: var(--muted); }
+  .sheet { position:absolute; left: 1420px; top: 210px; width: 1000px; background: var(--paper); border-radius: 36px;
+           box-shadow: 0 2px 4px rgb(13 14 18 / .06), 0 60px 120px -60px rgb(25 35 90 / .4); outline: 2px solid var(--line); }
+  .q { padding: 40px 400px 32px 52px; border-bottom: 2px solid var(--line); }
+  .mono { font-family:'JetBrains Mono'; }
+  .q .mono { font-size: 22px; color: var(--faint); }
+  .q p { font-family:'Funnel Display'; font-weight:600; font-size: 38px; letter-spacing:-0.02em; margin-top: 10px; line-height: 1.2; }
+  .ln { display:grid; grid-template-columns: 40px 1fr; gap: 18px; padding: 30px 52px; border-bottom: 2px solid var(--line); }
+  .ln .n { font-family:'JetBrains Mono'; font-size: 22px; color: var(--faint); padding-top: 6px; }
+  .ln .t { font-size: 32px; line-height: 1.3; }
+  .ln .s { margin-top: 16px; display:flex; gap: 14px; align-items:center; font-size: 22px; color: var(--faint); }
+  .tag { font-family:'JetBrains Mono'; font-weight:600; font-size: 21px; padding: 6px 18px; border-radius: 999px; color: var(--paper); }
+  .v { background: var(--cobalt); } .o { background: var(--proof); }
+  .quote { font-family:'JetBrains Mono'; font-size: 21px; padding: 2px 8px; border-radius: 5px; background: var(--marker-soft); color: var(--ink); }
+  .quote.x { background: var(--proof-soft); color: var(--proof); text-decoration: line-through; }
+  .strike { color: var(--muted); background-image: linear-gradient(var(--proof), var(--proof)); background-repeat:no-repeat; background-position: 0 58%; background-size: 100% 4px; }
+  .note { margin-top: 14px; font-family:'Funnel Display'; font-style: italic; font-weight:600; font-size: 28px; color: var(--proof); }
+  .slip { position:absolute; left: 2020px; top: 130px; width: 430px; background: var(--paper); border-radius: 28px; padding: 26px 30px; transform: rotate(2deg);
+          box-shadow: 0 40px 80px -40px rgb(25 35 90 / .45); outline: 2px solid var(--line); }
+  .slip .mono { font-size: 20px; color: var(--faint); }
+  .diff { margin-top: 12px; font-family:'JetBrains Mono'; font-size: 22px; line-height: 1.7; }
+  .diff .m { background: var(--proof-soft); color: var(--proof); padding: 0 10px; border-radius: 6px; }
+  .diff .p { background: var(--cobalt-soft); color: var(--cobalt); padding: 0 10px; border-radius: 6px; margin-top: 6px; }
+</style></head>
+<body>
+<div class="slab">
+  <div class="brand">
+    <svg width="72" height="54" viewBox="0 0 40 30"><rect width="40" height="7" rx="3.5" fill="#2c46e8"/><rect y="11.5" width="30" height="7" rx="3.5" fill="#0d0e12"/><rect y="23" width="20" height="7" rx="3.5" fill="#e0392c"/></svg>
+    <span>Canon</span>
+  </div>
+  <h1>Every answer, checked against <span class="marker">what's true today.</span></h1>
+  <p class="sub">The company brain that proofreads itself: every sentence sourced, current and owned.</p>
+  <div class="sheet">
+    <div class="q"><span class="mono">Asked · example</span><p>Who owns session replay, and who should I ask?</p></div>
+    <div class="ln"><span class="n">1</span><div><div class="t">Session replay is owned by the Replay team.</div><div class="s"><span class="tag v">Verified</span><span class="mono">ownership map</span><span class="quote">"session-replay: team-replay"</span></div></div></div>
+    <div class="ln"><span class="n">2</span><div><div class="t"><span class="strike">The handbook lists it under Product Analytics.</span></div><div class="s"><span class="tag o">Out of date</span><span class="mono">handbook</span><span class="quote x">"we own insights and session replay"</span></div><div class="note">‸ moved to the Replay team, after this page was written</div></div></div>
+    <div class="ln" style="border-bottom:0"><span class="n">3</span><div><div class="t">Ask the Replay team lead about recent changes.</div><div class="s"><span class="tag v">Verified</span><span class="mono">reviews and design docs</span></div></div></div>
+  </div>
+  <div class="slip"><span class="mono">ownership map · newer</span><div class="diff"><div class="m">- session-replay: product-analytics</div><div class="p">+ session-replay: replay</div></div></div>
+</div>
+</body></html>
