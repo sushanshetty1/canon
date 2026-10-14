@@ -27,7 +27,7 @@ export function Sources() {
           {row.map(([name, what], i) => (
             <span key={i} className="flex items-baseline gap-3 whitespace-nowrap">
               <span className="font-display text-[26px] font-semibold tracking-[-0.03em] text-paper">{name}</span>
-              <span className="font-mono text-[12.5px] text-[#7d828e]">{what}</span>
+              <span className="text-[15px] text-[#7d828e]">{what}</span>
             </span>
           ))}
         </motion.div>

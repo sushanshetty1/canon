@@ -89,7 +89,7 @@ function BusFactorMini() {
         <circle cx="228" cy="18" r="9" fill="var(--marker)" />
         <circle cx="228" cy="72" r="9" fill="var(--marker)" />
       </svg>
-      <p className="mt-2 font-mono text-[11.5px] text-white/50">algo.maxFlow from the area to the people who know it</p>
+      <p className="mt-2 text-[13px] text-white/55">Computed with <code className="font-mono text-[12px] text-white/75">algo.maxFlow</code> from the area to the people who know it.</p>
     </div>
   )
 }
@@ -102,14 +102,13 @@ function KnowsMini() {
   ]
   return (
     <ul className="space-y-2.5">
-      {people.map(([who, why, bg], i) => (
+      {people.map(([who, why, bg]) => (
         <li key={who} className="flex items-center gap-3 rounded-[14px] bg-paper px-3 py-2.5 ring-1 ring-line">
-          <span className="grid size-8 shrink-0 place-items-center rounded-full font-mono text-[11px] font-bold text-paper" style={{ background: bg }}>
+          <span className="grid size-8 shrink-0 place-items-center rounded-full text-[12px] font-bold text-paper" style={{ background: bg }}>
             {who}
           </span>
           <span className="min-w-0 flex-1 text-[13.5px] leading-snug">{why}</span>
-          <span className="font-mono text-[11px] text-faint">#{i + 1}</span>
-        </li>
+                  </li>
       ))}
     </ul>
   )
@@ -122,7 +121,7 @@ function FixMini() {
       <div className="relative rounded-[16px] bg-paper p-5 ring-1 ring-[#f0dc84]">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <VerdictTag verdict="stale" />
-          <span className="font-mono text-[11.5px] text-faint">handbook / product-analytics</span>
+          <span className="text-[13px] text-faint">Handbook page, Product Analytics</span>
         </div>
         <p className="mt-3 text-[15px] leading-snug">
           <span className="text-proof line-through decoration-proof/60">Product Analytics owns session replay</span>

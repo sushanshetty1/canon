@@ -19,7 +19,7 @@ export function Company() {
         <div>
           <div className="flex items-center gap-3">
             <img src="https://cdn.simpleicons.org/posthog/ffffff" alt="" className="size-7" loading="lazy" />
-            <span className="font-mono text-[12.5px] text-[#a3a8b3]">The demo company</span>
+            <span className="text-[14px] font-medium text-[#a3a8b3]">The demo company</span>
           </div>
           <h2 className="display mt-6 text-[40px] text-balance sm:text-[56px]">Shown on a company that works in public.</h2>
           <p className="mt-6 max-w-[30rem] text-[18px] leading-relaxed text-pretty text-[#a3a8b3]">

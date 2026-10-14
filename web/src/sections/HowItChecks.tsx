@@ -48,7 +48,7 @@ function NodeCard({ node, on, active }: { node: Node; on: boolean; active: boole
       animate={{ opacity: on ? 1 : 0.32, y: on ? 0 : 6, scale: active ? 1.025 : 1 }}
       transition={{ duration: 0.45, ease }}
     >
-      <span className={`font-mono text-[11px] ${dim}`}>{node.kind}</span>
+      <span className={`text-[12.5px] font-medium ${dim}`}>{node.kind}</span>
       <p className={`mt-1 text-[14.5px] leading-snug font-semibold ${node.tone === 'proof' ? 'text-proof line-through decoration-proof/50' : ''}`}>{node.title}</p>
       <p className={`mt-1 text-[12.5px] leading-snug ${dim}`}>{node.detail}</p>
     </motion.div>
@@ -107,7 +107,7 @@ function GraphWalk() {
         animate={{ opacity: on(5) ? 1 : 0.32 }}
         transition={{ duration: 0.45, ease }}
       >
-        <span className="font-mono text-[11px] text-muted">Result</span>
+        <span className="text-[12.5px] font-medium text-muted">Result</span>
         <p className="mt-1.5 flex flex-wrap items-center gap-2 text-[14px] leading-snug">
           <VerdictTag verdict="stale" /> cites the newer fact, and the fix goes to its owner.
         </p>
@@ -130,7 +130,7 @@ function GraphList() {
         return (
           <li key={n.id}>
             <div className={`rounded-[16px] px-4 py-3 ${toneClass[n.tone]}`}>
-              <span className={`font-mono text-[11px] ${n.tone === 'night' ? 'text-[#a3a8b3]' : 'text-muted'}`}>{n.kind}</span>
+              <span className={`text-[12.5px] font-medium ${n.tone === 'night' ? 'text-[#a3a8b3]' : 'text-muted'}`}>{n.kind}</span>
               <p className={`mt-1 text-[15px] font-semibold ${n.tone === 'proof' ? 'text-proof line-through decoration-proof/50' : ''}`}>{n.title}</p>
               <p className={`text-[13px] ${n.tone === 'night' ? 'text-[#a3a8b3]' : 'text-muted'}`}>{n.detail}</p>
             </div>
@@ -162,7 +162,7 @@ export function HowItChecks() {
           <ol className="grid gap-px overflow-hidden rounded-[22px] bg-line ring-1 ring-line">
             {steps.map(([title, body], i) => (
               <li key={title} className="grid grid-cols-[36px_minmax(0,1fr)] gap-x-3 bg-paper px-6 py-5">
-                <span className="grid size-7 place-items-center rounded-full bg-ink font-mono text-[12px] font-semibold text-paper">{i + 1}</span>
+                <span className="grid size-7 place-items-center rounded-full bg-ink text-[12.5px] font-semibold text-paper">{i + 1}</span>
                 <div>
                   <p className="text-[16px] font-semibold tracking-[-0.01em]">{title}</p>
                   <p className="mt-1 text-[14.5px] leading-relaxed text-muted text-pretty">{body}</p>
@@ -172,8 +172,8 @@ export function HowItChecks() {
           </ol>
           <div className="flex flex-col overflow-hidden rounded-[22px] bg-night text-paper">
             <div className="flex items-center justify-between border-b border-night-line px-6 py-3.5">
-              <span className="font-mono text-[12px] text-[#a3a8b3]">The check, in Cypher</span>
-              <span className="font-mono text-[12px] text-marker">FalkorDB</span>
+              <span className="text-[13px] font-medium text-[#a3a8b3]">The check, in Cypher</span>
+              <span className="text-[13px] font-semibold text-marker">FalkorDB</span>
             </div>
             <pre className="flex-1 overflow-x-auto px-6 py-6 font-mono text-[13px] leading-[1.85] text-[#e4e6ec] [font-variant-ligatures:none]">{QUERY}</pre>
           </div>

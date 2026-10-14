@@ -74,7 +74,7 @@ const verdictClass: Record<Verdict, string> = {
 
 export function VerdictTag({ verdict, className = '' }: { verdict: Verdict; className?: string }) {
   return (
-    <span className={`inline-flex h-6 shrink-0 items-center rounded-full px-2.5 font-mono text-[11.5px] font-semibold whitespace-nowrap ${verdictClass[verdict]} ${className}`}>
+    <span className={`inline-flex h-6 shrink-0 items-center rounded-[7px] px-2 text-[12.5px] font-semibold whitespace-nowrap ${verdictClass[verdict]} ${className}`}>
       {verdictLabel[verdict]}
     </span>
   )
