@@ -140,3 +140,32 @@ def test_link_is_idempotent(graph):
     k.write()
     assert link(graph) == first
     assert _snapshot(graph) == before
+
+
+def _map(owners: dict[str, list[str]]) -> str:
+    entries = "".join(f"    {s}: {{\n        feature: '{s.upper()}',\n        owner: {t!r},\n    }},\n" for s, t in owners.items())
+    return f"const FEATURE_DATA: Record<string, BaseFeature> = {{\n{entries}}}\n"
+
+
+def test_co_owners_from_the_ownership_map_both_hold(graph):
+    from canon.sources.posthog import ownership_history
+
+    versions = [
+        {"sha": "a" * 40, "date": "2026-06-05", "text": _map({"cli": ["error-tracking"]})},
+        {"sha": "b" * 40, "date": "2026-09-18", "text": _map({"cli": ["error-tracking", "context-and-mcp"]})},
+    ]
+    own = ownership_history(versions, lambda slug: slug)
+    k = Kit(graph)
+    k.batch.docs += own.docs
+    k.batch.passages += own.passages
+    k.batch.facts += own.facts
+    k.fact("page", "area:cli", "owned_by", "team:error-tracking", kind="handbook", on="2026-10-01")
+    k.write()
+    counts = link(graph)
+    current = graph.query(
+        "MATCH (f:Fact {predicate: 'owned_by', authority: 3}) WHERE f.valid_to IS NULL "
+        "AND NOT (f)-[:SUPERSEDED_BY]->() RETURN f.value ORDER BY f.value"
+    ).result_set
+    assert current == [["team:context-and-mcp"], ["team:error-tracking"]]
+    # Naming one of two owners is neither out of date nor a dispute.
+    assert counts["contradicts"] == 0 and counts["stale"] == 0

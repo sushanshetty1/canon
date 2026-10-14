@@ -16,6 +16,10 @@ normalising case, spacing and punctuation.
 4. **Dispute.** Two facts with equal authority and different values that both remain current are linked with
    `(A)-[:CONTRADICTS]->(B)`. Neither is picked.
 
+5. **Stated together.** A fact never replaces or disputes a value its own passage also states. "Owned by Billing
+   and Platform Features" is two facts from one passage, and both hold. The ownership map restates every owner in
+   an area's new list when the list changes, so a co-owner who stays is not replaced by the one who joins.
+
 **The dispute window.** A fact's reference date is the later of its `valid_from` and the last update of the
 document that states it: the last time someone edited that source and left the fact in place. For two facts of
 equal authority that disagree, the later one replaces the earlier only when its reference date is more than
@@ -46,7 +50,7 @@ MATCH (f:Fact)
 OPTIONAL MATCH (f)-[:STATED_IN]->(p:Passage)
 OPTIONAL MATCH (p)<-[:HAS|HAD]-(d:Document)
 RETURN f.id, f.subject, f.predicate, f.value, f.valid_from, f.valid_to, f.closed_by, f.authority, f.stale,
-       p.removed_at, d.updated_at
+       f.passage_id, p.removed_at, d.updated_at
 """
 # No aggregation here: FalkorDB 6.0.2 crashes when it groups on a key that is null, such as a missing property.
 
@@ -61,6 +65,7 @@ class _Fact:
     vt: str | None  # the end the sources give: a connector's valid_to, or the passage's removal
     auth: int
     ref: str  # the later of valid_from and the document's last update
+    passage: str = ""
 
 
 @dataclass
@@ -84,6 +89,10 @@ def _plan_group(fs: list[_Fact], plan: Plan) -> None:
     sup: dict[str, str] = {}
     pending: list[tuple[str, str]] = []
     multi = fs[0].predicate in MULTI_VALUED
+    stated: dict[str, set[str]] = {}
+    for f in fs:
+        if f.passage:
+            stated.setdefault(f.passage, set()).add(f.value)
 
     def standing(e: _Fact, t: str) -> bool:
         replaced = e.id in sup and by_id[sup[e.id]].vf <= t
@@ -105,6 +114,8 @@ def _plan_group(fs: list[_Fact], plan: Plan) -> None:
             continue
         for e in earlier:
             if e.id in sup or e.value == x.value or x.auth < e.auth:
+                continue
+            if e.value in stated.get(x.passage, ()):  # x's own source still says e's value: they hold together
                 continue
             ended = e.vt is not None and e.vt <= x.vf
             if x.auth > e.auth or ended or _days(e.ref, x.ref) > DISPUTE_WINDOW_DAYS:
@@ -128,14 +139,15 @@ def plan_links(rows: list[list]) -> tuple[Plan, dict[str, dict]]:
     for row in rows:
         if row[0] not in latest or (row[-1] or "") > (latest[row[0]][-1] or ""):
             latest[row[0]] = row
-    for fid, subject, predicate, value, vf, vt, closed_by, auth, stale, removed_at, doc_updated in latest.values():
+    for fid, subject, predicate, value, vf, vt, closed_by, auth, stale, pid, removed_at, doc_updated in latest.values():
         state[fid] = {"valid_to": vt, "closed_by": closed_by, "stale": bool(stale)}
         source_vt = None if closed_by in ("link", "removed") else vt
         if source_vt is None and removed_at:
             source_vt = removed_at
             plan.closed[fid] = (removed_at, "removed")
         vf = vf or "0000-01-01"
-        f = _Fact(fid, subject, predicate, _norm(value), vf, source_vt, int(auth or 0), max(vf, doc_updated or vf))
+        ref = max(vf, doc_updated or vf)
+        f = _Fact(fid, subject, predicate, _norm(value), vf, source_vt, int(auth or 0), ref, pid or "")
         groups.setdefault((subject, predicate), []).append(f)
     for fs in groups.values():
         if len(fs) > 1:

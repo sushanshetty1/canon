@@ -5,9 +5,10 @@ caches it under `/data/raw/posthog/`; tests pass a `fetch` callable over small r
 `load_posthog` turns the raw data into one `Batch`.
 
 The ownership map (`src/hooks/useFeatureOwnership.tsx` in `PostHog/posthog.com`) is the authority on who owns what.
-Its git history gives every area's owner with the window it held: each commit is a document, and each (area, team)
-pair gets a fact that opens when the team appears in the area's owner list and closes when it leaves. Handbook pages
-that still name an older owner are what the check later finds out of date.
+Its git history gives every area's owner with the window it held: each commit is a document, and each time an
+area's owner list changes, the commit states one fact per owner in the new list and closes the facts of the old
+list. Co-owners are stated together in one passage. Handbook pages that still name an older owner are what the
+check later finds out of date.
 
 Public data only: people keep a name, a role and a GitHub handle. No emails, avatars or locations are kept.
 """
@@ -231,6 +232,8 @@ class Ownership:
 def ownership_history(versions: list[dict], team_name: Callable[[str], str]) -> Ownership:
     """Walk the map's versions oldest first and turn owner changes into dated, windowed `owned_by` facts.
 
+    A window closes the day its area's owner list changes; the new list opens new windows from that commit.
+
     Each version is `{"sha", "date", "author_name", "author_handle", "text"}`.
     """
     out = Ownership([], [], [], [], {}, {}, {}, set())
@@ -278,12 +281,20 @@ def ownership_history(versions: list[dict], team_name: Callable[[str], str]) -> 
         out.passages.append(passage)
         out.activity.append((v.get("author_name") or "", v.get("author_handle") or "", doc.id, day))
 
-        now = {(slug, team) for slug, f in current.items() for team in f.owners}
-        for pair in sorted(set(open_windows) - now):
+        # An area whose owner list changed starts a new window for every owner in its new list, stated in this
+        # commit. A co-owner that stays is restated alongside the one that joins, so the two read as co-owners
+        # from one source, not as one team replacing the other.
+        changed = {
+            slug
+            for slug in set(previous) | set(current)
+            if (previous[slug].owners if slug in previous else ()) != (current[slug].owners if slug in current else ())
+        }
+        for pair in sorted(p for p in open_windows if p[0] in changed):
             start, pid = open_windows.pop(pair)
             closed.append((*pair, start, day, pid))
-        for pair in sorted(now - set(open_windows)):
-            open_windows[pair] = (day, passage.id)
+        for slug in sorted(changed & set(current)):
+            for team in current[slug].owners:
+                open_windows[(slug, team)] = (day, passage.id)
         previous = current
         for slug, f in current.items():
             out.names[slug] = f.name
