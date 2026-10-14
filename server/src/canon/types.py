@@ -16,6 +16,8 @@ class Doc:
     url: str  # a public URL a reader can open
     updated_at: str  # ISO date of the version read
     author: str | None = None  # GitHub handle when known
+    areas: tuple[str, ...] = ()  # area slugs the document is about, e.g. from a pull request's `feature/*` label
+    decided_at: str | None = None  # for an RFC: the date it was accepted, which is when its facts start to hold
 
 
 @dataclass(frozen=True)

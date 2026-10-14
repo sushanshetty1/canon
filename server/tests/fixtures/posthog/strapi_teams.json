@@ -1,0 +1,111 @@
+[
+  {
+    "id": 141,
+    "attributes": {
+      "name": "Billing",
+      "slug": "billing",
+      "profiles": {
+        "data": [
+          {
+            "id": 33209,
+            "attributes": {
+              "firstName": "Pawel",
+              "lastName": "Cebula",
+              "companyRole": "Product Engineer",
+              "github": "https://github.com/pawel-cebula"
+            }
+          },
+          {
+            "id": 35378,
+            "attributes": {
+              "firstName": "Marce",
+              "lastName": "Coll",
+              "companyRole": "Back-end Engineer",
+              "github": "https://github.com/MarceColl"
+            }
+          },
+          {
+            "id": 44378,
+            "attributes": {
+              "firstName": "Roy",
+              "lastName": "Cohen",
+              "companyRole": "Backend Engineer",
+              "github": null
+            }
+          },
+          {
+            "id": 47708,
+            "attributes": {
+              "firstName": "Alexander",
+              "lastName": "Mays",
+              "companyRole": "Backend Engineer",
+              "github": null
+            }
+          },
+          {
+            "id": 47335,
+            "attributes": {
+              "firstName": "Daniel",
+              "lastName": "Snitkovskiy",
+              "companyRole": "Backend Engineer",
+              "github": null
+            }
+          }
+        ]
+      },
+      "leadProfiles": {
+        "data": [
+          {
+            "id": 33209,
+            "attributes": {
+              "firstName": "Pawel",
+              "lastName": "Cebula",
+              "github": "https://github.com/pawel-cebula"
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": 171,
+    "attributes": {
+      "name": "Data Tools",
+      "slug": "data-tools",
+      "profiles": {
+        "data": [
+          {
+            "id": 30202,
+            "attributes": {
+              "firstName": "Marius",
+              "lastName": "Andra",
+              "companyRole": "Software Engineer",
+              "github": "https://github.com/mariusandra"
+            }
+          },
+          {
+            "id": 31090,
+            "attributes": {
+              "firstName": "Anna",
+              "lastName": "Szell",
+              "companyRole": "Product Manager",
+              "github": "https://github.com/annaszell"
+            }
+          }
+        ]
+      },
+      "leadProfiles": {
+        "data": [
+          {
+            "id": 30202,
+            "attributes": {
+              "firstName": "Marius",
+              "lastName": "Andra",
+              "github": "https://github.com/mariusandra"
+            }
+          }
+        ]
+      }
+    }
+  }
+]
