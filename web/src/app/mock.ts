@@ -154,7 +154,12 @@ function script(question: string): Step[] {
   return steps
 }
 
-export async function mockAsk(question: string, onEvent: (e: AskEvent) => void, signal?: AbortSignal): Promise<void> {
+export async function mockAsk(ws: string, question: string, onEvent: (e: AskEvent) => void, signal?: AbortSignal): Promise<void> {
+  // Only the demo company is recorded; any other workspace answers as an empty one would.
+  if (ws !== 'demo') {
+    await sleep(400, signal)
+    throw new Error('This workspace is not in the graph yet.')
+  }
   let now = 0
   for (const step of script(question)) {
     await sleep(step.at - now, signal)

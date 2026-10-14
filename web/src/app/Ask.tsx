@@ -169,7 +169,8 @@ export function Ask({ ws }: { ws: Workspace }) {
         if (event.type === 'empty') setAnnouncement('Nothing in the graph answers that.')
         if (event.type === 'done') {
           const c = event.counts
-          setAnnouncement(`Checked. ${c.verified} verified, ${c.stale} out of date, ${c.disputed} disputed, ${c.unsupported} removed.`)
+          const parts = (['verified', 'stale', 'disputed', 'unsupported'] as const).filter((k) => c[k]).map((k) => `${c[k]} ${spoken[k].split(',')[0]}`)
+          setAnnouncement(`Checked: ${parts.join(', ')}.`)
         }
       }
       ask(ws.slug, question, onEvent, ctrl.signal).catch((e: Error) => {
@@ -216,6 +217,7 @@ export function Ask({ ws }: { ws: Workspace }) {
   const current = state.sentences.find((s) => s.index === selected && s.verdict) ?? null
   const asked = state.phase !== 'idle'
   const noKey = state.error?.startsWith('Answers are off') ?? false
+  const missing = state.error?.includes('not in the graph') ?? false
 
   return (
     <div className="flex min-h-full min-w-0 flex-1 gap-3">
@@ -299,9 +301,11 @@ export function Ask({ ws }: { ws: Workspace }) {
                 <div>
                   <p className="text-[18px] leading-relaxed text-ink">{state.error}</p>
                   <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[15px]">
-                    <button type="button" onClick={() => start(state.question)} className="font-semibold text-cobalt hover:text-cobalt-deep">
-                      Try again
-                    </button>
+                    {!missing && (
+                      <button type="button" onClick={() => start(state.question)} className="font-semibold text-cobalt hover:text-cobalt-deep">
+                        Try again
+                      </button>
+                    )}
                     {noKey && !isMock() && (
                       <a href="?mock=1" className="font-semibold text-muted hover:text-ink">
                         Play the recorded demo instead

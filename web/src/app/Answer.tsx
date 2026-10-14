@@ -13,14 +13,21 @@ export const ease = [0.22, 1, 0.36, 1] as const
 
 const solid = (color: string) => `linear-gradient(${color}, ${color})`
 
+/** Text split before its last word, so a mark after the sentence never wraps onto a line by itself. */
+function lastWord(text: string): [string, string] {
+  const at = text.trimEnd().lastIndexOf(' ')
+  return at === -1 ? ['', text] : [text.slice(0, at + 1), text.slice(at + 1)]
+}
+
 /** A mark drawn behind or through the words, growing left to right across every line they span. */
-function Drawn({ children, image, position, height, delay = 0, duration = 0.6, className = '' }: {
+function Drawn({ children, image, position, height, delay = 0, duration = 0.6, curve = ease, className = '' }: {
   children: ReactNode
   image: string
   position: string
   height: string
   delay?: number
   duration?: number
+  curve?: typeof ease | 'linear' | 'easeOut'
   className?: string
 }) {
   const reduce = useReducedMotion()
@@ -30,7 +37,7 @@ function Drawn({ children, image, position, height, delay = 0, duration = 0.6, c
       style={{ backgroundImage: image, backgroundRepeat: 'no-repeat', backgroundPosition: position, boxDecorationBreak: 'slice' }}
       initial={reduce ? false : { backgroundSize: `0% ${height}` }}
       animate={{ backgroundSize: `100% ${height}` }}
-      transition={{ duration: reduce ? 0 : duration, delay: reduce ? 0 : delay, ease }}
+      transition={{ duration: reduce ? 0 : duration, delay: reduce ? 0 : delay, ease: curve }}
     >
       {children}
     </motion.span>
@@ -68,7 +75,9 @@ function Caret() {
 function Insertion({ sentence }: { sentence: Sentence }) {
   const reduce = useReducedMotion()
   const now = sentence.newer[0]
-  if (!now) return null
+  if (!now?.fact) return null
+  const space = now.fact.indexOf(' ')
+  const [first, rest] = space === -1 ? [now.fact, ''] : [now.fact.slice(0, space), now.fact.slice(space)]
   return (
     // Inline, so the correction flows on the same line as the struck words; it rises into place from a little below.
     <motion.span
@@ -78,8 +87,11 @@ function Insertion({ sentence }: { sentence: Sentence }) {
       animate={{ opacity: 1, top: '0em' }}
       transition={{ duration: reduce ? 0 : 0.5, delay: reduce ? 0 : 0.55, ease }}
     >
-      <Caret />
-      {now.fact}
+      <span className="whitespace-nowrap">
+        <Caret />
+        {first}
+      </span>
+      {rest}
     </motion.span>
   )
 }
@@ -92,15 +104,28 @@ const said: Record<string, string> = {
 
 function Marked({ sentence, note }: { sentence: Sentence; note: boolean }) {
   switch (sentence.verdict) {
-    case 'verified':
+    case 'verified': {
+      // The underline is drawn in two runs (the words, then the last word with its check) at one steady speed.
+      const [head, tail] = lastWord(sentence.text)
+      const total = 0.6
+      const first = (total * head.length) / sentence.text.length
+      const underline = { image: solid('rgb(44 70 232 / 0.55)'), position: '0 100%', height: '1.5px', className: 'pb-[0.08em]' }
       return (
         <>
-          <Drawn image={solid('rgb(44 70 232 / 0.55)')} position="0 100%" height="1.5px" className="pb-[0.08em]">
-            {sentence.text}
-          </Drawn>
-          <Check delay={0.5} />
+          {head && (
+            <Drawn {...underline} duration={first} curve="linear">
+              {head}
+            </Drawn>
+          )}
+          <span className="whitespace-nowrap">
+            <Drawn {...underline} delay={first} duration={total - first} curve={head ? 'easeOut' : ease}>
+              {tail}
+            </Drawn>
+            <Check delay={total} />
+          </span>
         </>
       )
+    }
     case 'stale':
       return (
         <>

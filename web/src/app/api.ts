@@ -62,6 +62,7 @@ export function isMock(): boolean {
 async function failure(res: Response): Promise<Error> {
   try {
     const body = await res.json()
+    if (res.status === 404 && body?.detail === 'No such workspace.') return new Error('This workspace is not in the graph yet.')
     if (typeof body?.detail === 'string') return new Error(body.detail)
   } catch {
     // not JSON
@@ -84,7 +85,7 @@ async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
 
 /** Ask a question; `onEvent` gets every event as it arrives. Resolves when the stream ends. */
 export async function ask(ws: string, question: string, onEvent: (e: AskEvent) => void, signal?: AbortSignal): Promise<void> {
-  if (isMock()) return mockAsk(question, onEvent, signal)
+  if (isMock()) return mockAsk(ws, question, onEvent, signal)
 
   let res: Response
   try {

@@ -75,18 +75,18 @@ export function FactHistory({ ws, factId }: { ws: string; factId: string }) {
 
   return (
     <figure>
-      <div className="grid grid-cols-[112px_minmax(0,1fr)] gap-x-3">
+      <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-x-3 sm:grid-cols-[112px_minmax(0,1fr)]">
         <div />
         <div className="relative h-5" aria-hidden="true">
-          {ticks.map((m) => (
-            <span key={m} className="absolute top-0 text-[11.5px] font-medium text-faint" style={{ left: pct(m) }}>
+          {ticks.map((m, i) => (
+            <span key={m} className={`absolute top-0 text-[11.5px] font-medium text-faint ${i % 2 ? 'max-sm:hidden' : ''}`} style={{ left: pct(m) }}>
               {MONTH_NAMES[m % 12]}
             </span>
           ))}
         </div>
       </div>
       <div className="relative">
-        <div className="pointer-events-none absolute inset-y-0 right-0 left-[124px]" aria-hidden="true">
+        <div className="pointer-events-none absolute inset-y-0 right-0 left-[112px] sm:left-[124px]" aria-hidden="true">
           {ticks.map((m) => (
             <span key={m} className="absolute inset-y-0 w-px bg-line" style={{ left: pct(m) }} />
           ))}
@@ -104,7 +104,7 @@ export function FactHistory({ ws, factId }: { ws: string; factId: string }) {
             const outside = (to - from) / span < 0.3 && (from - start) / span > 0.3
             const source = f.title && f.title.length <= 16 ? f.title : kindLabel(f.kind)
             return (
-              <li key={f.fact_id} className="grid grid-cols-[112px_minmax(0,1fr)] items-center gap-x-3">
+              <li key={f.fact_id} className="grid grid-cols-[100px_minmax(0,1fr)] items-center gap-x-3 sm:grid-cols-[112px_minmax(0,1fr)]">
                 <span className={`flex min-w-0 items-center gap-1.5 text-[12px] ${isThis ? 'font-semibold text-ink' : 'text-muted'}`} title={f.title ?? undefined}>
                   <span className={`size-1.5 shrink-0 rounded-full ${isThis ? 'bg-ink' : 'bg-transparent'}`} aria-hidden="true" />
                   <span className="truncate">{source}</span>
