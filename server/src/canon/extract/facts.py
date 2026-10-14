@@ -105,8 +105,8 @@ class Mentions:
         process = bool(_PROCESS.search(text))
         if not (team or area or person or process):
             return 0
-        score = 4 * (owns and (team or area)) + 2 * team + area + person + process
-        return score + (1 if kind in ("team_page", "rfc") else 0)
+        # Ownership statements first: they are what the ownership map can confirm or show to be out of date.
+        return 5 * (owns and (team or area)) + 2 * team + area + person + process
 
 
 def select_passages(batch: Batch, entities: Entities, *, limit: int | None = None) -> list[Passage]:
