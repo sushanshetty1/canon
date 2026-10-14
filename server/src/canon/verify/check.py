@@ -11,7 +11,8 @@ Verdicts, in order:
 5. Otherwise: `verified`.
 
 Rules 1, 3, 4 and 5 are graph queries (`check_graph`). Only rule 2 asks a model, and only whether the sentence says
-what the facts say.
+what the facts say. The model is told what the graph found (a fact's dates, that it was replaced or is out of date,
+that sources disagree) so a sentence reporting that can pass; it never decides any of it.
 """
 
 import asyncio
@@ -86,14 +87,22 @@ def check_graph(graph, claim: Claim) -> Checked:
 def statement(f: dict) -> str:
     """A fact as the entailment check reads it: the sentence, with the dates it held and where it is written."""
     held = f"from {f['valid_from']} to {f['valid_to']}" if f["valid_to"] else f"from {f['valid_from']}"
-    return f"{f['fact']} (held {held}; source: {f['title']}, {f['date']})"
+    if f["stale"]:
+        held += "; this page is out of date: a more authoritative source said otherwise first"
+    elif f["superseded_by"]:
+        held += "; later replaced by a newer source"
+    return f"{f['fact']} (held {held}; source: {f['kind']} {f['title']}, {f['date']})"
 
 
 async def check(graph, claim: Claim, *, entail: Entail) -> Checked:
     checked = await asyncio.to_thread(check_graph, graph, claim)
     if checked.verdict == "unsupported":
         return checked
-    if not await entail(claim.text, [statement(f) for f in checked.sources]):
+    facts = [statement(f) for f in checked.sources]
+    if checked.conflicting:  # the dispute is the graph's finding, so a sentence may report it
+        facts += [statement(c) for c in checked.conflicting]
+        facts.append("The graph records that these current sources disagree.")
+    if not await entail(claim.text, facts):
         return Checked(claim, "unsupported", checked.sources)
     return checked
 

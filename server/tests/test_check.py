@@ -82,6 +82,15 @@ def test_verdict_disputed(graph):
     assert out.conflicting[0]["passage"] == "Deploys are allowed on any day."
 
 
+def test_disputed_claim_is_checked_with_both_sides(graph):
+    _company(graph)
+    calls = []
+    out = asyncio.run(check(graph, Claim("The sources disagree about Friday deploys.", ["a"]), entail=_entail(True, calls)))
+    assert out.verdict == "disputed"
+    facts = calls[0][1]
+    assert any("any day" in f for f in facts) and facts[-1] == "The graph records that these current sources disagree."
+
+
 def test_closed_fact_is_stale(graph):
     k = Kit(graph)
     k.fact("gone", "topic:notebook-sharing", "process", "share by link", doc="handbook:notebooks", on="2026-05-01")
