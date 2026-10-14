@@ -114,7 +114,31 @@ def test_entailment_failure_is_unsupported(graph):
 def test_make_entail_reads_the_schema():
     class Stub:
         async def json(self, system, prompt, schema):
-            assert schema["required"] == ["supported"] and "Sentence: S" in prompt and "- F" in prompt
-            return {"supported": True}
+            assert schema["required"] == ["supported", "past"] and "Sentence: S" in prompt and "- F" in prompt
+            return {"supported": True, "past": True}
 
-    assert asyncio.run(make_entail(Stub())("S", ["F"])) is True
+    assert asyncio.run(make_entail(Stub())("S", ["F"])) == {"supported": True, "past": True}
+
+
+def test_sentence_about_the_past_is_history_not_stale(graph):
+    _company(graph)
+
+    async def past(text, facts):
+        return {"supported": True, "past": True}
+
+    async def present(text, facts):
+        return {"supported": True, "past": False}
+
+    claim = Claim("Product analytics owned notebooks until the ownership map changed.", ["map-old"])
+    assert asyncio.run(check(graph, claim, entail=past)).verdict == "verified"
+    assert asyncio.run(check(graph, claim, entail=present)).verdict == "stale"
+
+
+def test_out_of_date_page_stays_stale_even_in_the_past_tense(graph):
+    _company(graph)
+
+    async def past(text, facts):
+        return {"supported": True, "past": True}
+
+    out = asyncio.run(check(graph, Claim("Product analytics owned notebooks.", ["handbook"]), entail=past))
+    assert out.verdict == "stale"

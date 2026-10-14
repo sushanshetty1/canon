@@ -247,10 +247,12 @@ def ownership_history(versions: list[dict], team_name: Callable[[str], str]) -> 
             continue
         day = _day(v["date"])
         lines: list[str] = []
+        changed: list[str] = []  # area names, for the document's title
         for slug in sorted(set(previous) | set(current)):
             before, after = previous.get(slug), current.get(slug)
             if before == after:
                 continue
+            changed.append((after or before).name)
             if before is None:
                 owners = ", ".join(after.owners) or "no team"
                 lines.append(f"{after.name} ({slug}) added, owned by {owners}.")
@@ -271,7 +273,7 @@ def ownership_history(versions: list[dict], team_name: Callable[[str], str]) -> 
         doc = Doc(
             id=f"ownership_map:{v['sha'][:10]}",
             kind="ownership_map",
-            title=f"Feature ownership map, {day}",
+            title="Ownership map: " + (changed[0] if len(changed) == 1 else f"{changed[0]} and {len(changed) - 1} more"),
             url=f"https://github.com/{SITE_REPO}/commit/{v['sha']}",
             updated_at=day,
             author=v.get("author_handle"),
