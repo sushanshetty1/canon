@@ -52,4 +52,4 @@ def answer_model() -> Claude:
 
 
 def check_model() -> Claude:
-    return Claude(settings().extract_model, effort="low", max_tokens=4000)
+    return Claude(settings().check_model, effort="low", max_tokens=4000)

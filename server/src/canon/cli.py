@@ -175,7 +175,7 @@ def ingest_posthog(args) -> int:
         print(
             f"Model calls: {usage.calls}, cached: {usage.cached}, failed: {usage.failed}; tokens in "
             f"{usage.input_tokens}, out {usage.output_tokens}, cache read {usage.cache_read_tokens}, "
-            f"cache write {usage.cache_write_tokens}; about ${usage.cost_usd():.2f}"
+            f"cache write {usage.cache_write_tokens}; about ${usage.cost_usd(settings().extract_model):.2f}"
         )
         if usage.stopped:
             print(f"The model stopped answering ({usage.stopped}); {usage.skipped} passages were not sent. "

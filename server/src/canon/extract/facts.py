@@ -52,6 +52,10 @@ class Entities:
         return table is not None and key in table
 
 
+# Input and output dollars per million tokens (Haiku at its price for prompts of 100K tokens or fewer).
+PRICES = {"claude-haiku-5-5": (0.10, 0.50), "claude-sonnet-5-5": (2.0, 10.0), "claude-opus-5-5": (4.0, 20.0)}
+
+
 @dataclass
 class Usage:
     calls: int = 0
@@ -66,8 +70,9 @@ class Usage:
     stopped: str | None = None  # why it stopped
     dropped: dict[str, int] = field(default_factory=dict)
 
-    def cost_usd(self, input_per_mtok: float = 2.0, output_per_mtok: float = 10.0) -> float:
-        """At Sonnet 5.5 prices: cache reads 0.1x input, 5-minute cache writes 1.25x."""
+    def cost_usd(self, model: str = "claude-sonnet-5-5") -> float:
+        """At list prices per million tokens: cache reads 0.1x input, 5-minute cache writes 1.25x."""
+        input_per_mtok, output_per_mtok = PRICES.get(model, PRICES["claude-sonnet-5-5"])
         return (
             self.input_tokens * input_per_mtok
             + self.cache_read_tokens * input_per_mtok * 0.1
@@ -191,8 +196,9 @@ People:
 {people}"""
 
 
-def _cache_key(text: str) -> str:
-    return hashlib.sha1(text.encode()).hexdigest()
+def _cache_key(text: str, model: str) -> str:
+    """Per model, so facts a cheap development model extracted never stand in for the production model's."""
+    return hashlib.sha1(f"{model}\n{text}".encode()).hexdigest()
 
 
 async def _call(client, model: str, system: str, user: str, effort: str, usage: Usage) -> list[dict] | None:
@@ -335,7 +341,7 @@ async def extract(
         doc = docs.get(passage.doc_id)
         if doc is None or doc.kind not in AUTHORITY:
             return []
-        file = Path(cache_dir) / f"{_cache_key(passage.text)}.json" if cache_dir else None
+        file = Path(cache_dir) / f"{_cache_key(passage.text, model)}.json" if cache_dir else None
         if file and file.exists():
             raw = json.loads(file.read_text())["facts"]
             usage.cached += 1
