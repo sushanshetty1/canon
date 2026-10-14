@@ -24,6 +24,7 @@ INDEXES = [
     ("Decision", "id"),
     ("Change", "sha"),
     ("Fix", "id"),
+    ("Topic", "key"),
 ]
 
 
