@@ -40,8 +40,15 @@ def write_batch(graph, batch: Batch) -> dict[str, int]:
     _run(
         graph,
         """UNWIND $rows AS r MERGE (d:Document {id: r.id})
-           SET d.kind = r.kind, d.title = r.title, d.url = r.url, d.updated_at = r.updated_at, d.author = r.author""",
+           SET d.kind = r.kind, d.title = r.title, d.url = r.url, d.updated_at = r.updated_at, d.author = r.author,
+               d.decided_at = r.decided_at""",
         [asdict(d) for d in batch.docs],
+    )
+    # A document about an area (a pull request labelled `feature/notebooks`) links to it.
+    _run(
+        graph,
+        "UNWIND $rows AS r MATCH (d:Document {id: r.doc}) MERGE (a:Area {slug: r.area}) MERGE (d)-[:ABOUT]->(a)",
+        [{"doc": d.id, "area": a} for d in batch.docs for a in d.areas],
     )
     # Passages a document no longer has stay on record, detached from the current version.
     by_doc: dict[str, list[str]] = {}
