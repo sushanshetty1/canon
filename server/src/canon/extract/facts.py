@@ -62,6 +62,8 @@ class Usage:
     cache_read_tokens: int = 0
     cache_write_tokens: int = 0
     passages_with_facts: int = 0
+    skipped: int = 0  # passages not sent because the model stopped answering
+    stopped: str | None = None  # why it stopped
     dropped: dict[str, int] = field(default_factory=dict)
 
     def cost_usd(self, input_per_mtok: float = 2.0, output_per_mtok: float = 10.0) -> float:
@@ -214,7 +216,11 @@ async def _call(client, model: str, system: str, user: str, effort: str, usage: 
             if e.status_code == 529:
                 await asyncio.sleep(min(60.0, 2**attempt) + random.random())
                 continue
-            raise
+            # Not worth retrying, and the next call would fail the same way (a spend limit, a bad key): stop
+            # calling, and keep what is extracted or cached so far.
+            usage.failed += 1
+            usage.stopped = usage.stopped or f"{e.status_code}: {getattr(e, 'message', e)}"
+            return None
         u = response.usage
         usage.calls += 1
         usage.input_tokens += u.input_tokens or 0
@@ -337,6 +343,9 @@ async def extract(
             api = client or _client()
             user = f"Document: {doc.title}\nKind: {doc.kind.replace('_', ' ')}\n\nPassage:\n{passage.text}"
             async with semaphore:
+                if usage.stopped:
+                    usage.skipped += 1
+                    return []
                 raw = await _call(api, model, system, user, effort, usage)
             if raw is None:
                 return []

@@ -5,6 +5,7 @@ import json
 import os
 from types import SimpleNamespace
 
+import anthropic
 import pytest
 
 from canon.extract.facts import Entities, Usage, extract, select_passages, validate
@@ -88,6 +89,30 @@ def test_extract_dates_and_caches(tmp_path):
     assert facts[0].authority == AUTHORITY["rfc"]
     again = asyncio.run(extract([passage], [doc], ENTITIES, model="stub", cache_dir=tmp_path, client=client))
     assert client.calls == 1 and again == facts  # the second run reads the cache
+
+
+class SpendLimit(anthropic.BadRequestError):
+    def __init__(self):
+        self.status_code = 400
+        self.message = "You have reached your specified API usage limits."
+
+
+def test_extract_stops_calling_after_a_hard_error_and_keeps_the_cache(tmp_path):
+    doc = Doc("handbook:a.md", "handbook", "A", "https://example.com/a", "2026-09-01")
+    passages = [Passage(f"{doc.id}#{i}", doc.id, f"The Billing team owns notebooks, page {i}.") for i in range(5)]
+    row = {"subject": "area:notebooks", "predicate": "owned_by", "value": "team:billing", "text": "Billing owns notebooks."}
+    warm = StubClient([row])
+    asyncio.run(extract(passages[:1], [doc], ENTITIES, model="stub", cache_dir=tmp_path, client=warm))
+
+    class Failing(StubClient):
+        async def create(self, **kwargs):
+            self.calls += 1
+            raise SpendLimit()
+
+    failing, usage = Failing([]), Usage()
+    facts = asyncio.run(extract(passages, [doc], ENTITIES, model="stub", cache_dir=tmp_path, client=failing, concurrency=1, usage=usage))
+    assert [f.passage_id for f in facts] == [passages[0].id]  # the cached passage still counts
+    assert failing.calls == 1 and usage.skipped == 3 and "usage limits" in usage.stopped
 
 
 def test_select_passages_skips_evidence_kinds():

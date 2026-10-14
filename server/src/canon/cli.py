@@ -177,6 +177,9 @@ def ingest_posthog(args) -> int:
             f"{usage.input_tokens}, out {usage.output_tokens}, cache read {usage.cache_read_tokens}, "
             f"cache write {usage.cache_write_tokens}; about ${usage.cost_usd():.2f}"
         )
+        if usage.stopped:
+            print(f"The model stopped answering ({usage.stopped}); {usage.skipped} passages were not sent. "
+                  "Run again later: cached passages cost nothing.")
         if usage.dropped:
             print("Dropped by validation:", ", ".join(f"{k} {n}" for k, n in sorted(usage.dropped.items())))
 
