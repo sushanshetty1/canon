@@ -69,7 +69,7 @@ def test_fact_shows_its_chain_and_conflicts(graph):
     assert body["forward"] == [] and {f["fact_id"] for f in body["back"]} >= {stale}
     assert any(f["kind"] == "team_page" for f in body["restated"])
 
-    deploys = fact_id("topic:friday-deploys", "policy", "no deploys after 2pm on fridays",
+    deploys = fact_id("topic:friday-deploys", "decided", "no deploys after 2pm on fridays",
                       "handbook:handbook/engineering/deployments.md#0")
     body = client.get(f"/api/w/demo/facts/{deploys}").json()
     assert [f["title"] for f in body["conflicts"]] == ["On-call"]

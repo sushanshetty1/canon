@@ -49,8 +49,8 @@ def test_lower_authority_restatement_is_stale_not_disputed(graph):
 
 def test_equal_authority_disagreement_contradicts(graph):
     k = Kit(graph)
-    k.fact("a", "topic:friday-deploys", "policy", "no deploys after 2pm on fridays", on="2026-09-10")
-    k.fact("b", "topic:friday-deploys", "policy", "deploys allowed any day with on-call approval", on="2026-09-24")
+    k.fact("a", "topic:friday-deploys", "decided", "no deploys after 2pm on fridays", on="2026-09-10")
+    k.fact("b", "topic:friday-deploys", "decided", "deploys allowed any day with on-call approval", on="2026-09-24")
     k.write()
     counts = link(graph)
     assert edges(graph) == {("CONTRADICTS", "a", "b")}
@@ -60,8 +60,8 @@ def test_equal_authority_disagreement_contradicts(graph):
 
 def test_equal_authority_far_apart_supersedes(graph):
     k = Kit(graph)
-    k.fact("a", "topic:friday-deploys", "policy", "no deploys on fridays", on="2026-03-01")
-    k.fact("b", "topic:friday-deploys", "policy", "deploys allowed any day", on="2026-09-24")
+    k.fact("a", "topic:friday-deploys", "decided", "no deploys on fridays", on="2026-03-01")
+    k.fact("b", "topic:friday-deploys", "decided", "deploys allowed any day", on="2026-09-24")
     k.write()
     link(graph)
     assert edges(graph) == {("SUPERSEDED_BY", "a", "b")}
@@ -71,8 +71,8 @@ def test_equal_authority_far_apart_supersedes(graph):
 def test_old_fact_on_recently_edited_page_still_disputes(graph):
     # The fact dates from March, but its page was edited a week before the other source: both are current.
     k = Kit(graph)
-    k.fact("a", "topic:friday-deploys", "policy", "no deploys on fridays", on="2026-03-01", doc_updated="2026-09-17")
-    k.fact("b", "topic:friday-deploys", "policy", "deploys allowed any day", on="2026-09-24")
+    k.fact("a", "topic:friday-deploys", "decided", "no deploys on fridays", on="2026-03-01", doc_updated="2026-09-17")
+    k.fact("b", "topic:friday-deploys", "decided", "deploys allowed any day", on="2026-09-24")
     k.write()
     link(graph)
     assert edges(graph) == {("CONTRADICTS", "a", "b")}
@@ -129,8 +129,8 @@ def test_link_is_idempotent(graph):
     k.fact("map", *OWNS, "team:data-tools", kind="ownership_map", on="2026-09-01")
     k.fact("handbook", *OWNS, "team:product-analytics", on="2026-10-01")
     k.fact("team", *OWNS, "team:data-tools", kind="team_page", on="2026-09-10")
-    k.fact("a", "topic:friday-deploys", "policy", "no deploys after 2pm", on="2026-09-10")
-    k.fact("b", "topic:friday-deploys", "policy", "deploy any day", on="2026-09-24")
+    k.fact("a", "topic:friday-deploys", "decided", "no deploys after 2pm", on="2026-09-10")
+    k.fact("b", "topic:friday-deploys", "decided", "deploy any day", on="2026-09-24")
     k.write()
     first = link(graph)
     before = _snapshot(graph)

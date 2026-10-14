@@ -128,7 +128,6 @@ def main(argv: list[str] | None = None) -> int:
 def ingest_posthog(args) -> int:
     """Connector, writer, extraction, writer, then the supersession linker when it is there."""
     import asyncio
-    import importlib
     from collections import Counter
 
     from canon.config import settings
@@ -183,11 +182,12 @@ def ingest_posthog(args) -> int:
         if usage.dropped:
             print("Dropped by validation:", ", ".join(f"{k} {n}" for k, n in sorted(usage.dropped.items())))
 
-    # The supersession linker is built alongside this; use it when it is there.
-    try:
-        supersede = importlib.import_module("canon.verify.supersede")
-    except ImportError:
-        print("Supersession linker not available: skipped")
-    else:
-        print("Linked:", ", ".join(f"{k} {v}" for k, v in supersede.link(graph).items()))
+    from canon.llm import check_model
+    from canon.verify.conflicts import judge
+    from canon.verify.supersede import link
+
+    print("Linked:", ", ".join(f"{k} {v}" for k, v in link(graph).items()))
+    if not args.skip_extract:
+        # Which current process and policy statements conflict is a question of meaning: a model reads each topic.
+        print("Judged:", ", ".join(f"{k} {v}" for k, v in asyncio.run(judge(graph, check_model())).items()))
     return 0

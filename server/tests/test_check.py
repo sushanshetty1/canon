@@ -18,9 +18,9 @@ def _company(graph):
            text="Notebooks are owned by Data tools.")
     k.fact("handbook", *OWNS, "team:product-analytics", on="2026-10-01",
            text="Product analytics owns notebooks.")
-    k.fact("a", "topic:friday-deploys", "policy", "no deploys after 2pm", on="2026-09-10",
+    k.fact("a", "topic:friday-deploys", "decided", "no deploys after 2pm", on="2026-09-10",
            text="There are no deploys after 2pm on Fridays.")
-    k.fact("b", "topic:friday-deploys", "policy", "deploy any day", on="2026-09-24",
+    k.fact("b", "topic:friday-deploys", "decided", "deploy any day", on="2026-09-24",
            text="Deploys are allowed on any day.")
     k.write()
     link(graph)

@@ -14,7 +14,8 @@ normalising case, spacing and punctuation.
    `(L)-[:SUPERSEDED_BY {reason: 'stale'}]->(H)` and `L.stale = true`. Its page belongs on the fix list. L is not
    a dispute: the higher authority decides.
 4. **Dispute.** Two facts with equal authority and different values that both remain current are linked with
-   `(A)-[:CONTRADICTS]->(B)`. Neither is picked.
+   `(A)-[:CONTRADICTS]->(B)`. Neither is picked. This applies to single-valued predicates (`owned_by`,
+   `decided`); for free-sentence predicates the judge adds `CONTRADICTS {reason: 'judged'}`, which `link` keeps.
 
 5. **Stated together.** A fact never replaces or disputes a value its own passage also states. "Owned by Billing
    and Platform Features" is two facts from one passage, and both hold. The ownership map restates every owner in
@@ -42,7 +43,9 @@ from datetime import date
 
 DISPUTE_WINDOW_DAYS = 30
 # Predicates where one subject holds many values at once, so a different value is an addition, not a change.
-MULTI_VALUED = frozenset({"uses", "leads"})
+# Process and policy facts are free sentences: several hold for one topic at once, and whether two of them
+# conflict is a question of meaning, which `verify.conflicts.judge` asks per topic.
+MULTI_VALUED = frozenset({"uses", "leads", "member_of", "contact_for", "process", "policy"})
 EDGES = ("SUPERSEDED_BY", "RESTATES", "CONTRADICTS")
 
 FACTS = """
@@ -170,7 +173,12 @@ def link(graph) -> dict[str, int]:
         ).result_set
     }
     for t in EDGES:
-        gone = [{"a": a, "b": b} for (tt, a, b) in existing if tt == t and (tt, a, b) not in plan.edges]
+        # Conflicts the judge found (reason 'judged') are not the linker's to remove.
+        gone = [
+            {"a": a, "b": b}
+            for (tt, a, b), reason in existing.items()
+            if tt == t and (tt, a, b) not in plan.edges and reason != "judged"
+        ]
         _run(graph, f"UNWIND $rows AS r MATCH (:Fact {{id: r.a}})-[e:{t}]->(:Fact {{id: r.b}}) DELETE e", gone)
         new = [
             {"a": a, "b": b, "reason": reason}

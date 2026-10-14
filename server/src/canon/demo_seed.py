@@ -78,12 +78,12 @@ DOCS = [
     ("handbook:handbook/engineering/deployments.md", "handbook", "Deployments", "handbook/engineering/deployments",
      "2026-09-10", "name:tomas-silva", [(
          "We do not deploy to production after 2pm on Fridays.",
-         [("topic:friday-deploys", "policy", "no deploys after 2pm on fridays",
+         [("topic:friday-deploys", "decided", "no deploys after 2pm on fridays",
            "Nobody deploys to production after 2pm on Fridays.", None)])]),
     ("handbook:handbook/engineering/on-call.md", "handbook", "On-call", "handbook/engineering/on-call", "2026-09-24",
      "name:lea-fischer", [(
          "Deploys are fine on any day, Fridays included, as long as the on-call engineer approves.",
-         [("topic:friday-deploys", "policy", "deploys any day with on-call approval",
+         [("topic:friday-deploys", "decided", "deploys any day with on-call approval",
            "Deploys are allowed on any day, including Fridays, with the on-call engineer's approval.", None)])]),
 ]
 REVIEWS = [("name:lea-fischer", "ownership_map:8b41e6c5f2", "2026-06-17"), ("name:sam-adeyemi", "ownership_map:c07d93ab14", "2026-09-01")]
