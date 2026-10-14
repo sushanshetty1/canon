@@ -1,0 +1,62 @@
+/* The app's own marks. The palette and type come from index.css. */
+
+:root {
+  /* A real amber highlighter: stronger than --amber-soft so it reads behind a whole sentence. */
+  --amber-marker: #fbe1a6;
+}
+
+/* A sentence of an answer. It wraps like prose, and its hover and focus follow the lines it spans. */
+.sentence {
+  border-radius: 5px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: opacity 0.3s ease, background-color 0.2s ease;
+}
+
+.sentence[data-ready='true'] {
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .sentence[data-ready='true']:hover {
+    background-color: var(--paper-2);
+  }
+}
+
+.sentence:focus-visible {
+  outline: 2px solid var(--cobalt);
+  outline-offset: 3px;
+}
+
+/* While its check runs, a sentence is faint, and a slow light passes over it. */
+.pending {
+  color: transparent;
+  background-image: linear-gradient(90deg, var(--line-strong) 0%, var(--line-strong) 42%, var(--faint) 50%, var(--line-strong) 58%, var(--line-strong) 100%);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: pending-light 2.2s linear infinite;
+}
+
+@keyframes pending-light {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pending {
+    animation: none;
+    color: var(--faint);
+    background: none;
+  }
+}
+
+/* The bottom sheet's scroll area should not drag the page with it. */
+.sheet-scroll {
+  overscroll-behavior: contain;
+}
+
