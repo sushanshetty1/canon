@@ -741,7 +741,7 @@ export function Product() {
           <Cell className="lg:col-span-4" tone="cobalt" title="Ask anything about the company" body="Plain questions, answered claim by claim. Every sentence gets a mark in the margin, and its source.">
             <AskSheet />
           </Cell>
-          <Cell className="lg:col-span-2" tone="paper-2" title="Who actually knows" body="Ranked by what people did: reviewed, wrote, decided, answered. Not by job title.">
+          <Cell className="lg:col-span-2" tone="paper-2" center title="Who actually knows" body="Ranked by what people did: reviewed, wrote, decided, answered. Not by job title.">
             <WhoKnows />
           </Cell>
           <Cell className="lg:col-span-2" tone="night" title="Bus factor" body="For each area, how many people could still answer if the rest left.">
