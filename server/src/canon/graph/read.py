@@ -8,7 +8,8 @@ MATCH (f:Fact) WHERE f.id IN $ids
 OPTIONAL MATCH (f)-[:STATED_IN]->(p:Passage)
 OPTIONAL MATCH (p)<-[:HAS|HAD]-(d:Document)
 OPTIONAL MATCH (f)-[:SUPERSEDED_BY]->(nx:Fact)
-RETURN f, p, d, nx.id
+OPTIONAL MATCH (f)-[:VALUE]->(v)
+RETURN f, p, d, nx.id, v.name
 """
 
 CHAIN_ENDS = """
@@ -34,7 +35,7 @@ def facts(graph, ids) -> dict[str, dict]:
     if not ids:
         return {}
     out: dict[str, dict] = {}
-    for f, p, d, nxt in graph.query(LINEAGE, {"ids": ids}).result_set:
+    for f, p, d, nxt, value_name in graph.query(LINEAGE, {"ids": ids}).result_set:
         fp, pp, dp = _props(f), _props(p), _props(d)
         # A passage can hang off its document by both HAS and HAD, which gives the same fact twice.
         if out.get(fp["id"], {}).get("doc_id"):
@@ -45,6 +46,7 @@ def facts(graph, ids) -> dict[str, dict]:
             "subject": fp.get("subject"),
             "predicate": fp.get("predicate"),
             "value": fp.get("value"),
+            "value_name": value_name,  # the team, area or person the value names, by its display name
             "authority": fp.get("authority"),
             "valid_from": fp.get("valid_from"),
             "valid_to": fp.get("valid_to"),

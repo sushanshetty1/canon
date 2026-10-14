@@ -138,3 +138,13 @@ def test_demo_seed_has_the_cases(graph):
 
 def test_empty_evidence_is_an_evidence_object():
     assert Evidence().documents == 0
+
+
+def test_topic_matches_other_word_forms_in_any_order(graph):
+    from canon.answer.retrieve import match_entities
+    from canon.types import Fact
+
+    from canon.graph.writer import write_facts
+
+    write_facts(graph, [Fact("t1", "topic:ticket-escalation", "process", "x", "Escalate to support.", "2026-01-01", "p", 1)])
+    assert match_entities(graph, "How do I escalate a support ticket?") == ["topic:ticket-escalation"]

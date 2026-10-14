@@ -2,16 +2,16 @@ export type Workspace = { slug: string; name: string; label: string; suggestions
 
 export const WORKSPACES: Workspace[] = [
   {
+    slug: 'posthog',
+    name: 'PostHog',
+    label: 'PostHog',
+    suggestions: ['Which team owns the MCP server?', 'Who owns notebooks?', 'How do I escalate a support ticket?'],
+  },
+  {
     slug: 'demo',
     name: 'Kestrel',
     label: 'Kestrel (demo)',
     suggestions: ['Who owns session replay?', 'Can we deploy on Fridays?', 'Who owns notebooks?'],
-  },
-  {
-    slug: 'posthog',
-    name: 'PostHog',
-    label: 'PostHog',
-    suggestions: ['Who owns notebooks?', 'Who owns feature flags?', 'How long are session recordings kept?'],
   },
 ]
 

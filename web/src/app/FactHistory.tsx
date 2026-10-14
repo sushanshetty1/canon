@@ -98,7 +98,7 @@ export function FactHistory({ ws, factId }: { ws: string; factId: string }) {
             const from = monthsOf(f.valid_from!)
             const to = monthsOf(f.valid_to ?? today)
             const isThis = f.fact_id === detail.fact.fact_id
-            const label = valueLabel(f.value) || f.fact || ''
+            const label = f.value_name || valueLabel(f.value) || f.fact || ''
             const struck = tone === 'ended' || tone === 'stale' ? 'line-through decoration-current/50' : ''
             // A short bar carries its label beside it, on the empty months before it.
             const outside = (to - from) / span < 0.3 && (from - start) / span > 0.3

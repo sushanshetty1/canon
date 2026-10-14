@@ -12,6 +12,7 @@ export type Source = {
   subject: string | null
   predicate: string | null
   value: string | null
+  value_name?: string | null
   authority: number | null
   valid_from: string | null
   valid_to: string | null

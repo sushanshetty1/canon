@@ -152,9 +152,9 @@ Answers need `ANTHROPIC_API_KEY` in the environment.
 ## Roadmap
 
 - [x] Scaffold: server, FalkorDB with per-workspace graphs, site
-- [ ] PostHog connectors: handbook, ownership map, RFCs, issues and pull requests, forum
-- [ ] Extraction: facts with passages and validity windows, superseded and contradicting facts
-- [ ] Ask, with every claim checked
+- [x] PostHog connectors: handbook, ownership map, RFCs, issues and pull requests, forum
+- [x] Extraction: facts with passages and validity windows, superseded and contradicting facts
+- [x] Ask, with every claim checked
 - [ ] People: ownership, expertise from evidence, bus factor
 - [ ] Decisions and catch me up
 - [ ] Fix queue and the GitHub action

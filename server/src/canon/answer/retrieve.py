@@ -19,10 +19,11 @@ STOPWORDS = frozenset(
 )
 FULLTEXT = """
 CALL db.idx.fulltext.queryNodes('Passage', $q) YIELD node, score
-WITH node, score ORDER BY score DESC LIMIT 30
 MATCH (f:Fact)-[:STATED_IN]->(node)
-RETURN f.id, score
+RETURN f.id, score ORDER BY score DESC LIMIT 60
 """
+# Most passages (issues, pull requests, forum threads) carry no facts, so the limit applies after the match:
+# limiting passages first lets them crowd out the handbook passages facts come from.
 ENTITY_LABELS = {"Area": ("area", "slug"), "Team": ("team", "slug"), "Person": ("person", "handle"), "Topic": ("topic", "key")}
 
 
@@ -36,12 +37,21 @@ class Evidence:
         return len({f["source"]["doc_id"] for f in self.facts if f["source"]["doc_id"]})
 
 
-def _singular(word: str) -> str:
-    return word[:-1] if len(word) > 3 and word.endswith("s") and not word.endswith("ss") else word
+SUFFIXES = ("ations", "ation", "ating", "ates", "ated", "ate", "ions", "ion", "ing", "ers", "er", "ed", "es", "s")
+
+
+def stem(word: str) -> str:
+    """A light stemmer, enough that "escalate", "escalated" and "escalation" meet."""
+    if len(word) <= 4 or word.endswith("ss"):
+        return word
+    for suffix in SUFFIXES:
+        if word.endswith(suffix) and len(word) - len(suffix) >= 4:
+            return word[: -len(suffix)]
+    return word
 
 
 def tokens(text: str) -> list[str]:
-    return [_singular(w) for w in re.findall(r"[a-z0-9]+", (text or "").lower())]
+    return [stem(w) for w in re.findall(r"[a-z0-9]+", (text or "").lower())]
 
 
 def search_terms(question: str) -> list[str]:
@@ -72,6 +82,9 @@ def match_entities(graph, question: str) -> list[str]:
                 if not needle or all(w in STOPWORDS for w in needle) or len("".join(needle)) < 3:
                     continue
                 span, k = _span(words, needle), f"{prefix}:{key}"
+                if not span and label == "Topic" and len(needle) > 1 and set(needle) <= set(words):
+                    # A topic key is a bag of words: "ticket-escalation" matches "escalate a support ticket".
+                    span = (min(words.index(w) for w in needle), max(words.index(w) for w in needle) + 1)
                 if span and (k not in found or span[1] - span[0] > found[k][1] - found[k][0]):
                     found[k] = span
     inside = lambda a, b: b[0] <= a[0] and a[1] <= b[1] and a != b  # noqa: E731
