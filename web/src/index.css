@@ -1,0 +1,118 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/funnel-display';
+@import '@fontsource-variable/funnel-sans';
+@import '@fontsource-variable/jetbrains-mono';
+
+/* Canon proofreads a company. The palette is a proofreader's desk:
+   ink for text, cobalt ink for what checks out, proof red for what no longer does,
+   highlighter yellow for the passage a claim stands on, amber where two sources disagree. */
+:root {
+  --page: #e8e9ec;
+  --paper: #fdfdfc;
+  --paper-2: #f3f4f6;
+  --night: #0d0e12;
+  --night-2: #16181e;
+  --night-line: #262a33;
+  --line: #e2e4e8;
+  --line-strong: #cbcfd6;
+  --ink: #0d0e12;
+  --muted: #5b606b;
+  --faint: #8b909a;
+  --cobalt: #2c46e8;
+  --cobalt-deep: #2238c4;
+  --cobalt-soft: #e5e9fd;
+  --proof: #e0392c;
+  --proof-soft: #fde6e3;
+  --amber: #c97a00;
+  --amber-soft: #fdf0d9;
+  --marker: #ffe24a;
+  --marker-soft: #fff4b0;
+}
+
+@theme inline {
+  --color-page: var(--page);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-night: var(--night);
+  --color-night-2: var(--night-2);
+  --color-night-line: var(--night-line);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-cobalt: var(--cobalt);
+  --color-cobalt-deep: var(--cobalt-deep);
+  --color-cobalt-soft: var(--cobalt-soft);
+  --color-proof: var(--proof);
+  --color-proof-soft: var(--proof-soft);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --color-marker: var(--marker);
+  --color-marker-soft: var(--marker-soft);
+  --font-display: 'Funnel Display Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Funnel Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+}
+
+html {
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  color-scheme: light;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+}
+
+::selection {
+  background: var(--marker);
+}
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 0.98;
+}
+
+/* A slab: one rounded sheet of paper (or night) on the page. Sections stack as slabs. */
+.slab {
+  border-radius: 28px;
+  overflow: hidden;
+}
+
+/* Ruled-paper texture: faint baselines, the way a proof sheet is lined. */
+.ruled {
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, rgb(13 14 18 / 0.045) 31px, rgb(13 14 18 / 0.045) 32px);
+}
+
+.ruled-night {
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, rgb(255 255 255 / 0.035) 31px, rgb(255 255 255 / 0.035) 32px);
+}
+
+/* A highlighter stroke behind words: slightly uneven, like a real marker. */
+.marker {
+  background:
+    linear-gradient(to bottom, transparent 22%, var(--marker) 22%, var(--marker) 90%, transparent 90%) no-repeat;
+  background-size: 100% 100%;
+  border-radius: 0.1em;
+  padding: 0 0.08em;
+  margin: 0 -0.04em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
