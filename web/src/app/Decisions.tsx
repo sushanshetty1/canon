@@ -146,7 +146,7 @@ function Bar({ d, axis, today, index, below, reduce }: { d: Decision; axis: Axis
 
       {/* The pull requests that built it. */}
       {d.pulls
-        .filter((p) => p.merged_at)
+        .filter((p) => p.merged_at && p.merged_at >= axis.startIso)
         .map((p) => (
           <span key={p.id} title={p.title} className="absolute top-1/2 h-[24px] w-[2px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink" style={{ left: `${pct(p.merged_at!)}%` }} />
         ))}
@@ -188,7 +188,6 @@ function Timeline({ items: listed, all, today, span, selected, onSelect }: {
       {axis.ticks.map((t) => (
         <span key={t.iso} className="absolute inset-y-0 w-px bg-line" style={{ left: axis.pct(t.iso) + '%' }} />
       ))}
-      <span className="absolute inset-y-0 w-[2px] -translate-x-1/2 bg-ink" style={{ left: axis.pct(today) + '%' }} />
     </>
   )
 
@@ -245,6 +244,10 @@ function Timeline({ items: listed, all, today, span, selected, onSelect }: {
             )
           })}
         </ul>
+        {/* Today, drawn over the rows so a selected row does not hide it. */}
+        <div className="pointer-events-none absolute inset-y-0 right-0 left-0 z-10 min-[900px]:left-[300px]" aria-hidden="true">
+          <span className="absolute inset-y-0 w-[2px] -translate-x-1/2 bg-ink" style={{ left: axis.pct(today) + '%' }} />
+        </div>
       </div>
     </div>
   )
