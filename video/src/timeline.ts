@@ -17,19 +17,19 @@ export type SceneDef = {
 }
 
 export const SCENES: SceneDef[] = [
-  { id: 'open', into: { kind: 'none' }, extra: 0.3 },
-  { id: 'problem', into: { kind: 'stretch' }, extra: 0.4 },
+  { id: 'open', into: { kind: 'none' }, extra: 0.2 },
+  { id: 'problem', into: { kind: 'stretch' }, extra: 0.3 },
   { id: 'idea', into: { kind: 'card', old: 'Cited', next: 'Checked.' }, delay: 0.6, extra: 0.2 },
-  { id: 'graph', into: { kind: 'lift' }, extra: 0.3 },
+  { id: 'graph', into: { kind: 'lift' }, extra: 0.2 },
   { id: 'ask', into: { kind: 'card', old: 'Search', next: 'Ask.' }, delay: 0.6, extra: 0.2 },
-  { id: 'dispute', into: { kind: 'sweep' }, extra: 1.0 },
-  { id: 'fix', into: { kind: 'card', old: 'Report', next: 'Fix.' }, delay: 0.6, extra: 1.2 },
-  { id: 'whoknows', into: { kind: 'card', old: 'Org chart', next: 'Evidence.' }, delay: 0.6, extra: 0.4 },
-  { id: 'busfactor', into: { kind: 'sweep' }, extra: 1.8 },
-  { id: 'decisions', into: { kind: 'lift' }, extra: 0.8 },
-  { id: 'connect', into: { kind: 'card', old: 'Demo', next: 'Your company.' }, delay: 0.6, extra: 2.0 },
-  { id: 'numbers', into: { kind: 'card', old: 'Claimed', next: 'Measured.' }, delay: 0.6, extra: 0.6 },
-  { id: 'close', into: { kind: 'lift' }, extra: 2.4 },
+  { id: 'dispute', into: { kind: 'sweep' }, extra: 0.6 },
+  { id: 'fix', into: { kind: 'card', old: 'Report', next: 'Fix.' }, delay: 0.6, extra: 0.9 },
+  { id: 'whoknows', into: { kind: 'card', old: 'Org chart', next: 'Evidence.' }, delay: 0.6, extra: 0.3 },
+  { id: 'busfactor', into: { kind: 'sweep' }, extra: 1.4 },
+  { id: 'decisions', into: { kind: 'lift' }, extra: 0.5 },
+  { id: 'connect', into: { kind: 'card', old: 'Demo', next: 'Your company.' }, delay: 0.6, extra: 1.6 },
+  { id: 'numbers', into: { kind: 'card', old: 'Claimed', next: 'Measured.' }, delay: 0.6, extra: 0.4 },
+  { id: 'close', into: { kind: 'lift' }, extra: 2.0 },
 ]
 
 /** How long each kind of transition overlaps the scene before it, in seconds. */

@@ -80,12 +80,14 @@ export function Ask() {
         { at: CONTENT_AT + 1.4, rect: { x: 470, y: 190, w: 940, h: 300 }, stiffness: 30 },
         { at: c(1) - 0.1, rect: { x: 420, y: 140, w: 860, h: 470 } },
         { at: c(2) + 1.0, rect: { x: 360, y: 16, w: 1225, h: 870 } },
-        { at: c(3) + 0.9, rect: history, pad: 26 },
+        // The sentence on the left, its history on the right: both in one frame.
+        { at: c(3) + 0.9, rect: { x: 326, y: 300, w: 1248, h: 560 }, pad: 12 },
         { at: c(4) - 0.2, rect: { x: 320, y: 290, w: 1000, h: 420 } },
       ]}
       rings={[
         { at: c(2) - 0.25, until: c(2) + 1.2, rect: sentence1, kind: 'underline' },
         { at: c(3) + 1.9, until: c(4) - 0.6, rect: { x: history.x, y: history.y + 70, w: history.w, h: history.h - 70 } },
+        { at: c(3) + 1.4, until: c(4) - 0.6, rect: { x: 337, y: 331, w: 460, h: 28 }, kind: 'underline', pad: 3 },
         { at: c(4) + 2.0, until: dur - 0.4, rect: { ...removed, y: removed.y + 30, h: 58 }, color: C.faint },
       ]}
       labels={[{ at: CONTENT_AT + 0.35, until: c(1) - 0.6, title: 'Ask', sub: 'The PostHog workspace, public at canon.sushans.dev' }]}

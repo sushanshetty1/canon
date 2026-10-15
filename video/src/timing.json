@@ -5,7 +5,7 @@
  "scenes": {
   "open": {
    "file": "voice/open.wav",
-   "duration": 7.2,
+   "duration": 7.168,
    "lead": 0.8,
    "chunks": [
     {
@@ -15,8 +15,8 @@
     },
     {
      "text": "None of them checks whether that page is still true.",
-     "start": 4.52,
-     "end": 7
+     "start": 4.488,
+     "end": 6.968
     }
    ],
    "words": [
@@ -72,59 +72,59 @@
     },
     {
      "w": "None",
-     "start": 4.52,
-     "end": 4.68
+     "start": 4.488,
+     "end": 4.648
     },
     {
      "w": "of",
-     "start": 4.72,
-     "end": 4.76
+     "start": 4.688,
+     "end": 4.728
     },
     {
      "w": "them",
-     "start": 4.84,
-     "end": 5
+     "start": 4.808,
+     "end": 4.968
     },
     {
      "w": "checks",
-     "start": 5.16,
-     "end": 5.32
+     "start": 5.128,
+     "end": 5.288
     },
     {
      "w": "whether",
-     "start": 5.44,
-     "end": 5.56
+     "start": 5.408,
+     "end": 5.528
     },
     {
      "w": "that",
-     "start": 5.64,
-     "end": 5.8
+     "start": 5.608,
+     "end": 5.768
     },
     {
      "w": "page",
-     "start": 5.92,
-     "end": 6.04
+     "start": 5.888,
+     "end": 6.008
     },
     {
      "w": "is",
-     "start": 6.08,
-     "end": 6.12
+     "start": 6.048,
+     "end": 6.088
     },
     {
      "w": "still",
-     "start": 6.2,
-     "end": 6.44
+     "start": 6.168,
+     "end": 6.408
     },
     {
      "w": "true",
-     "start": 6.52,
-     "end": 7
+     "start": 6.488,
+     "end": 6.968
     }
    ]
   },
   "problem": {
    "file": "voice/problem.wav",
-   "duration": 15.47,
+   "duration": 15.414,
    "lead": 0.3,
    "chunks": [
     {
@@ -134,13 +134,13 @@
     },
     {
      "text": "In September, the ownership map moved it to the Context and MCP team.",
-     "start": 5.772,
-     "end": 10.745
+     "start": 5.744,
+     "end": 10.717
     },
     {
      "text": "A tool that finds that page and cites it is confidently wrong.",
-     "start": 11.03,
-     "end": 15.35
+     "start": 10.974,
+     "end": 15.294
     }
    ],
    "words": [
@@ -201,134 +201,134 @@
     },
     {
      "w": "In",
-     "start": 5.772,
-     "end": 5.825
+     "start": 5.744,
+     "end": 5.797
     },
     {
      "w": "September",
-     "start": 6.265,
-     "end": 6.758
+     "start": 6.237,
+     "end": 6.73
     },
     {
      "w": "the",
-     "start": 6.812,
-     "end": 6.865
+     "start": 6.784,
+     "end": 6.837
     },
     {
      "w": "ownership",
-     "start": 7.105,
-     "end": 7.345
+     "start": 7.077,
+     "end": 7.317
     },
     {
      "w": "map",
-     "start": 7.505,
-     "end": 7.665
+     "start": 7.477,
+     "end": 7.637
     },
     {
      "w": "moved",
-     "start": 7.785,
-     "end": 7.905
+     "start": 7.757,
+     "end": 7.877
     },
     {
      "w": "it",
-     "start": 7.985,
-     "end": 8.065
+     "start": 7.957,
+     "end": 8.037
     },
     {
      "w": "to",
-     "start": 8.105,
-     "end": 8.145
+     "start": 8.077,
+     "end": 8.117
     },
     {
      "w": "the",
-     "start": 8.225,
-     "end": 8.305
+     "start": 8.197,
+     "end": 8.277
     },
     {
      "w": "Context",
-     "start": 8.385,
-     "end": 8.865
+     "start": 8.357,
+     "end": 8.837
     },
     {
      "w": "and",
-     "start": 8.945,
-     "end": 9.025
+     "start": 8.917,
+     "end": 8.997
     },
     {
      "w": "MCP",
-     "start": 9.185,
-     "end": 9.665
+     "start": 9.157,
+     "end": 9.637
     },
     {
      "w": "team",
-     "start": 9.745,
-     "end": 10.745
+     "start": 9.717,
+     "end": 10.717
     },
     {
      "w": "A",
-     "start": 11.03,
-     "end": 11.07
+     "start": 10.974,
+     "end": 11.014
     },
     {
      "w": "tool",
-     "start": 11.11,
-     "end": 11.27
+     "start": 11.054,
+     "end": 11.214
     },
     {
      "w": "that",
-     "start": 11.35,
-     "end": 11.51
+     "start": 11.294,
+     "end": 11.454
     },
     {
      "w": "finds",
-     "start": 11.63,
-     "end": 11.83
+     "start": 11.574,
+     "end": 11.774
     },
     {
      "w": "that",
-     "start": 11.91,
-     "end": 11.99
+     "start": 11.854,
+     "end": 11.934
     },
     {
      "w": "page",
-     "start": 12.07,
-     "end": 12.31
+     "start": 12.014,
+     "end": 12.254
     },
     {
      "w": "and",
-     "start": 12.39,
-     "end": 12.55
+     "start": 12.334,
+     "end": 12.494
     },
     {
      "w": "cites",
-     "start": 12.63,
-     "end": 12.87
+     "start": 12.574,
+     "end": 12.814
     },
     {
      "w": "it",
-     "start": 12.95,
-     "end": 13.19
+     "start": 12.894,
+     "end": 13.134
     },
     {
      "w": "is",
-     "start": 13.27,
-     "end": 13.43
+     "start": 13.214,
+     "end": 13.374
     },
     {
      "w": "confidently",
-     "start": 13.51,
-     "end": 14.23
+     "start": 13.454,
+     "end": 14.174
     },
     {
      "w": "wrong",
-     "start": 14.75,
-     "end": 15.35
+     "start": 14.694,
+     "end": 15.294
     }
    ]
   },
   "idea": {
    "file": "voice/idea.wav",
-   "duration": 13.1,
+   "duration": 13.068,
    "lead": 0.3,
    "chunks": [
     {
@@ -343,8 +343,8 @@
     },
     {
      "text": "Then it checks every sentence of an answer against it, before you see it.",
-     "start": 8.633,
-     "end": 12.98
+     "start": 8.601,
+     "end": 12.948
     }
    ],
    "words": [
@@ -445,79 +445,79 @@
     },
     {
      "w": "Then",
-     "start": 8.633,
-     "end": 8.74
+     "start": 8.601,
+     "end": 8.708
     },
     {
      "w": "it",
-     "start": 8.82,
-     "end": 8.9
+     "start": 8.788,
+     "end": 8.868
     },
     {
      "w": "checks",
-     "start": 9.1,
-     "end": 9.3
+     "start": 9.068,
+     "end": 9.268
     },
     {
      "w": "every",
-     "start": 9.38,
-     "end": 9.62
+     "start": 9.348,
+     "end": 9.588
     },
     {
      "w": "sentence",
-     "start": 9.82,
-     "end": 10.02
+     "start": 9.788,
+     "end": 9.988
     },
     {
      "w": "of",
-     "start": 10.06,
-     "end": 10.1
+     "start": 10.028,
+     "end": 10.068
     },
     {
      "w": "an",
-     "start": 10.18,
-     "end": 10.26
+     "start": 10.148,
+     "end": 10.228
     },
     {
      "w": "answer",
-     "start": 10.34,
-     "end": 10.58
+     "start": 10.308,
+     "end": 10.548
     },
     {
      "w": "against",
-     "start": 10.66,
-     "end": 10.98
+     "start": 10.628,
+     "end": 10.948
     },
     {
      "w": "it",
-     "start": 11.06,
-     "end": 11.593
+     "start": 11.028,
+     "end": 11.561
     },
     {
      "w": "before",
-     "start": 11.727,
-     "end": 11.86
+     "start": 11.695,
+     "end": 11.828
     },
     {
      "w": "you",
-     "start": 11.94,
-     "end": 12.02
+     "start": 11.908,
+     "end": 11.988
     },
     {
      "w": "see",
-     "start": 12.1,
-     "end": 12.18
+     "start": 12.068,
+     "end": 12.148
     },
     {
      "w": "it",
-     "start": 12.26,
-     "end": 12.98
+     "start": 12.228,
+     "end": 12.948
     }
    ]
   },
   "graph": {
    "file": "voice/graph.wav",
-   "duration": 23.55,
+   "duration": 23.43,
    "lead": 0.3,
    "chunks": [
     {
@@ -527,28 +527,28 @@
     },
     {
      "text": "When a newer source replaces that fact, the graph records an edge.",
-     "start": 5.15,
-     "end": 9.35
+     "start": 5.126,
+     "end": 9.326
     },
     {
      "text": "So still true is a path:",
-     "start": 9.635,
-     "end": 12.075
+     "start": 9.583,
+     "end": 12.023
     },
     {
      "text": "follow SUPERSEDED_BY to whatever holds today.",
-     "start": 12.185,
-     "end": 15.665
+     "start": 12.125,
+     "end": 15.605
     },
     {
      "text": "FalkorDB runs that check on every sentence.",
-     "start": 16.055,
-     "end": 19.468
+     "start": 15.955,
+     "end": 19.368
     },
     {
      "text": "The model writes the words. The graph decides what is current.",
-     "start": 19.697,
-     "end": 23.43
+     "start": 19.577,
+     "end": 23.31
     }
    ],
    "words": [
@@ -614,224 +614,224 @@
     },
     {
      "w": "When",
-     "start": 5.15,
-     "end": 5.23
+     "start": 5.126,
+     "end": 5.206
     },
     {
      "w": "a",
-     "start": 5.27,
-     "end": 5.31
+     "start": 5.246,
+     "end": 5.286
     },
     {
      "w": "newer",
-     "start": 5.39,
-     "end": 5.63
+     "start": 5.366,
+     "end": 5.606
     },
     {
      "w": "source",
-     "start": 5.71,
-     "end": 5.95
+     "start": 5.686,
+     "end": 5.926
     },
     {
      "w": "replaces",
-     "start": 6.03,
-     "end": 6.59
+     "start": 6.006,
+     "end": 6.566
     },
     {
      "w": "that",
-     "start": 6.67,
-     "end": 6.83
+     "start": 6.646,
+     "end": 6.806
     },
     {
      "w": "fact",
-     "start": 6.91,
-     "end": 7.47
+     "start": 6.886,
+     "end": 7.446
     },
     {
      "w": "the",
-     "start": 7.51,
-     "end": 7.55
+     "start": 7.486,
+     "end": 7.526
     },
     {
      "w": "graph",
-     "start": 7.63,
-     "end": 7.95
+     "start": 7.606,
+     "end": 7.926
     },
     {
      "w": "records",
-     "start": 8.15,
-     "end": 8.35
+     "start": 8.126,
+     "end": 8.326
     },
     {
      "w": "an",
-     "start": 8.43,
-     "end": 8.51
+     "start": 8.406,
+     "end": 8.486
     },
     {
      "w": "edge",
-     "start": 8.59,
-     "end": 9.35
+     "start": 8.566,
+     "end": 9.326
     },
     {
      "w": "So",
-     "start": 9.635,
-     "end": 10.195
+     "start": 9.583,
+     "end": 10.143
     },
     {
      "w": "still",
-     "start": 10.275,
-     "end": 10.515
+     "start": 10.223,
+     "end": 10.463
     },
     {
      "w": "true",
-     "start": 10.595,
-     "end": 10.915
+     "start": 10.543,
+     "end": 10.863
     },
     {
      "w": "is",
-     "start": 10.995,
-     "end": 11.075
+     "start": 10.943,
+     "end": 11.023
     },
     {
      "w": "a",
-     "start": 11.155,
-     "end": 11.195
+     "start": 11.103,
+     "end": 11.143
     },
     {
      "w": "path",
-     "start": 11.235,
-     "end": 12.075
+     "start": 11.183,
+     "end": 12.023
     },
     {
      "w": "follow",
-     "start": 12.185,
-     "end": 12.505
+     "start": 12.125,
+     "end": 12.445
     },
     {
      "w": "superseded-by",
-     "start": 12.585,
-     "end": 13.825
+     "start": 12.525,
+     "end": 13.765
     },
     {
      "w": "to",
-     "start": 13.865,
-     "end": 13.945
+     "start": 13.805,
+     "end": 13.885
     },
     {
      "w": "whatever",
-     "start": 14.145,
-     "end": 14.345
+     "start": 14.085,
+     "end": 14.285
     },
     {
      "w": "holds",
-     "start": 14.505,
-     "end": 14.665
+     "start": 14.445,
+     "end": 14.605
     },
     {
      "w": "today",
-     "start": 14.745,
-     "end": 15.665
+     "start": 14.685,
+     "end": 15.605
     },
     {
      "w": "Falkor",
-     "start": 16.055,
-     "end": 16.455
+     "start": 15.955,
+     "end": 16.355
     },
     {
      "w": "DB",
-     "start": 16.535,
-     "end": 16.935
+     "start": 16.435,
+     "end": 16.835
     },
     {
      "w": "runs",
-     "start": 17.015,
-     "end": 17.255
+     "start": 16.915,
+     "end": 17.155
     },
     {
      "w": "that",
-     "start": 17.375,
-     "end": 17.495
+     "start": 17.275,
+     "end": 17.395
     },
     {
      "w": "check",
-     "start": 17.655,
-     "end": 17.815
+     "start": 17.555,
+     "end": 17.715
     },
     {
      "w": "on",
-     "start": 17.895,
-     "end": 18.135
+     "start": 17.795,
+     "end": 18.035
     },
     {
      "w": "every",
-     "start": 18.215,
-     "end": 18.455
+     "start": 18.115,
+     "end": 18.355
     },
     {
      "w": "sentence",
-     "start": 18.535,
-     "end": 19.468
+     "start": 18.435,
+     "end": 19.368
     },
     {
      "w": "The",
-     "start": 19.697,
-     "end": 19.75
+     "start": 19.577,
+     "end": 19.63
     },
     {
      "w": "model",
-     "start": 19.91,
-     "end": 20.07
+     "start": 19.79,
+     "end": 19.95
     },
     {
      "w": "writes",
-     "start": 20.23,
-     "end": 20.39
+     "start": 20.11,
+     "end": 20.27
     },
     {
      "w": "the",
-     "start": 20.43,
-     "end": 20.47
+     "start": 20.31,
+     "end": 20.35
     },
     {
      "w": "words",
-     "start": 20.55,
-     "end": 21.23
+     "start": 20.43,
+     "end": 21.11
     },
     {
      "w": "The",
-     "start": 21.27,
-     "end": 21.35
+     "start": 21.15,
+     "end": 21.23
     },
     {
      "w": "graph",
-     "start": 21.43,
-     "end": 21.75
+     "start": 21.31,
+     "end": 21.63
     },
     {
      "w": "decides",
-     "start": 21.83,
-     "end": 22.23
+     "start": 21.71,
+     "end": 22.11
     },
     {
      "w": "what",
-     "start": 22.31,
-     "end": 22.39
+     "start": 22.19,
+     "end": 22.27
     },
     {
      "w": "is",
-     "start": 22.47,
-     "end": 22.55
+     "start": 22.35,
+     "end": 22.43
     },
     {
      "w": "current",
-     "start": 22.63,
-     "end": 23.43
+     "start": 22.51,
+     "end": 23.31
     }
    ]
   },
   "ask": {
    "file": "voice/ask.wav",
-   "duration": 24.555,
+   "duration": 24.439,
    "lead": 0.3,
    "chunks": [
     {
@@ -841,23 +841,23 @@
     },
     {
      "text": "Each sentence is checked as it lands.",
-     "start": 7.54,
-     "end": 10.06
+     "start": 7.508,
+     "end": 10.028
     },
     {
      "text": "Open one for its sources, and the fact's history:",
-     "start": 10.415,
-     "end": 13.562
+     "start": 10.347,
+     "end": 13.494
     },
     {
      "text": "PostHog AI, Signals, Self-Driving, and since September, Context and MCP.",
-     "start": 13.773,
-     "end": 20.48
+     "start": 13.693,
+     "end": 20.4
     },
     {
      "text": "One sentence had nothing behind it, so Canon removed it.",
-     "start": 20.835,
-     "end": 24.435
+     "start": 20.719,
+     "end": 24.319
     }
    ],
    "words": [
@@ -928,189 +928,189 @@
     },
     {
      "w": "Each",
-     "start": 7.54,
-     "end": 7.78
+     "start": 7.508,
+     "end": 7.748
     },
     {
      "w": "sentence",
-     "start": 7.98,
-     "end": 8.18
+     "start": 7.948,
+     "end": 8.148
     },
     {
      "w": "is",
-     "start": 8.26,
-     "end": 8.42
+     "start": 8.228,
+     "end": 8.388
     },
     {
      "w": "checked",
-     "start": 8.5,
-     "end": 8.74
+     "start": 8.468,
+     "end": 8.708
     },
     {
      "w": "as",
-     "start": 8.82,
-     "end": 8.9
+     "start": 8.788,
+     "end": 8.868
     },
     {
      "w": "it",
-     "start": 8.98,
-     "end": 9.06
+     "start": 8.948,
+     "end": 9.028
     },
     {
      "w": "lands",
-     "start": 9.54,
-     "end": 10.06
+     "start": 9.508,
+     "end": 10.028
     },
     {
      "w": "Open",
-     "start": 10.415,
-     "end": 10.735
+     "start": 10.347,
+     "end": 10.667
     },
     {
      "w": "one",
-     "start": 10.815,
-     "end": 10.975
+     "start": 10.747,
+     "end": 10.907
     },
     {
      "w": "for",
-     "start": 11.015,
-     "end": 11.055
+     "start": 10.947,
+     "end": 10.987
     },
     {
      "w": "its",
-     "start": 11.135,
-     "end": 11.295
+     "start": 11.067,
+     "end": 11.227
     },
     {
      "w": "sources",
-     "start": 11.615,
-     "end": 11.975
+     "start": 11.547,
+     "end": 11.907
     },
     {
      "w": "and",
-     "start": 12.015,
-     "end": 12.095
+     "start": 11.947,
+     "end": 12.027
     },
     {
      "w": "the",
-     "start": 12.135,
-     "end": 12.175
+     "start": 12.067,
+     "end": 12.107
     },
     {
      "w": "fact's",
-     "start": 12.255,
-     "end": 12.495
+     "start": 12.187,
+     "end": 12.427
     },
     {
      "w": "history",
-     "start": 12.575,
-     "end": 13.562
+     "start": 12.507,
+     "end": 13.494
     },
     {
      "w": "PostHog",
-     "start": 13.773,
-     "end": 14.12
+     "start": 13.693,
+     "end": 14.04
     },
     {
      "w": "AI",
-     "start": 14.28,
-     "end": 15.04
+     "start": 14.2,
+     "end": 14.96
     },
     {
      "w": "Signals",
-     "start": 15.08,
-     "end": 15.8
+     "start": 15,
+     "end": 15.72
     },
     {
      "w": "Self-Driving",
-     "start": 15.88,
-     "end": 16.88
+     "start": 15.8,
+     "end": 16.8
     },
     {
      "w": "and",
-     "start": 16.92,
-     "end": 17.16
+     "start": 16.84,
+     "end": 17.08
     },
     {
      "w": "since",
-     "start": 17.24,
-     "end": 17.4
+     "start": 17.16,
+     "end": 17.32
     },
     {
      "w": "September",
-     "start": 17.84,
-     "end": 18.32
+     "start": 17.76,
+     "end": 18.24
     },
     {
      "w": "Context",
-     "start": 18.36,
-     "end": 18.92
+     "start": 18.28,
+     "end": 18.84
     },
     {
      "w": "and",
-     "start": 19,
-     "end": 19.08
+     "start": 18.92,
+     "end": 19
     },
     {
      "w": "MCP",
-     "start": 19.24,
-     "end": 20.48
+     "start": 19.16,
+     "end": 20.4
     },
     {
      "w": "One",
-     "start": 20.835,
-     "end": 20.995
+     "start": 20.719,
+     "end": 20.879
     },
     {
      "w": "sentence",
-     "start": 21.195,
-     "end": 21.395
+     "start": 21.079,
+     "end": 21.279
     },
     {
      "w": "had",
-     "start": 21.515,
-     "end": 21.635
+     "start": 21.399,
+     "end": 21.519
     },
     {
      "w": "nothing",
-     "start": 21.795,
-     "end": 21.955
+     "start": 21.679,
+     "end": 21.839
     },
     {
      "w": "behind",
-     "start": 22.075,
-     "end": 22.275
+     "start": 21.959,
+     "end": 22.159
     },
     {
      "w": "it",
-     "start": 22.355,
-     "end": 22.782
+     "start": 22.239,
+     "end": 22.666
     },
     {
      "w": "so",
-     "start": 22.888,
-     "end": 22.995
+     "start": 22.772,
+     "end": 22.879
     },
     {
      "w": "Canon",
-     "start": 23.155,
-     "end": 23.315
+     "start": 23.039,
+     "end": 23.199
     },
     {
      "w": "removed",
-     "start": 23.475,
-     "end": 23.635
+     "start": 23.359,
+     "end": 23.519
     },
     {
      "w": "it",
-     "start": 23.715,
-     "end": 24.435
+     "start": 23.599,
+     "end": 24.319
     }
    ]
   },
   "dispute": {
    "file": "voice/dispute.wav",
-   "duration": 11.32,
+   "duration": 11.272,
    "lead": 0.3,
    "chunks": [
     {
@@ -1120,13 +1120,13 @@
     },
     {
      "text": "One says growth reviews happen every four weeks. Another says quarterly.",
-     "start": 4.59,
-     "end": 9.19
+     "start": 4.566,
+     "end": 9.166
     },
     {
      "text": "Canon shows both.",
-     "start": 9.44,
-     "end": 11.2
+     "start": 9.392,
+     "end": 11.152
     }
    ],
    "words": [
@@ -1177,79 +1177,79 @@
     },
     {
      "w": "One",
-     "start": 4.59,
-     "end": 4.75
+     "start": 4.566,
+     "end": 4.726
     },
     {
      "w": "says",
-     "start": 4.83,
-     "end": 5.07
+     "start": 4.806,
+     "end": 5.046
     },
     {
      "w": "growth",
-     "start": 5.15,
-     "end": 5.39
+     "start": 5.126,
+     "end": 5.366
     },
     {
      "w": "reviews",
-     "start": 5.47,
-     "end": 5.87
+     "start": 5.446,
+     "end": 5.846
     },
     {
      "w": "happen",
-     "start": 5.95,
-     "end": 6.27
+     "start": 5.926,
+     "end": 6.246
     },
     {
      "w": "every",
-     "start": 6.43,
-     "end": 6.59
+     "start": 6.406,
+     "end": 6.566
     },
     {
      "w": "four",
-     "start": 6.71,
-     "end": 6.83
+     "start": 6.686,
+     "end": 6.806
     },
     {
      "w": "weeks",
-     "start": 7.15,
-     "end": 7.51
+     "start": 7.126,
+     "end": 7.486
     },
     {
      "w": "Another",
-     "start": 7.55,
-     "end": 7.87
+     "start": 7.526,
+     "end": 7.846
     },
     {
      "w": "says",
-     "start": 7.95,
-     "end": 8.19
+     "start": 7.926,
+     "end": 8.166
     },
     {
      "w": "quarterly",
-     "start": 8.35,
-     "end": 9.19
+     "start": 8.326,
+     "end": 9.166
     },
     {
      "w": "Canon",
-     "start": 9.44,
-     "end": 9.76
+     "start": 9.392,
+     "end": 9.712
     },
     {
      "w": "shows",
-     "start": 9.84,
-     "end": 10.08
+     "start": 9.792,
+     "end": 10.032
     },
     {
      "w": "both",
-     "start": 10.16,
-     "end": 11.2
+     "start": 10.112,
+     "end": 11.152
     }
    ]
   },
   "fix": {
    "file": "voice/fix.wav",
-   "duration": 16.66,
+   "duration": 16.596,
    "lead": 0.3,
    "chunks": [
     {
@@ -1259,23 +1259,23 @@
     },
     {
      "text": "The fix queue strikes each line the graph knows has changed,",
-     "start": 5.025,
-     "end": 8.585
+     "start": 4.997,
+     "end": 8.557
     },
     {
      "text": "drafts a checked correction,",
-     "start": 8.66,
-     "end": 10.393
+     "start": 8.628,
+     "end": 10.361
     },
     {
      "text": "and routes it to the team that owns the area.",
-     "start": 10.482,
-     "end": 13.135
+     "start": 10.446,
+     "end": 13.099
     },
     {
      "text": "Approve it, and Canon files a GitHub issue.",
-     "start": 13.42,
-     "end": 16.54
+     "start": 13.356,
+     "end": 16.476
     }
    ],
    "words": [
@@ -1341,174 +1341,174 @@
     },
     {
      "w": "The",
-     "start": 5.025,
-     "end": 5.105
+     "start": 4.997,
+     "end": 5.077
     },
     {
      "w": "fix",
-     "start": 5.185,
-     "end": 5.425
+     "start": 5.157,
+     "end": 5.397
     },
     {
      "w": "queue",
-     "start": 5.505,
-     "end": 5.745
+     "start": 5.477,
+     "end": 5.717
     },
     {
      "w": "strikes",
-     "start": 5.825,
-     "end": 6.225
+     "start": 5.797,
+     "end": 6.197
     },
     {
      "w": "each",
-     "start": 6.305,
-     "end": 6.465
+     "start": 6.277,
+     "end": 6.437
     },
     {
      "w": "line",
-     "start": 6.545,
-     "end": 6.785
+     "start": 6.517,
+     "end": 6.757
     },
     {
      "w": "the",
-     "start": 6.825,
-     "end": 6.865
+     "start": 6.797,
+     "end": 6.837
     },
     {
      "w": "graph",
-     "start": 6.945,
-     "end": 7.185
+     "start": 6.917,
+     "end": 7.157
     },
     {
      "w": "knows",
-     "start": 7.265,
-     "end": 7.545
+     "start": 7.237,
+     "end": 7.517
     },
     {
      "w": "has",
-     "start": 7.585,
-     "end": 7.745
+     "start": 7.557,
+     "end": 7.717
     },
     {
      "w": "changed",
-     "start": 7.825,
-     "end": 8.585
+     "start": 7.797,
+     "end": 8.557
     },
     {
      "w": "drafts",
-     "start": 8.66,
-     "end": 9.06
+     "start": 8.628,
+     "end": 9.028
     },
     {
      "w": "a",
-     "start": 9.14,
-     "end": 9.22
+     "start": 9.108,
+     "end": 9.188
     },
     {
      "w": "checked",
-     "start": 9.34,
-     "end": 9.46
+     "start": 9.308,
+     "end": 9.428
     },
     {
      "w": "correction",
-     "start": 9.54,
-     "end": 10.393
+     "start": 9.508,
+     "end": 10.361
     },
     {
      "w": "and",
-     "start": 10.482,
-     "end": 10.535
+     "start": 10.446,
+     "end": 10.499
     },
     {
      "w": "routes",
-     "start": 10.615,
-     "end": 10.855
+     "start": 10.579,
+     "end": 10.819
     },
     {
      "w": "it",
-     "start": 10.895,
-     "end": 10.935
+     "start": 10.859,
+     "end": 10.899
     },
     {
      "w": "to",
-     "start": 11.015,
-     "end": 11.095
+     "start": 10.979,
+     "end": 11.059
     },
     {
      "w": "the",
-     "start": 11.175,
-     "end": 11.255
+     "start": 11.139,
+     "end": 11.219
     },
     {
      "w": "team",
-     "start": 11.375,
-     "end": 11.495
+     "start": 11.339,
+     "end": 11.459
     },
     {
      "w": "that",
-     "start": 11.575,
-     "end": 11.735
+     "start": 11.539,
+     "end": 11.699
     },
     {
      "w": "owns",
-     "start": 11.815,
-     "end": 11.975
+     "start": 11.779,
+     "end": 11.939
     },
     {
      "w": "the",
-     "start": 12.055,
-     "end": 12.135
+     "start": 12.019,
+     "end": 12.099
     },
     {
      "w": "area",
-     "start": 12.215,
-     "end": 13.135
+     "start": 12.179,
+     "end": 13.099
     },
     {
      "w": "Approve",
-     "start": 13.42,
-     "end": 13.74
+     "start": 13.356,
+     "end": 13.676
     },
     {
      "w": "it",
-     "start": 13.9,
-     "end": 14.1
+     "start": 13.836,
+     "end": 14.036
     },
     {
      "w": "and",
-     "start": 14.14,
-     "end": 14.3
+     "start": 14.076,
+     "end": 14.236
     },
     {
      "w": "Canon",
-     "start": 14.5,
-     "end": 14.7
+     "start": 14.436,
+     "end": 14.636
     },
     {
      "w": "files",
-     "start": 14.86,
-     "end": 15.02
+     "start": 14.796,
+     "end": 14.956
     },
     {
      "w": "a",
-     "start": 15.06,
-     "end": 15.1
+     "start": 14.996,
+     "end": 15.036
     },
     {
      "w": "GitHub",
-     "start": 15.3,
-     "end": 15.5
+     "start": 15.236,
+     "end": 15.436
     },
     {
      "w": "issue",
-     "start": 15.98,
-     "end": 16.54
+     "start": 15.916,
+     "end": 16.476
     }
    ]
   },
   "whoknows": {
    "file": "voice/whoknows.wav",
-   "duration": 9.75,
+   "duration": 9.726,
    "lead": 0.3,
    "chunks": [
     {
@@ -1518,8 +1518,8 @@
     },
     {
      "text": "Every name opens to its evidence.",
-     "start": 6.99,
-     "end": 9.63
+     "start": 6.966,
+     "end": 9.606
     }
    ],
    "words": [
@@ -1590,39 +1590,39 @@
     },
     {
      "w": "Every",
-     "start": 6.99,
-     "end": 7.31
+     "start": 6.966,
+     "end": 7.286
     },
     {
      "w": "name",
-     "start": 7.39,
-     "end": 7.79
+     "start": 7.366,
+     "end": 7.766
     },
     {
      "w": "opens",
-     "start": 7.87,
-     "end": 8.19
+     "start": 7.846,
+     "end": 8.166
     },
     {
      "w": "to",
-     "start": 8.27,
-     "end": 8.35
+     "start": 8.246,
+     "end": 8.326
     },
     {
      "w": "its",
-     "start": 8.43,
-     "end": 8.51
+     "start": 8.406,
+     "end": 8.486
     },
     {
      "w": "evidence",
-     "start": 8.59,
-     "end": 9.63
+     "start": 8.566,
+     "end": 9.606
     }
    ]
   },
   "busfactor": {
    "file": "voice/busfactor.wav",
-   "duration": 15.14,
+   "duration": 15.076,
    "lead": 0.3,
    "chunks": [
     {
@@ -1632,18 +1632,18 @@
     },
     {
      "text": "from an area, through its documents, to the people who hold it.",
-     "start": 4.255,
-     "end": 8.255
+     "start": 4.251,
+     "end": 8.251
     },
     {
      "text": "The minimum cut is who it hinges on.",
-     "start": 8.545,
-     "end": 11.105
+     "start": 8.517,
+     "end": 11.077
     },
     {
      "text": "36 PostHog areas rest on one person.",
-     "start": 11.54,
-     "end": 15.02
+     "start": 11.476,
+     "end": 14.956
     }
    ],
    "words": [
@@ -1699,144 +1699,144 @@
     },
     {
      "w": "from",
-     "start": 4.255,
-     "end": 4.415
+     "start": 4.251,
+     "end": 4.411
     },
     {
      "w": "an",
-     "start": 4.495,
-     "end": 4.575
+     "start": 4.491,
+     "end": 4.571
     },
     {
      "w": "area",
-     "start": 4.775,
-     "end": 5.215
+     "start": 4.771,
+     "end": 5.211
     },
     {
      "w": "through",
-     "start": 5.335,
-     "end": 5.455
+     "start": 5.331,
+     "end": 5.451
     },
     {
      "w": "its",
-     "start": 5.535,
-     "end": 5.615
+     "start": 5.531,
+     "end": 5.611
     },
     {
      "w": "documents",
-     "start": 5.695,
-     "end": 6.415
+     "start": 5.691,
+     "end": 6.411
     },
     {
      "w": "to",
-     "start": 6.495,
-     "end": 6.575
+     "start": 6.491,
+     "end": 6.571
     },
     {
      "w": "the",
-     "start": 6.615,
-     "end": 6.655
+     "start": 6.611,
+     "end": 6.651
     },
     {
      "w": "people",
-     "start": 6.735,
-     "end": 6.975
+     "start": 6.731,
+     "end": 6.971
     },
     {
      "w": "who",
-     "start": 7.055,
-     "end": 7.215
+     "start": 7.051,
+     "end": 7.211
     },
     {
      "w": "hold",
-     "start": 7.295,
-     "end": 7.455
+     "start": 7.291,
+     "end": 7.451
     },
     {
      "w": "it",
-     "start": 7.535,
-     "end": 8.255
+     "start": 7.531,
+     "end": 8.251
     },
     {
      "w": "The",
-     "start": 8.545,
-     "end": 8.625
+     "start": 8.517,
+     "end": 8.597
     },
     {
      "w": "minimum",
-     "start": 8.705,
-     "end": 9.025
+     "start": 8.677,
+     "end": 8.997
     },
     {
      "w": "cut",
-     "start": 9.105,
-     "end": 9.425
+     "start": 9.077,
+     "end": 9.397
     },
     {
      "w": "is",
-     "start": 9.505,
-     "end": 9.585
+     "start": 9.477,
+     "end": 9.557
     },
     {
      "w": "who",
-     "start": 9.665,
-     "end": 9.745
+     "start": 9.637,
+     "end": 9.717
     },
     {
      "w": "it",
-     "start": 9.825,
-     "end": 9.905
+     "start": 9.797,
+     "end": 9.877
     },
     {
      "w": "hinges",
-     "start": 10.012,
-     "end": 10.225
+     "start": 9.984,
+     "end": 10.197
     },
     {
      "w": "on",
-     "start": 10.385,
-     "end": 11.105
+     "start": 10.357,
+     "end": 11.077
     },
     {
      "w": "Thirty-six",
-     "start": 11.54,
-     "end": 12.06
+     "start": 11.476,
+     "end": 11.996
     },
     {
      "w": "PostHog",
-     "start": 12.14,
-     "end": 12.62
+     "start": 12.076,
+     "end": 12.556
     },
     {
      "w": "areas",
-     "start": 12.7,
-     "end": 13.1
+     "start": 12.636,
+     "end": 13.036
     },
     {
      "w": "rest",
-     "start": 13.26,
-     "end": 13.42
+     "start": 13.196,
+     "end": 13.356
     },
     {
      "w": "on",
-     "start": 13.5,
-     "end": 13.74
+     "start": 13.436,
+     "end": 13.676
     },
     {
      "w": "one",
-     "start": 13.82,
-     "end": 13.98
+     "start": 13.756,
+     "end": 13.916
     },
     {
      "w": "person",
-     "start": 14.06,
-     "end": 15.02
+     "start": 13.996,
+     "end": 14.956
     }
    ]
   },
   "decisions": {
    "file": "voice/decisions.wav",
-   "duration": 11.09,
+   "duration": 11.05,
    "lead": 0.3,
    "chunks": [
     {
@@ -1846,13 +1846,13 @@
     },
     {
      "text": "Been away? Drag back to the day you left,",
-     "start": 5.14,
-     "end": 7.58
+     "start": 5.108,
+     "end": 7.548
     },
     {
      "text": "and get everything since, checked the same way.",
-     "start": 7.69,
-     "end": 10.97
+     "start": 7.65,
+     "end": 10.93
     }
    ],
    "words": [
@@ -1903,94 +1903,94 @@
     },
     {
      "w": "Been",
-     "start": 5.14,
-     "end": 5.22
+     "start": 5.108,
+     "end": 5.188
     },
     {
      "w": "away",
-     "start": 5.3,
-     "end": 6.06
+     "start": 5.268,
+     "end": 6.028
     },
     {
      "w": "Drag",
-     "start": 6.1,
-     "end": 6.34
+     "start": 6.068,
+     "end": 6.308
     },
     {
      "w": "back",
-     "start": 6.42,
-     "end": 6.58
+     "start": 6.388,
+     "end": 6.548
     },
     {
      "w": "to",
-     "start": 6.62,
-     "end": 6.66
+     "start": 6.588,
+     "end": 6.628
     },
     {
      "w": "the",
-     "start": 6.74,
-     "end": 6.82
+     "start": 6.708,
+     "end": 6.788
     },
     {
      "w": "day",
-     "start": 6.9,
-     "end": 6.98
+     "start": 6.868,
+     "end": 6.948
     },
     {
      "w": "you",
-     "start": 7.06,
-     "end": 7.14
+     "start": 7.028,
+     "end": 7.108
     },
     {
      "w": "left",
-     "start": 7.34,
-     "end": 7.58
+     "start": 7.308,
+     "end": 7.548
     },
     {
      "w": "and",
-     "start": 7.69,
-     "end": 7.77
+     "start": 7.65,
+     "end": 7.73
     },
     {
      "w": "get",
-     "start": 7.85,
-     "end": 8.01
+     "start": 7.81,
+     "end": 7.97
     },
     {
      "w": "everything",
-     "start": 8.09,
-     "end": 8.57
+     "start": 8.05,
+     "end": 8.53
     },
     {
      "w": "since",
-     "start": 8.65,
-     "end": 9.17
+     "start": 8.61,
+     "end": 9.13
     },
     {
      "w": "checked",
-     "start": 9.21,
-     "end": 9.45
+     "start": 9.17,
+     "end": 9.41
     },
     {
      "w": "the",
-     "start": 9.53,
-     "end": 9.69
+     "start": 9.49,
+     "end": 9.65
     },
     {
      "w": "same",
-     "start": 9.81,
-     "end": 9.93
+     "start": 9.77,
+     "end": 9.89
     },
     {
      "w": "way",
-     "start": 10.01,
-     "end": 10.97
+     "start": 9.97,
+     "end": 10.93
     }
    ]
   },
   "connect": {
    "file": "voice/connect.wav",
-   "duration": 15.525,
+   "duration": 15.481,
    "lead": 0.3,
    "chunks": [
     {
@@ -2000,18 +2000,18 @@
     },
     {
      "text": "GitHub, private repositories included, Slack, Notion, Linear, Jira, Confluence and files,",
-     "start": 2.645,
-     "end": 10.245
+     "start": 2.633,
+     "end": 10.233
     },
     {
      "text": "read again every hour.",
-     "start": 10.36,
-     "end": 12.28
+     "start": 10.344,
+     "end": 12.264
     },
     {
      "text": "Start from a repository, and invite your team.",
-     "start": 12.605,
-     "end": 15.325
+     "start": 12.561,
+     "end": 15.281
     }
    ],
    "words": [
@@ -2042,124 +2042,124 @@
     },
     {
      "w": "GitHub",
-     "start": 2.645,
-     "end": 3.365
+     "start": 2.633,
+     "end": 3.353
     },
     {
      "w": "private",
-     "start": 3.525,
-     "end": 3.685
+     "start": 3.513,
+     "end": 3.673
     },
     {
      "w": "repositories",
-     "start": 4.045,
-     "end": 4.405
+     "start": 4.033,
+     "end": 4.393
     },
     {
      "w": "included",
-     "start": 4.485,
-     "end": 5.365
+     "start": 4.473,
+     "end": 5.353
     },
     {
      "w": "Slack",
-     "start": 5.525,
-     "end": 6.165
+     "start": 5.513,
+     "end": 6.153
     },
     {
      "w": "Notion",
-     "start": 6.245,
-     "end": 6.965
+     "start": 6.233,
+     "end": 6.953
     },
     {
      "w": "Linear",
-     "start": 7.045,
-     "end": 7.685
+     "start": 7.033,
+     "end": 7.673
     },
     {
      "w": "Jira",
-     "start": 7.765,
-     "end": 8.405
+     "start": 7.753,
+     "end": 8.393
     },
     {
      "w": "Confluence",
-     "start": 8.525,
-     "end": 9.045
+     "start": 8.513,
+     "end": 9.033
     },
     {
      "w": "and",
-     "start": 9.125,
-     "end": 9.285
+     "start": 9.113,
+     "end": 9.273
     },
     {
      "w": "files",
-     "start": 9.365,
-     "end": 10.245
+     "start": 9.353,
+     "end": 10.233
     },
     {
      "w": "read",
-     "start": 10.36,
-     "end": 10.44
+     "start": 10.344,
+     "end": 10.424
     },
     {
      "w": "again",
-     "start": 10.52,
-     "end": 10.92
+     "start": 10.504,
+     "end": 10.904
     },
     {
      "w": "every",
-     "start": 11,
-     "end": 11.32
+     "start": 10.984,
+     "end": 11.304
     },
     {
      "w": "hour",
-     "start": 11.4,
-     "end": 12.28
+     "start": 11.384,
+     "end": 12.264
     },
     {
      "w": "Start",
-     "start": 12.605,
-     "end": 12.845
+     "start": 12.561,
+     "end": 12.801
     },
     {
      "w": "from",
-     "start": 12.925,
-     "end": 13.005
+     "start": 12.881,
+     "end": 12.961
     },
     {
      "w": "a",
-     "start": 13.085,
-     "end": 13.125
+     "start": 13.041,
+     "end": 13.081
     },
     {
      "w": "repository",
-     "start": 13.165,
-     "end": 14.005
+     "start": 13.121,
+     "end": 13.961
     },
     {
      "w": "and",
-     "start": 14.045,
-     "end": 14.125
+     "start": 14.001,
+     "end": 14.081
     },
     {
      "w": "invite",
-     "start": 14.285,
-     "end": 14.445
+     "start": 14.241,
+     "end": 14.401
     },
     {
      "w": "your",
-     "start": 14.485,
-     "end": 14.525
+     "start": 14.441,
+     "end": 14.481
     },
     {
      "w": "team",
-     "start": 14.605,
-     "end": 15.325
+     "start": 14.561,
+     "end": 15.281
     }
    ]
   },
   "numbers": {
    "file": "voice/numbers.wav",
-   "duration": 17.395,
+   "duration": 17.311,
    "lead": 0.3,
    "chunks": [
     {
@@ -2169,23 +2169,23 @@
     },
     {
      "text": "Canon was right 98 percent of the time, and never stated an out-of-date answer as current.",
-     "start": 3.695,
-     "end": 9.495
+     "start": 3.691,
+     "end": 9.491
     },
     {
      "text": "On the 13 where the handbook is out of date,",
-     "start": 9.815,
-     "end": 12.255
+     "start": 9.779,
+     "end": 12.219
     },
     {
      "text": "Canon got all 13.",
-     "start": 12.365,
-     "end": 14.525
+     "start": 12.321,
+     "end": 14.481
     },
     {
      "text": "Search and summarise got none.",
-     "start": 14.955,
-     "end": 17.275
+     "start": 14.871,
+     "end": 17.191
     }
    ],
    "words": [
@@ -2226,184 +2226,184 @@
     },
     {
      "w": "Canon",
-     "start": 3.695,
-     "end": 3.935
+     "start": 3.691,
+     "end": 3.931
     },
     {
      "w": "was",
-     "start": 4.015,
-     "end": 4.175
+     "start": 4.011,
+     "end": 4.171
     },
     {
      "w": "right",
-     "start": 4.335,
-     "end": 4.495
+     "start": 4.331,
+     "end": 4.491
     },
     {
      "w": "ninety-eight",
-     "start": 4.575,
-     "end": 5.055
+     "start": 4.571,
+     "end": 5.051
     },
     {
      "w": "percent",
-     "start": 5.215,
-     "end": 5.375
+     "start": 5.211,
+     "end": 5.371
     },
     {
      "w": "of",
-     "start": 5.415,
-     "end": 5.455
+     "start": 5.411,
+     "end": 5.451
     },
     {
      "w": "the",
-     "start": 5.535,
-     "end": 5.615
+     "start": 5.531,
+     "end": 5.611
     },
     {
      "w": "time",
-     "start": 5.895,
-     "end": 6.255
+     "start": 5.891,
+     "end": 6.251
     },
     {
      "w": "and",
-     "start": 6.335,
-     "end": 6.415
+     "start": 6.331,
+     "end": 6.411
     },
     {
      "w": "never",
-     "start": 6.495,
-     "end": 6.735
+     "start": 6.491,
+     "end": 6.731
     },
     {
      "w": "stated",
-     "start": 6.815,
-     "end": 7.135
+     "start": 6.811,
+     "end": 7.131
     },
     {
      "w": "an",
-     "start": 7.215,
-     "end": 7.295
+     "start": 7.211,
+     "end": 7.291
     },
     {
      "w": "out-of-date",
-     "start": 7.375,
-     "end": 7.855
+     "start": 7.371,
+     "end": 7.851
     },
     {
      "w": "answer",
-     "start": 7.935,
-     "end": 8.255
+     "start": 7.931,
+     "end": 8.251
     },
     {
      "w": "as",
-     "start": 8.335,
-     "end": 8.415
+     "start": 8.331,
+     "end": 8.411
     },
     {
      "w": "current",
-     "start": 8.495,
-     "end": 9.495
+     "start": 8.491,
+     "end": 9.491
     },
     {
      "w": "On",
-     "start": 9.815,
-     "end": 9.895
+     "start": 9.779,
+     "end": 9.859
     },
     {
      "w": "the",
-     "start": 9.935,
-     "end": 9.975
+     "start": 9.899,
+     "end": 9.939
     },
     {
      "w": "thirteen",
-     "start": 10.055,
-     "end": 10.535
+     "start": 10.019,
+     "end": 10.499
     },
     {
      "w": "where",
-     "start": 10.615,
-     "end": 10.695
+     "start": 10.579,
+     "end": 10.659
     },
     {
      "w": "the",
-     "start": 10.775,
-     "end": 10.855
+     "start": 10.739,
+     "end": 10.819
     },
     {
      "w": "handbook",
-     "start": 10.975,
-     "end": 11.175
+     "start": 10.939,
+     "end": 11.139
     },
     {
      "w": "is",
-     "start": 11.255,
-     "end": 11.335
+     "start": 11.219,
+     "end": 11.299
     },
     {
      "w": "out",
-     "start": 11.415,
-     "end": 11.495
+     "start": 11.379,
+     "end": 11.459
     },
     {
      "w": "of",
-     "start": 11.575,
-     "end": 11.655
+     "start": 11.539,
+     "end": 11.619
     },
     {
      "w": "date",
-     "start": 11.935,
-     "end": 12.255
+     "start": 11.899,
+     "end": 12.219
     },
     {
      "w": "Canon",
-     "start": 12.365,
-     "end": 12.685
+     "start": 12.321,
+     "end": 12.641
     },
     {
      "w": "got",
-     "start": 12.765,
-     "end": 13.005
+     "start": 12.721,
+     "end": 12.961
     },
     {
      "w": "all",
-     "start": 13.085,
-     "end": 13.325
+     "start": 13.041,
+     "end": 13.281
     },
     {
      "w": "thirteen",
-     "start": 13.365,
-     "end": 14.525
+     "start": 13.321,
+     "end": 14.481
     },
     {
      "w": "Search",
-     "start": 14.955,
-     "end": 15.195
+     "start": 14.871,
+     "end": 15.111
     },
     {
      "w": "and",
-     "start": 15.275,
-     "end": 15.355
+     "start": 15.191,
+     "end": 15.271
     },
     {
      "w": "summarise",
-     "start": 15.435,
-     "end": 16.075
+     "start": 15.351,
+     "end": 15.991
     },
     {
      "w": "got",
-     "start": 16.195,
-     "end": 16.315
+     "start": 16.111,
+     "end": 16.231
     },
     {
      "w": "none",
-     "start": 16.395,
-     "end": 17.275
+     "start": 16.311,
+     "end": 17.191
     }
    ]
   },
   "close": {
    "file": "voice/close.wav",
-   "duration": 10.415,
+   "duration": 10.379,
    "lead": 0.3,
    "chunks": [
     {
@@ -2413,8 +2413,8 @@
     },
     {
      "text": "Built on FalkorDB. Open source, and live at canon.sushans.dev.",
-     "start": 4.775,
-     "end": 10.295
+     "start": 4.739,
+     "end": 10.259
     }
    ],
    "words": [
@@ -2460,73 +2460,73 @@
     },
     {
      "w": "Built",
-     "start": 4.775,
-     "end": 4.935
+     "start": 4.739,
+     "end": 4.899
     },
     {
      "w": "on",
-     "start": 5.015,
-     "end": 5.175
+     "start": 4.979,
+     "end": 5.139
     },
     {
      "w": "Falkor",
-     "start": 5.255,
-     "end": 5.655
+     "start": 5.219,
+     "end": 5.619
     },
     {
      "w": "DB",
-     "start": 5.735,
-     "end": 6.615
+     "start": 5.699,
+     "end": 6.579
     },
     {
      "w": "Open",
-     "start": 6.695,
-     "end": 6.935
+     "start": 6.659,
+     "end": 6.899
     },
     {
      "w": "source",
-     "start": 7.015,
-     "end": 7.495
+     "start": 6.979,
+     "end": 7.459
     },
     {
      "w": "and",
-     "start": 7.575,
-     "end": 7.655
+     "start": 7.539,
+     "end": 7.619
     },
     {
      "w": "live",
-     "start": 7.735,
-     "end": 7.975
+     "start": 7.699,
+     "end": 7.939
     },
     {
      "w": "at",
-     "start": 8.055,
-     "end": 8.215
+     "start": 8.019,
+     "end": 8.179
     },
     {
      "w": "canon",
-     "start": 8.335,
-     "end": 8.615
+     "start": 8.299,
+     "end": 8.579
     },
     {
      "w": "dot",
-     "start": 8.695,
-     "end": 8.855
+     "start": 8.659,
+     "end": 8.819
     },
     {
      "w": "sushans",
-     "start": 8.935,
-     "end": 9.415
+     "start": 8.899,
+     "end": 9.379
     },
     {
      "w": "dot",
-     "start": 9.495,
-     "end": 9.735
+     "start": 9.459,
+     "end": 9.699
     },
     {
      "w": "dev",
-     "start": 9.895,
-     "end": 10.295
+     "start": 9.859,
+     "end": 10.259
     }
    ]
   }
@@ -2546,5 +2546,5 @@
   "numbers",
   "close"
  ],
- "total": 191.17
+ "total": 190.41
 }

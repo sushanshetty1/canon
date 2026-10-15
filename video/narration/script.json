@@ -15,7 +15,7 @@
     "draft_voice": "Samantha"
   },
   "pace": {
-    "pause_scale": 0.7,
+    "pause_scale": 0.62,
     "tail": 0.2
   },
   "scenes": [

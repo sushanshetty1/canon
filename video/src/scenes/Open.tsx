@@ -5,6 +5,7 @@
 import { interpolate } from 'remotion'
 import { C, DISPLAY, SANS } from '../brand'
 import { PaperSlab, Struck, Written, clamp, pop, ramp, useSec } from '../components/ui'
+import { OVERLAP, useSceneTime } from '../timeline'
 
 const MONTHS = ['Jan 2026', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov']
 const SPAN = 11 // months shown, from January 1; the last weeks are ahead of today
@@ -109,12 +110,15 @@ function BarView({ bar, row, s }: { bar: Bar; row: number; s: number }) {
 
 export function Open() {
   const { sec: s, fps } = useSec()
+  const { dur } = useSceneTime()
   const slab = pop(s, 0, fps, { damping: 24, stiffness: 90, mass: 1 })
   const head = ramp(s, 0.25, 0.8)
   const strike = ramp(s, 0.95, 0.5)
   const today = ramp(s, 1.3, 0.55)
   const line = lineAt(s)
   const pin = pop(s, reach(PIN.at) + 0.05, fps, { damping: 14, stiffness: 170, mass: 0.7 })
+  // The next scene takes the pin over and flies it to the handbook page, so this one steps out of the way.
+  const handedOver = s >= dur - OVERLAP.stretch
   const glow = s > reach(PIN.at) + 0.5 ? 0.5 + 0.5 * Math.sin((s - reach(PIN.at)) * 4) : 0
 
   return (
@@ -147,7 +151,20 @@ export function Open() {
 
       {/* Months */}
       {MONTHS.map((m, i) => (
-        <div key={m} style={{ position: 'absolute', left: x(i) + 8, top: ROW0 - 44, fontFamily: SANS, fontWeight: 500, fontSize: 16, color: C.faint, opacity: ramp(s, 0.6 + i * 0.03, 0.4) }}>
+        <div
+          key={m}
+          style={{
+            position: 'absolute',
+            left: x(i) + 8,
+            top: ROW0 - 44,
+            fontFamily: SANS,
+            fontWeight: 500,
+            fontSize: 16,
+            color: C.faint,
+            // A month label steps aside while the Today pill passes over it.
+            opacity: ramp(s, 0.6 + i * 0.03, 0.4) * interpolate(Math.abs(x(line) - (x(i) + 8 + 14 * (m.length > 3 ? 2.4 : 1))), [30, 58], [0, 1], clamp),
+          }}
+        >
           {m}
         </div>
       ))}
@@ -178,7 +195,7 @@ export function Open() {
           width: PIN_RECT.w,
           transformOrigin: '100% 50%',
           transform: `scale(${0.6 + 0.4 * pin})`,
-          opacity: pin,
+          opacity: handedOver ? 0 : pin,
           display: 'flex',
           alignItems: 'center',
           gap: 9,

@@ -8,6 +8,9 @@ const faces: [string, string][] = [
 ]
 
 let started = false
+let resolveReady: () => void = () => {}
+/** Resolves once every face is loaded and added. */
+export const fontsReady: Promise<void> = new Promise((r) => (resolveReady = r))
 
 export function loadFonts() {
   if (started || typeof document === 'undefined') return
@@ -21,9 +24,13 @@ export function loadFonts() {
       set.add(face)
     }),
   )
-    .then(() => continueRender(handle))
+    .then(() => {
+      resolveReady()
+      continueRender(handle)
+    })
     .catch((e) => {
       console.error(e)
+      resolveReady()
       continueRender(handle)
     })
 }

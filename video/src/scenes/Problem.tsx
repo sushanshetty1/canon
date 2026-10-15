@@ -1,10 +1,12 @@
 // The problem, on PostHog's own pages: the handbook still names the old owner, the ownership map moved it, and an
 // answer built by search quotes the handbook with a citation. The red pin from the opening grows into the page.
 
-import { interpolate } from 'remotion'
+import { useLayoutEffect, useRef, useState } from 'react'
+import { continueRender, delayRender, interpolate, interpolateColors } from 'remotion'
 import { C, DISPLAY, MONO, SANS, ease } from '../brand'
 import { PaperSlab, Struck, Written, clamp, pop, ramp, useSec } from '../components/ui'
 import { useSceneTime } from '../timeline'
+import { fontsReady } from '../fonts'
 import { PIN_RECT } from './Open'
 
 const HANDBOOK = { x: 80, y: 84, w: 700, h: 396 }
@@ -14,25 +16,35 @@ const ANSWER = { x: 80, y: 516, w: 1440, h: 300 }
 const lerp = (a: number, b: number, p: number) => a + (b - a) * p
 
 function Meta({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontFamily: SANS, fontSize: 18, color: C.muted }}>{children}</div>
+  return <div style={{ fontFamily: SANS, fontSize: 18, lineHeight: '22px', color: C.muted }}>{children}</div>
 }
 
 export function Problem() {
   const { sec: s, fps } = useSec()
   const { c, word } = useSceneTime()
 
-  // The pin grows into the handbook page.
-  const g = interpolate(s, [0, 0.7], [0, 1], { ...clamp, easing: ease })
-  const bg = ramp(s, 0.15, 0.45)
-  const box = {
-    x: lerp(PIN_RECT.x, HANDBOOK.x, g),
-    y: lerp(PIN_RECT.y, HANDBOOK.y, g),
-    w: lerp(PIN_RECT.w, HANDBOOK.w, g),
-    h: lerp(PIN_RECT.h, HANDBOOK.h, g),
+  // The red pin from the opening flies to the handbook page and becomes the highlighted line on it.
+  const line = useRef<HTMLSpanElement>(null)
+  const [target, setTarget] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
+  const [handle] = useState(() => delayRender('measure the handbook line'))
+  useLayoutEffect(() => {
+    fontsReady.then(() => {
+      const el = line.current
+      if (el) setTarget({ x: HANDBOOK.x + el.offsetLeft, y: HANDBOOK.y + el.offsetTop, w: el.offsetWidth, h: el.offsetHeight })
+      continueRender(handle)
+    })
+  }, [handle])
+  const g = interpolate(s, [0, 0.75], [0, 1], { ...clamp, easing: ease })
+  const bg = ramp(s, 0.02, 0.3)
+  const cardIn = ramp(s, 0.28, 0.45)
+  const landed = ramp(s, 0.68, 0.14)
+  const t = target ?? { x: HANDBOOK.x + 38, y: 270, w: 540, h: 34 }
+  const fly = {
+    x: lerp(PIN_RECT.x, t.x, g),
+    y: lerp(PIN_RECT.y, t.y, g),
+    w: lerp(PIN_RECT.w, t.w, g),
+    h: lerp(PIN_RECT.h, t.h, g),
   }
-  const red = 1 - ramp(s, 0.4, 0.4)
-  const content = ramp(s, 0.55, 0.5)
-
   const mapIn = pop(s, c(1) - 0.2, fps)
   const mapStrike = ramp(s, c(1) + 1.2, 0.5)
   const mapWrite = ramp(s, c(1) + 1.55, 0.55)
@@ -41,7 +53,6 @@ export function Problem() {
   const ansIn = pop(s, c(2) - 0.15, fps)
   const ansStrike = ramp(s, word('confident', c(2)) + 0.1, 0.55)
   const ansTag = pop(s, word('confident', c(2)) + 0.5, fps, { damping: 14, stiffness: 170, mass: 0.7 })
-  const marker = ramp(s, 1.0, 0.7)
 
   return (
     <PaperSlab style={{ background: 'transparent', boxShadow: 'none' }}>
@@ -51,54 +62,94 @@ export function Problem() {
       <div
         style={{
           position: 'absolute',
-          left: box.x,
-          top: box.y,
-          width: box.w,
-          height: box.h,
-          borderRadius: lerp(99, 24, g),
-          background: `rgb(${Math.round(lerp(243, 224, red))}, ${Math.round(lerp(244, 57, red))}, ${Math.round(lerp(246, 44, red))})`,
-          overflow: 'hidden',
+          left: HANDBOOK.x,
+          top: HANDBOOK.y,
+          width: HANDBOOK.w,
+          height: HANDBOOK.h,
+          borderRadius: 24,
+          background: C.paper2,
+          opacity: cardIn,
+          transform: `scale(${0.97 + 0.03 * cardIn})`,
         }}
       >
-        <div
-          style={{
-            position: 'absolute',
-            left: 46,
-            top: 0,
-            height: PIN_RECT.h,
-            display: 'flex',
-            alignItems: 'center',
-            fontFamily: SANS,
-            fontWeight: 600,
-            fontSize: 16,
-            color: C.paper,
-            whiteSpace: 'nowrap',
-            opacity: 1 - ramp(s, 0.22, 0.25),
-          }}
-        >
-          Handbook still says PostHog AI
-        </div>
-        <div style={{ position: 'absolute', inset: 0, padding: '34px 38px', opacity: content }}>
+        <div style={{ position: 'absolute', inset: 0, padding: '34px 38px' }}>
           <Meta>Handbook · AI products · edited Sep 23, 2026</Meta>
-          <div style={{ marginTop: 14, fontFamily: DISPLAY, fontWeight: 600, fontSize: 38, letterSpacing: '-0.035em', color: C.ink }}>Current status and ownership</div>
+          <div style={{ marginTop: 14, fontFamily: DISPLAY, fontWeight: 600, fontSize: 38, lineHeight: '46px', letterSpacing: '-0.035em', color: C.ink }}>Current status and ownership</div>
           <div style={{ marginTop: 22, fontFamily: SANS, fontSize: 27, lineHeight: 1.6, color: C.ink }}>
-            MCP is in general availability.{' '}
+            MCP is in general availability.
+            <br />
             <span
+              ref={line}
               style={{
-                backgroundImage: `linear-gradient(to bottom, transparent 18%, ${C.marker} 18%, ${C.marker} 92%, transparent 92%)`,
-                backgroundRepeat: 'no-repeat',
-                backgroundSize: `${marker * 100}% 100%`,
-                boxDecorationBreak: 'clone',
-                WebkitBoxDecorationBreak: 'clone',
+                backgroundImage: `linear-gradient(to bottom, transparent 6%, ${C.marker} 6%, ${C.marker} 94%, transparent 94%)`,
+                opacity: landed,
+                borderRadius: 4,
               }}
             >
               The PostHog AI team owns the MCP server,
-            </span>{' '}
+            </span>
+            <br />
             <span style={{ color: C.faint }}>with a named support contact…</span>
           </div>
           <div style={{ position: 'absolute', left: 38, bottom: 30, fontFamily: SANS, fontWeight: 600, fontSize: 19, color: C.proof, opacity: edited }}>Edited six days after the ownership moved.</div>
         </div>
       </div>
+
+      {/* The pin in flight: red flag to highlighted line */}
+      {s < 0.85 && (
+        <div
+          style={{
+            position: 'absolute',
+            left: fly.x,
+            top: fly.y,
+            width: fly.w,
+            height: fly.h,
+            borderRadius: lerp(99, 4, g),
+            background: interpolateColors(g, [0, 0.45, 1], [C.proof, C.proof, C.marker]),
+            boxShadow: `0 ${lerp(10, 0, g)}px ${lerp(26, 0, g)}px -8px rgba(224,57,44,${0.45 * (1 - g)})`,
+            overflow: 'hidden',
+            opacity: 1 - landed,
+            zIndex: 4,
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 9,
+              padding: '0 14px 0 5px',
+              fontFamily: SANS,
+              fontWeight: 600,
+              fontSize: 16,
+              color: C.paper,
+              whiteSpace: 'nowrap',
+              opacity: 1 - ramp(s, 0.2, 0.18),
+            }}
+          >
+            <span style={{ width: 27, height: 27, borderRadius: 99, background: C.paper, color: C.proof, display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 15 }}>!</span>
+            Handbook still says PostHog AI
+          </div>
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              fontFamily: SANS,
+              fontSize: 27,
+              color: C.ink,
+              whiteSpace: 'nowrap',
+              opacity: ramp(s, 0.24, 0.2),
+            }}
+          >
+            The PostHog AI team owns the MCP server,
+          </div>
+        </div>
+      )}
 
       {/* The ownership map */}
       <div
