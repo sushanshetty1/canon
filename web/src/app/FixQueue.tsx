@@ -437,7 +437,7 @@ function Outcome({ fix }: { fix: Fix }) {
           {fix.dismissed.by && <>By {fix.dismissed.by}, </>}
           {formatDate(fix.dismissed.at)}
         </p>
-        {fix.dismissed.reason && <p className="mt-2 border-l-2 border-line-strong pl-3 text-[14.5px] leading-relaxed text-ink">{fix.dismissed.reason}</p>}
+        {fix.dismissed.reason && <p className="mt-2 text-[14.5px] leading-relaxed text-ink">“{fix.dismissed.reason}”</p>}
       </div>
     )
   return <p className="text-[15px] font-semibold text-ink">The page no longer says this.</p>

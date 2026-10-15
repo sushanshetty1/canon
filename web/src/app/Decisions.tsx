@@ -343,7 +343,7 @@ function Linked({ links, all, onSelect, verb }: { links: Decision['superseded_by
             >
               {other?.title ?? l.title ?? l.id}
             </button>
-            {l.reason && <p className="mt-1.5 border-l-2 border-line-strong pl-3 text-[14.5px] leading-relaxed text-muted">{l.reason}</p>}
+            {l.reason && <p className="mt-1.5 text-[14.5px] leading-relaxed text-muted">“{l.reason}”</p>}
             <p className="mt-1.5 text-[12.5px] text-faint">
               {l.by === 'model' ? `The model read both RFCs and judged that one ${verb} the other.` : `The RFC says so where it links the other.`}
             </p>
