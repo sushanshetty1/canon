@@ -1,0 +1,577 @@
+[
+  {
+    "category": "stale-trap",
+    "question": "Which team owns AI gateway?",
+    "gold": [
+      "Agent Infrastructure"
+    ],
+    "stale": [
+      "AI Gateway"
+    ],
+    "area": "ai-gateway",
+    "id": "q01"
+  },
+  {
+    "category": "stale-trap",
+    "question": "Which team owns Cloud agents?",
+    "gold": [
+      "Surfaces"
+    ],
+    "stale": [
+      "PostHog AI",
+      "PostHog code",
+      "PostHog desktop"
+    ],
+    "area": "background-agents",
+    "id": "q02"
+  },
+  {
+    "category": "stale-trap",
+    "question": "Which team owns MCP server?",
+    "gold": [
+      "Context & MCP"
+    ],
+    "stale": [
+      "Max AI",
+      "PostHog AI",
+      "Self-Driving",
+      "Signals"
+    ],
+    "area": "mcp-server",
+    "id": "q03"
+  },
+  {
+    "category": "stale-trap",
+    "question": "Which team owns PostHog AI platform?",
+    "gold": [
+      "Surfaces"
+    ],
+    "stale": [
+      "PostHog AI",
+      "PostHog desktop",
+      "Self-Driving",
+      "Signals"
+    ],
+    "area": "posthog-ai",
+    "id": "q04"
+  },
+  {
+    "category": "stale-trap",
+    "question": "Which team owns PostHog Desktop?",
+    "gold": [
+      "Surfaces"
+    ],
+    "stale": [
+      "PostHog code",
+      "PostHog desktop"
+    ],
+    "area": "posthog-code",
+    "id": "q05"
+  },
+  {
+    "category": "stale-trap",
+    "question": "Which team owns Session summaries?",
+    "gold": [
+      "Replay"
+    ],
+    "stale": [
+      "Signals"
+    ],
+    "area": "session-summaries",
+    "id": "q06"
+  },
+  {
+    "category": "stale-trap",
+    "question": "Which team owns Wizard?",
+    "gold": [
+      "Wizard & Docs"
+    ],
+    "stale": [
+      "Content",
+      "Docs wizard"
+    ],
+    "area": "wizard",
+    "id": "q07"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns Dashboards?",
+    "gold": [
+      "Product Analytics"
+    ],
+    "stale": [
+      "Analytics platform"
+    ],
+    "area": "dashboards",
+    "id": "q08"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns PostHog.com?",
+    "gold": [
+      "Website"
+    ],
+    "stale": [
+      "Brand"
+    ],
+    "area": "PostHog.com",
+    "id": "q09"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns Revenue data management?",
+    "gold": [
+      "Web Analytics"
+    ],
+    "stale": [
+      "Customer Analytics",
+      "Growth",
+      "Revenue analytics"
+    ],
+    "area": "revenue-data-management",
+    "id": "q10"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns AI playground?",
+    "gold": [
+      "Agent Infrastructure"
+    ],
+    "stale": [
+      "AI Gateway"
+    ],
+    "area": "ai-playground",
+    "id": "q11"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns Currency rate dataset?",
+    "gold": [
+      "Web Analytics"
+    ],
+    "stale": [
+      "Customer Analytics",
+      "Growth",
+      "Revenue analytics"
+    ],
+    "area": "currency-rate-dataset",
+    "id": "q12"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns Data management?",
+    "gold": [
+      "Product Analytics"
+    ],
+    "stale": [
+      "Analytics platform"
+    ],
+    "area": "data-management",
+    "id": "q13"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns Actions?",
+    "gold": [
+      "Product Analytics"
+    ],
+    "stale": [
+      "Analytics platform"
+    ],
+    "area": "actions",
+    "id": "q14"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns AI plugin (Claude Code, Codex, Cursor, Gemini CLI)?",
+    "gold": [
+      "Context & MCP"
+    ],
+    "stale": [
+      "Self-Driving"
+    ],
+    "area": "ai-plugin",
+    "id": "q15"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns Comments/Discussions?",
+    "gold": [
+      "Conversations"
+    ],
+    "stale": [
+      "Platform Features"
+    ],
+    "area": "comments",
+    "id": "q16"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns HogQL?",
+    "gold": [
+      "Data Tools"
+    ],
+    "stale": [
+      "Data stack",
+      "Data warehouse"
+    ],
+    "area": "hogql",
+    "id": "q17"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns SQL insights?",
+    "gold": [
+      "Product Analytics"
+    ],
+    "stale": [
+      "Data stack",
+      "Data warehouse"
+    ],
+    "area": "sql-insights",
+    "id": "q18"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns Cache warming?",
+    "gold": [
+      "Query Performance"
+    ],
+    "stale": [
+      "Analytics platform"
+    ],
+    "area": "cache-warming",
+    "id": "q19"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns Group analytics?",
+    "gold": [
+      "Web Analytics"
+    ],
+    "stale": [
+      "Customer Analytics"
+    ],
+    "area": "group-analytics",
+    "id": "q20"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns Platform (US + EU)?",
+    "gold": [
+      "Cloud Foundations",
+      "Cloud Platform"
+    ],
+    "stale": [
+      "Infrastructure"
+    ],
+    "area": "platform",
+    "id": "q21"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns Heatmaps?",
+    "gold": [
+      "Web Analytics"
+    ],
+    "stale": [
+      "Replay"
+    ],
+    "area": "heatmaps",
+    "id": "q22"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns Customer Analytics?",
+    "gold": [
+      "Web Analytics"
+    ],
+    "stale": [
+      "Customer Analytics"
+    ],
+    "area": "customer-analytics",
+    "id": "q23"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns CLI?",
+    "gold": [
+      "Context & MCP",
+      "Error Tracking"
+    ],
+    "stale": [
+      "Self-Driving"
+    ],
+    "area": "cli",
+    "id": "q24"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns Dashboard templates?",
+    "gold": [
+      "Product Analytics"
+    ],
+    "stale": [
+      "Analytics platform"
+    ],
+    "area": "dashboard-templates",
+    "id": "q25"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns Pipeline sources?",
+    "gold": [
+      "Warehouse Sources"
+    ],
+    "stale": [
+      "Data stack",
+      "Data warehouse"
+    ],
+    "area": "pipeline-sources",
+    "id": "q26"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns Query performance?",
+    "gold": [
+      "Query Performance"
+    ],
+    "stale": [
+      "Analytics platform"
+    ],
+    "area": "query-performance",
+    "id": "q27"
+  },
+  {
+    "category": "changed",
+    "question": "Which team owns Table exports?",
+    "gold": [
+      "Product Analytics"
+    ],
+    "stale": [
+      "Analytics platform"
+    ],
+    "area": "table-exports",
+    "id": "q28"
+  },
+  {
+    "category": "history",
+    "question": "Which team owned Dashboards before Product Analytics?",
+    "gold": [
+      "Analytics platform"
+    ],
+    "stale": [],
+    "area": "dashboards",
+    "id": "q29"
+  },
+  {
+    "category": "history",
+    "question": "Which team owned MCP store before Context & MCP?",
+    "gold": [
+      "Self-Driving"
+    ],
+    "stale": [],
+    "area": "mcp-store",
+    "id": "q30"
+  },
+  {
+    "category": "history",
+    "question": "Which team owned Heatmaps before Web Analytics?",
+    "gold": [
+      "Replay"
+    ],
+    "stale": [],
+    "area": "heatmaps",
+    "id": "q31"
+  },
+  {
+    "category": "history",
+    "question": "Which team owned Data colors & themes before Platform UX?",
+    "gold": [
+      "Analytics platform"
+    ],
+    "stale": [],
+    "area": "data-colors-themes",
+    "id": "q32"
+  },
+  {
+    "category": "history",
+    "question": "Which team owned CLI before Context & MCP and Error Tracking?",
+    "gold": [
+      "Self-Driving"
+    ],
+    "stale": [],
+    "area": "cli",
+    "id": "q33"
+  },
+  {
+    "category": "history",
+    "question": "Which team owned Inbox before Self-Driving?",
+    "gold": [
+      "Signals"
+    ],
+    "stale": [],
+    "area": "signals",
+    "id": "q34"
+  },
+  {
+    "category": "control",
+    "question": "Which team owns SSO?",
+    "gold": [
+      "Platform Features"
+    ],
+    "stale": [],
+    "area": "sso",
+    "id": "q35"
+  },
+  {
+    "category": "control",
+    "question": "Which team owns Property filters?",
+    "gold": [
+      "Platform UX"
+    ],
+    "stale": [],
+    "area": "property-filters",
+    "id": "q36"
+  },
+  {
+    "category": "control",
+    "question": "Which team owns Insights?",
+    "gold": [
+      "Product Analytics"
+    ],
+    "stale": [],
+    "area": "insights",
+    "id": "q37"
+  },
+  {
+    "category": "control",
+    "question": "Which team owns Sentry integration?",
+    "gold": [
+      "Error Tracking"
+    ],
+    "stale": [],
+    "area": "sentry-integration",
+    "id": "q38"
+  },
+  {
+    "category": "control",
+    "question": "Which team owns Web analytics?",
+    "gold": [
+      "Web Analytics"
+    ],
+    "stale": [],
+    "area": "web-analytics",
+    "id": "q39"
+  },
+  {
+    "category": "control",
+    "question": "Which team owns Settings structure (personal & project)?",
+    "gold": [
+      "Platform UX"
+    ],
+    "stale": [],
+    "area": "settings",
+    "id": "q40"
+  },
+  {
+    "category": "lead",
+    "question": "Who leads the Blitzscale team?",
+    "gold": [
+      "jamesefhawkins"
+    ],
+    "stale": [],
+    "team": "blitzscale",
+    "id": "q41"
+  },
+  {
+    "category": "lead",
+    "question": "Who leads the Security team?",
+    "gold": [
+      "piccirello"
+    ],
+    "stale": [],
+    "team": "security",
+    "id": "q42"
+  },
+  {
+    "category": "lead",
+    "question": "Who leads the Web Analytics team?",
+    "gold": [
+      "lricoy"
+    ],
+    "stale": [],
+    "team": "web-analytics",
+    "id": "q43"
+  },
+  {
+    "category": "lead",
+    "question": "Who leads the MCP Analytics team?",
+    "gold": [
+      "lucasheriques"
+    ],
+    "stale": [],
+    "team": "mcp-analytics",
+    "id": "q44"
+  },
+  {
+    "category": "lead",
+    "question": "Who leads the Replay team?",
+    "gold": [
+      "tuehaulund"
+    ],
+    "stale": [],
+    "team": "replay",
+    "id": "q45"
+  },
+  {
+    "category": "lead",
+    "question": "Who leads the Forward Deployed Engineering team?",
+    "gold": [
+      "jkersu"
+    ],
+    "stale": [],
+    "team": "forward-deployed-engineering",
+    "id": "q46"
+  },
+  {
+    "category": "lead",
+    "question": "Who leads the Warehouse team?",
+    "gold": [
+      "edscode"
+    ],
+    "stale": [],
+    "team": "warehouse",
+    "id": "q47"
+  },
+  {
+    "category": "lead",
+    "question": "Who leads the Platform UX team?",
+    "gold": [
+      "adamleithp"
+    ],
+    "stale": [],
+    "team": "platform-ux",
+    "id": "q48"
+  },
+  {
+    "category": "lead",
+    "question": "Who leads the People & Ops team?",
+    "gold": [
+      "fraserhopper"
+    ],
+    "stale": [],
+    "team": "people",
+    "id": "q49"
+  },
+  {
+    "category": "lead",
+    "question": "Who leads the Query Performance team?",
+    "gold": [
+      "vassiedk"
+    ],
+    "stale": [],
+    "team": "query-performance",
+    "id": "q50"
+  }
+]
