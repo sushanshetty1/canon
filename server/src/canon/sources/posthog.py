@@ -24,6 +24,7 @@ from urllib.parse import urlencode
 
 import httpx
 
+from canon.people.attribution import Attributor
 from canon.sources import github as gh
 from canon.sources.cache import Cache
 from canon.types import Activity, Area, Batch, Doc, Fact, Passage, Person, Team
@@ -499,10 +500,16 @@ def load_posthog(
         for c in pr.get("comments") or []:
             act(c["author"], doc.id, "COMMENTED", c["at"])
 
-    # Pull requests and issues: activity and evidence. `feature/*` labels name the area.
+    # Pull requests and issues: activity and evidence. `feature/*` labels name the area, and so do the directories
+    # a pull request changed.
+    attributor = Attributor(own.names)
+    pull_files: dict[str, list[str]] = fetch("pull_files") or {}
     for kind, rows in (("pull", fetch("pulls") or []), ("issue", fetch("issues") or [])):
         for r in rows:
-            areas = tuple(sorted({own.label_to_area[l] for l in r.get("labels", []) if l in own.label_to_area}))
+            areas_set = {own.label_to_area[l] for l in r.get("labels", []) if l in own.label_to_area}
+            if kind == "pull":
+                areas_set.update(attributor.areas_for(pull_files.get(str(r["number"]), ())))
+            areas = tuple(sorted(areas_set))
             at = r.get("merged_at") or r.get("created_at")
             doc = Doc(
                 id=f"{kind}:{r['number']}",
@@ -843,3 +850,30 @@ class LiveSource:
             return rows
 
         return self.cache.json("rfcs", read)
+
+    def _pull_files(self) -> dict[str, list[str]]:
+        """The paths each cached pull request changed (the first 100), keyed by number, for area attribution."""
+
+        def read() -> dict[str, list[str]]:
+            numbers = [r["number"] for r in self._pulls()]
+            owner, name = MAIN_REPO.split("/")
+            out: dict[str, list[str]] = {}
+            for i in range(0, len(numbers), _FILES_PER_QUERY):
+                chunk = numbers[i : i + _FILES_PER_QUERY]
+                fields = " ".join(
+                    f"p{n}: pullRequest(number: {n}) {{ files(first: 100) {{ nodes {{ path }} }} }}" for n in chunk
+                )
+                query = (
+                    "query($owner: String!, $name: String!) "
+                    f"{{ repository(owner: $owner, name: $name) {{ {fields} }} }}"
+                )
+                repo = self.github.graphql(query, {"owner": owner, "name": name})["repository"]
+                for n in chunk:
+                    node = repo.get(f"p{n}") or {}
+                    out[str(n)] = [f["path"] for f in ((node.get("files") or {}).get("nodes") or [])]
+            return out
+
+        return self.cache.json("pull_files", read)
+
+
+_FILES_PER_QUERY = 25  # pull requests per GraphQL query; each asks for up to 100 paths
