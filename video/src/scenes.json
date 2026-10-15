@@ -1,0 +1,21 @@
+{
+  "voiceAt": { "none": 1.0, "stretch": 0.35, "card": 0.35, "lift": 0.25, "sweep": 0.2 },
+  "overlap": { "none": 0, "sweep": 0.8, "lift": 0.8, "stretch": 0.7, "card": 0.55 },
+  "breath": 0.14,
+  "hold": 1.8,
+  "scenes": [
+    { "id": "open", "into": { "kind": "none" } },
+    { "id": "problem", "into": { "kind": "stretch" } },
+    { "id": "idea", "into": { "kind": "card", "old": "Cited", "next": "Checked." } },
+    { "id": "graph", "into": { "kind": "lift" } },
+    { "id": "ask", "into": { "kind": "card", "old": "Search", "next": "Ask." } },
+    { "id": "dispute", "into": { "kind": "sweep" } },
+    { "id": "fix", "into": { "kind": "card", "old": "Report", "next": "Fix." } },
+    { "id": "whoknows", "into": { "kind": "card", "old": "Org chart", "next": "Evidence." } },
+    { "id": "busfactor", "into": { "kind": "sweep" } },
+    { "id": "decisions", "into": { "kind": "lift" } },
+    { "id": "connect", "into": { "kind": "card", "old": "Demo", "next": "Your company." } },
+    { "id": "numbers", "into": { "kind": "card", "old": "Claimed", "next": "Measured." }, "pauseBefore": 1.0 },
+    { "id": "close", "into": { "kind": "lift" } }
+  ]
+}

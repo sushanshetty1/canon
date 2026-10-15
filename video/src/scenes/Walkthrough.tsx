@@ -106,19 +106,19 @@ export function Dispute() {
         [0, 1.2],
         [c(1) - 0.35, 5.6],
         [c(1) + 0.4, 6.8],
-        [c(1) + 3.8, 8.6],
-        [c(2) - 0.2, 9.75],
-        [c(2) + 1.4, 11.4],
-        [dur, 11.4 + (dur - c(2) - 1.4) * 0.8],
+        [c(1) + 3.0, 8.6],
+        [c(2) - 0.5, 9.75],
+        [c(2) + 0.6, 11.4],
+        [dur, 11.4 + (dur - c(2) - 0.6) * 0.8],
       ]}
       shots={[
         { at: 0, rect: FULL },
         { at: c(1) - 0.2, rect: { x: 400, y: 140, w: 900, h: 600 } },
-        { at: c(2) + 0.5, rect: { x: 1130, y: 20, w: 450, h: 560 } },
+        { at: c(2) - 0.1, rect: { x: 1130, y: 20, w: 450, h: 560 } },
       ]}
       rings={[
-        { at: c(1) + 0.6, until: c(2) - 0.3, rect: { x: 584, y: 326, w: 680, h: 250 }, color: C.amber },
-        { at: c(2) + 1.5, until: dur - 0.3, rect: { x: 1146, y: 205, w: 414, h: 66 }, color: C.amber },
+        { at: c(1) + 0.6, until: c(2) - 0.6, rect: { x: 584, y: 326, w: 680, h: 250 }, color: C.amber },
+        { at: c(2) + 0.6, until: dur - 0.2, rect: { x: 1150, y: 210, w: 406, h: 56 }, color: C.amber, pad: 6 },
       ]}
       labels={[{ at: 0.9, until: c(1) - 0.4, title: 'Disputed', sub: 'Two current sources disagree, so Canon shows both' }]}
     />
@@ -138,26 +138,28 @@ export function Fix() {
         [c(1) + 0.9, 5.6],
         [c(2) - 0.1, 7.2],
         [c(3) - 0.2, 9.4],
-        [c(4) - 0.5, 12.9],
-        [c(4) + 0.6, 14.95],
-        [c(4) + 2.2, 17.8],
-        [c(4) + 3.4, 19.4],
-        [dur, 19.4 + (dur - c(4) - 3.4) * 0.6],
+        [c(4) - 0.6, 12.9],
+        [c(4) + 0.4, 14.95],
+        [c(4) + 1.1, 15.65],
+        [c(4) + 1.1, 17.5],
+        [c(4) + 1.4, 17.8],
+        [c(4) + 2.3, 19.4],
+        [dur, 19.4 + (dur - c(4) - 2.3) * 0.6],
       ]}
       shots={[
         { at: 0, rect: FULL },
         { at: c(1) + 0.7, rect: { x: 310, y: 270, w: 900, h: 120 } },
         { at: c(2) - 0.2, rect: { x: 310, y: 270, w: 900, h: 210 } },
         { at: c(3) - 0.1, rect: { x: 1250, y: 236, w: 320, h: 230 }, max: 1.5 },
-        { at: c(4) - 0.4, rect: { x: 1250, y: 236, w: 320, h: 420 } },
-        { at: c(4) + 3.0, rect: { x: 240, y: 330, w: 1350, h: 520 } },
+        { at: c(4) - 0.5, rect: { x: 1250, y: 236, w: 320, h: 420 } },
+        { at: c(4) + 1.9, rect: { x: 240, y: 330, w: 1350, h: 520 } },
       ]}
       rings={[
         { at: c(1) + 1.4, until: c(2) - 0.2, rect: { x: 330, y: 322, w: 818, h: 55 }, color: C.proof },
         { at: c(2) + 0.2, until: c(3) - 0.2, rect: { x: 330, y: 286, w: 430, h: 32 }, kind: 'underline' },
         { at: c(2) + 0.7, until: c(3) - 0.2, rect: { x: 330, y: 436, w: 380, h: 25 } },
         { at: c(3) + 0.4, until: c(4) - 0.5, rect: { x: 1273, y: 250, w: 267, h: 47 }, pad: 8 },
-        { at: c(4) + 3.3, until: dur - 0.3, rect: { x: 1272, y: 400, w: 290, h: 92 } },
+        { at: c(4) + 2.2, until: dur - 0.2, rect: { x: 1272, y: 400, w: 290, h: 92 } },
       ]}
       labels={[{ at: CONTENT_AT + 0.35, until: c(1) + 0.3, title: 'Fix queue', sub: '12 lines on 5 pages, each with its correction' }]}
     />
@@ -194,7 +196,7 @@ export function WhoKnows() {
 
 export function BusFactor() {
   const { c, dur } = useSceneTime()
-  const footAt = c(3) - 0.55
+  const footAt = c(3) - 0.9
   return (
     <AbsoluteFill>
       <FlowNetwork until={footAt + 0.6} />
@@ -209,10 +211,10 @@ export function BusFactor() {
         ]}
         shots={[
           { at: footAt, rect: { x: 470, y: 40, w: 900, h: 300 } },
-          { at: c(3) + 2.9, rect: { x: 470, y: 380, w: 900, h: 190 } },
+          { at: c(3) + 1.6, rect: { x: 470, y: 380, w: 900, h: 190 } },
         ]}
-        rings={[{ at: c(3) + 3.6, until: dur - 0.3, rect: { x: 576, y: 440, w: 170, h: 74 }, color: C.proof }]}
-        labels={[{ at: c(3) + 3.2, until: dur, title: 'Bus factor', sub: 'Pipeline sources rests on gilbert09 alone' }]}
+        rings={[{ at: c(3) + 2.0, until: dur - 0.2, rect: { x: 576, y: 440, w: 170, h: 74 }, color: C.proof }]}
+        labels={[{ at: c(3) + 0.5, until: dur, title: 'Bus factor', sub: 'Pipeline sources rests on gilbert09 alone' }]}
         cursor={false}
       />
     </AbsoluteFill>
@@ -267,8 +269,8 @@ export function Connect() {
   const { c, word, dur } = useSceneTime()
   const a = CONTENT_AT - 0.1
   const b = c(1) + 0.1
-  const d = c(3) - 0.15
-  const e = c(3) + 3.0
+  const d = c(3) - 0.6
+  const e = d + 2.6
   const notion = word('Notion', c(1))
   const linear = word('Linear', c(1))
   const jira = word('Jira', c(1))
@@ -319,13 +321,13 @@ export function Connect() {
         exit
         warp={[
           [d, 4.7],
-          [d + 1.9, 8.05],
-          [d + 1.9, 25.0],
-          [d + 2.5, 25.6],
-          [d + 2.5, 35.2],
+          [d + 1.6, 8.05],
+          [d + 1.6, 25.0],
+          [d + 2.0, 25.4],
+          [d + 2.0, 35.2],
           [e + 0.6, 35.8],
         ]}
-        shots={[{ at: d, rect: { x: 470, y: 200, w: 900, h: 500 } }, { at: d + 1.9, rect: FULL }]}
+        shots={[{ at: d, rect: { x: 470, y: 200, w: 900, h: 500 } }, { at: d + 1.6, rect: FULL }]}
         labels={[{ at: d + 0.3, until: e, title: 'New workspace', sub: 'From any repository you can read, private ones too' }]}
       />
       <Clip
@@ -334,9 +336,9 @@ export function Connect() {
         to={dur}
         enter
         warp={[
-          [e, 9.4],
-          [dur - 1.0, 12.6],
-          [dur, 13.6],
+          [e, 9.6],
+          [e + 1.2, 12.6],
+          [dur, 12.6 + (dur - e - 1.2)],
         ]}
         shots={[{ at: e, rect: { x: 1170, y: 20, w: 420, h: 480 } }]}
         labels={[{ at: e + 0.3, until: dur, title: 'Members', sub: 'Only the people you invite can open it' }]}

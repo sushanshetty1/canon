@@ -20,6 +20,7 @@ npm run render    # out/canon-demo.mp4
 | `narration/script.json` | The narration, scene by scene, in caption-sized chunks, and the voice settings |
 | `scripts/voice.mjs` | ElevenLabs text to speech with timestamps, one request per scene, cached in `voice/cache` |
 | `src/timing.json` | The voice timing every cut and caption follows |
+| `src/scenes.json` | The running order, transitions and pacing |
 | `src/` | The composition: scenes, transitions, the footage camera, cursor and captions |
 
 Each take is a folder of frames in `public/captures/<take>/` with `take.json`: when each frame was painted, and every
@@ -56,10 +57,16 @@ After re-recording, check each take's times (`node capture/inspect.mjs <take>`) 
 ## Re-voice
 
 `npm run voice` reads `ELEVENLABS_API_KEY` from the environment or the `export` line in `~/.zshrc` (never printed),
-and calls `POST /v1/text-to-speech/{voice}/with-timestamps` once per scene with the model and voice in
-`narration/script.json` (Eric, `eleven_v4`). A scene is generated again only when its text or the voice settings
-change. Pauses between chunks are added when the audio is assembled, so pacing changes cost nothing.
-`npm run voice:draft` uses macOS `say` instead (writes files, plays nothing).
+and calls `POST /v1/text-to-speech/{voice}/with-timestamps` once per scene (or once per entry in a scene's `parts`)
+with the model and voice in `narration/script.json` (Eric, `eleven_v4`). Only text that changed is generated again;
+a part whose exact words an earlier take of the scene already speaks is cut out of that take instead.
+
+The narration plays as one continuous read. Each clip is trimmed to its speech (silence found in the audio, with
+6 ms fades at every cut), any pause between words longer than 0.3 s is shortened to 0.3 s, and `src/scenes.json`
+starts each scene's line a breath (0.14 s plus the clips' own 0.13 s of head and tail) after the previous one, with
+one deliberate 1 s pause before the benchmark. Transitions play under the voice. `node scripts/gaps.mjs <file>`
+lists every silence of 0.4 s or more below -40 dB. `npm run voice:draft` uses macOS `say` instead (writes files,
+plays nothing).
 
 ## Review
 
