@@ -27,7 +27,9 @@ import anthropic
 from canon.extract.predicates import AUTHORITY, PREDICATES, SHAPES, merge_topics, normalise_topic
 from canon.types import Batch, Doc, Fact, Passage
 
-EXTRACT_KINDS = ("handbook", "doc", "team_page", "rfc")
+# Connected sources are read for facts too: their docs, chats and tickets are where a company writes things down.
+EXTRACT_KINDS = ("handbook", "doc", "team_page", "rfc", "notion_page", "confluence_page", "upload", "slack_thread",
+                 "linear_issue", "jira_issue")
 MAX_PHRASE = 160
 
 

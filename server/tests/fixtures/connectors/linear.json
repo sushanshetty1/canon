@@ -1,0 +1,58 @@
+{
+  "_note": "Recorded Linear GraphQL responses, shaped as https://linear.app/developers/graphql documents them. Synthetic organisation.",
+  "viewer": {"data": {"viewer": {"id": "lu-ana", "name": "Ana Ruiz"}, "organization": {"name": "Kestrel", "urlKey": "kestrel"}}},
+  "Teams": {"data": {"teams": {
+    "nodes": [
+      {"id": "lt-1", "key": "PAY", "name": "Payments", "description": "Billing and invoices", "members": {"nodes": [
+        {"id": "lu-ana", "name": "Ana Ruiz", "displayName": "ana", "email": "ana@kestrel.example"},
+        {"id": "lu-ben", "name": "Ben Okafor", "displayName": "ben", "email": "ben@kestrel.example"}
+      ]}},
+      {"id": "lt-2", "key": "SRCH", "name": "Search", "description": null, "members": {"nodes": [
+        {"id": "lu-cal", "name": "Cal Diaz", "displayName": "cal", "email": "cal@kestrel.example"}
+      ]}}
+    ],
+    "pageInfo": {"hasNextPage": false, "endCursor": "t2"}
+  }}},
+  "Projects": {"data": {"projects": {
+    "nodes": [
+      {"id": "lp-1", "name": "Billing migration", "description": "Move billing to the new ledger.\n\nThe Payments team runs the cutover.", "url": "https://linear.app/kestrel/project/billing-migration-1a2b", "createdAt": "2026-09-01T09:00:00.000Z", "updatedAt": "2026-10-10T09:00:00.000Z", "status": {"name": "In Progress"}, "lead": {"id": "lu-ben", "name": "Ben Okafor", "displayName": "ben", "email": "ben@kestrel.example"}, "teams": {"nodes": [{"key": "PAY", "name": "Payments"}]}}
+    ],
+    "pageInfo": {"hasNextPage": false, "endCursor": "p1"}
+  }}},
+  "Issues": [
+    {"data": {"issues": {
+      "nodes": [
+        {
+          "id": "li-12", "identifier": "PAY-12", "title": "Cut over invoices to the ledger", "description": "Invoices are written to the ledger from November.",
+          "url": "https://linear.app/kestrel/issue/PAY-12/cut-over-invoices", "createdAt": "2026-09-20T10:00:00.000Z", "updatedAt": "2026-10-14T11:00:00.000Z",
+          "state": {"name": "In Progress", "type": "started"}, "team": {"key": "PAY", "name": "Payments"}, "project": {"id": "lp-1", "name": "Billing migration"},
+          "creator": {"id": "lu-ana", "name": "Ana Ruiz", "displayName": "ana", "email": "ana@kestrel.example"},
+          "assignee": {"id": "lu-cal", "name": "Cal Diaz", "displayName": "cal", "email": "cal@kestrel.example"},
+          "comments": {"nodes": [
+            {"body": "Ben handed this over to Cal while he is out.", "createdAt": "2026-10-02T09:00:00.000Z", "user": {"id": "lu-ben", "name": "Ben Okafor", "displayName": "ben", "email": "ben@kestrel.example"}}
+          ]},
+          "history": {"nodes": [
+            {"createdAt": "2026-09-21T10:00:00.000Z", "actor": {"id": "lu-ana", "name": "Ana Ruiz", "displayName": "ana", "email": "ana@kestrel.example"}, "fromState": null, "toState": null, "fromAssignee": null, "toAssignee": {"id": "lu-ben", "name": "Ben Okafor", "displayName": "ben", "email": "ben@kestrel.example"}},
+            {"createdAt": "2026-09-25T10:00:00.000Z", "actor": {"id": "lu-ben", "name": "Ben Okafor", "displayName": "ben", "email": "ben@kestrel.example"}, "fromState": {"name": "Todo"}, "toState": {"name": "In Progress"}, "fromAssignee": null, "toAssignee": null},
+            {"createdAt": "2026-10-02T09:00:00.000Z", "actor": {"id": "lu-ben", "name": "Ben Okafor", "displayName": "ben", "email": "ben@kestrel.example"}, "fromState": null, "toState": null, "fromAssignee": {"id": "lu-ben", "name": "Ben Okafor", "displayName": "ben", "email": "ben@kestrel.example"}, "toAssignee": {"id": "lu-cal", "name": "Cal Diaz", "displayName": "cal", "email": "cal@kestrel.example"}}
+          ]}
+        }
+      ],
+      "pageInfo": {"hasNextPage": true, "endCursor": "i1"}
+    }}},
+    {"data": {"issues": {
+      "nodes": [
+        {
+          "id": "li-7", "identifier": "SRCH-7", "title": "Tune ranking weights", "description": null,
+          "url": "https://linear.app/kestrel/issue/SRCH-7/tune-ranking", "createdAt": "2026-10-01T10:00:00.000Z", "updatedAt": "2026-10-03T11:00:00.000Z",
+          "state": {"name": "Todo", "type": "unstarted"}, "team": {"key": "SRCH", "name": "Search"}, "project": null,
+          "creator": {"id": "lu-cal", "name": "Cal Diaz", "displayName": "cal", "email": "cal@kestrel.example"},
+          "assignee": {"id": "lu-cal", "name": "Cal Diaz", "displayName": "cal", "email": "cal@kestrel.example"},
+          "comments": {"nodes": []},
+          "history": {"nodes": []}
+        }
+      ],
+      "pageInfo": {"hasNextPage": false, "endCursor": "i2"}
+    }}}
+  ]
+}

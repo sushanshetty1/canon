@@ -42,6 +42,12 @@ AUTHORITY: dict[Kind, int] = {
     "pull": 1,
     "issue": 0,
     "forum": 0,
+    "notion_page": 1,  # connected docs rank with the handbook
+    "confluence_page": 1,
+    "upload": 1,
+    "slack_thread": 0,  # chats and tickets rank with issues and the forum
+    "linear_issue": 0,
+    "jira_issue": 0,
 }
 
 STOPWORDS = frozenset(

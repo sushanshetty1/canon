@@ -31,6 +31,7 @@ def _view(props: dict, now: float) -> dict:
     if status == "running" and now - float(props.get("updated", 0)) > STALE_SECONDS:
         status, error = "failed", "The server stopped before this finished. Start it again."
     from canon.ingest import STEPS
+    from canon.sources.sync import SYNC_STEPS
 
     step = props.get("step")
     return {
@@ -38,7 +39,8 @@ def _view(props: dict, now: float) -> dict:
         "kind": props.get("kind"),
         "status": status,
         "step": step,
-        "step_label": STEPS.get(step or "", "Starting"),
+        "step_label": STEPS.get(step or "") or SYNC_STEPS.get(step or "", "Starting"),
+        "connection": props.get("connection"),
         "progress": float(props.get("progress") or 0),
         "counts": json.loads(props.get("counts") or "{}"),
         "error": error,
@@ -62,8 +64,12 @@ class Jobs:
         rows = graph.query("MATCH (j:Job) RETURN j ORDER BY j.started DESC LIMIT 1").result_set
         return _view(dict(rows[0][0].properties), self.cloud.clock()) if rows else None
 
-    def start(self, slug: str, kind: str, work: Callable[[Callable[..., None]], dict]) -> dict | None:
-        """Start `work(report)` for the workspace. None when a job is already running there."""
+    def start(
+        self, slug: str, kind: str, work: Callable[[Callable[..., None]], dict], *, connection: str | None = None,
+        step: str = "clone",
+    ) -> dict | None:
+        """Start `work(report)` for the workspace. None when a job is already running there. `connection` is the
+        connection a sync reads (`canon.sources.connections`), and `step` the step it starts on."""
         with self._lock:
             current = self.latest(slug)
             if slug in self._running or (current and current["status"] == "running"):
@@ -73,11 +79,11 @@ class Jobs:
         now = self.cloud.clock()
         job_id = secrets.token_hex(6)
         graph.query(
-            """CREATE (:Job {id: $id, kind: $kind, status: 'running', step: 'clone', progress: 0.0, counts: '{}',
-                             started: $now, updated: $now, started_at: $at})""",
-            {"id": job_id, "kind": kind, "now": now, "at": _iso(now)},
+            """CREATE (:Job {id: $id, kind: $kind, status: 'running', step: $step, progress: 0.0, counts: '{}',
+                             started: $now, updated: $now, started_at: $at, connection: $connection})""",
+            {"id": job_id, "kind": kind, "now": now, "at": _iso(now), "step": step, "connection": connection},
         )
-        state = {"step": "clone", "progress": 0.0, "counts": {}, "written": 0.0}
+        state = {"step": step, "progress": 0.0, "counts": {}, "written": 0.0}
 
         def report(*, step: str | None = None, counts: dict | None = None, progress: float | None = None) -> None:
             if step:
@@ -128,6 +134,9 @@ def _calm(e: Exception) -> str:
 
     import httpx
 
+    public = getattr(e, "public_message", None)  # a connector's own message, written to be shown (sources.client)
+    if isinstance(public, str) and public:
+        return public
     if isinstance(e, subprocess.CalledProcessError):
         return "The repository could not be read from GitHub."
     if isinstance(e, httpx.HTTPStatusError):

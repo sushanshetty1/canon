@@ -3,7 +3,10 @@
 from dataclasses import dataclass, field
 from typing import Literal
 
-Kind = Literal["handbook", "doc", "team_page", "ownership_map", "rfc", "issue", "pull", "forum"]
+Kind = Literal[
+    "handbook", "doc", "team_page", "ownership_map", "rfc", "issue", "pull", "forum",
+    "notion_page", "confluence_page", "upload", "slack_thread", "linear_issue", "jira_issue",
+]
 Verdict = Literal["verified", "stale", "disputed", "unsupported"]
 ActivityRel = Literal["AUTHORED", "REVIEWED", "COMMENTED", "DECIDED"]
 

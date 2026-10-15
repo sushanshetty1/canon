@@ -1,0 +1,33 @@
+{
+  "_note": "Recorded Confluence Cloud REST responses (v2, and v1 user/current), shaped as https://developer.atlassian.com/cloud/confluence/rest/v2 documents them. Synthetic site.",
+  "user/current": {"type": "known", "accountId": "5b10ac8d82e05b22cc7d4ef5", "accountType": "atlassian", "email": "ana@kestrel.example", "publicName": "Ana Ruiz", "displayName": "Ana Ruiz"},
+  "spaces": [
+    {"results": [
+      {"id": "65537", "key": "ENG", "name": "Engineering", "type": "global", "status": "current", "homepageId": "100"}
+    ], "_links": {"next": "/wiki/api/v2/spaces?limit=50&cursor=c2", "base": "https://kestrel.atlassian.net/wiki"}},
+    {"results": [
+      {"id": "65538", "key": "HR", "name": "People Ops", "type": "global", "status": "current", "homepageId": "200"}
+    ], "_links": {"base": "https://kestrel.atlassian.net/wiki"}}
+  ],
+  "pages": [
+    {"results": [
+      {"id": "101", "status": "current", "title": "Incident response", "spaceId": "65537", "parentId": "100", "parentType": "page",
+       "authorId": "712020:aa11", "ownerId": "712020:aa11", "createdAt": "2026-03-01T10:00:00.000Z",
+       "version": {"createdAt": "2026-10-09T14:00:00.000Z", "message": "", "number": 7, "minorEdit": false, "authorId": "5b10ac8d82e05b22cc7d4ef5"},
+       "body": {"storage": {"representation": "storage", "value": "<h2>Who responds</h2><p>The Operations team owns incident response. Page the on-call engineer first.</p><ac:structured-macro ac:name=\"code\"><ac:parameter ac:name=\"language\">bash</ac:parameter><ac:plain-text-body><![CDATA[pd trigger]]></ac:plain-text-body></ac:structured-macro><ul><li><p>Sev 1: within 5 minutes</p></li><li><p>Sev 2: within 30 minutes</p></li></ul>"}},
+       "_links": {"webui": "/spaces/ENG/pages/101/Incident+response", "editui": "/pages/resumedraft.action?draftId=101", "tinyui": "/x/ZQ"}}
+    ], "_links": {"next": "/wiki/api/v2/pages?limit=50&sort=-modified-date&body-format=storage&status=current&cursor=p2", "base": "https://kestrel.atlassian.net/wiki"}},
+    {"results": [
+      {"id": "201", "status": "current", "title": "Leave policy", "spaceId": "65538", "parentId": "200", "parentType": "page",
+       "authorId": "712020:bb22", "ownerId": "712020:bb22", "createdAt": "2025-11-01T10:00:00.000Z",
+       "version": {"createdAt": "2026-02-01T10:00:00.000Z", "message": "", "number": 2, "minorEdit": false, "authorId": "712020:bb22"},
+       "body": {"storage": {"representation": "storage", "value": "<p>Everyone gets 25 days of leave a year.</p>"}},
+       "_links": {"webui": "/spaces/HR/pages/201/Leave+policy"}}
+    ], "_links": {"base": "https://kestrel.atlassian.net/wiki"}}
+  ],
+  "users-bulk": {"results": [
+    {"accountId": "712020:aa11", "accountType": "atlassian", "displayName": "Dev Patel", "publicName": "Dev Patel", "email": ""},
+    {"accountId": "5b10ac8d82e05b22cc7d4ef5", "accountType": "atlassian", "displayName": "Ana Ruiz", "publicName": "Ana Ruiz", "email": "ana@kestrel.example"},
+    {"accountId": "712020:bb22", "accountType": "atlassian", "displayName": "Eli Moss", "publicName": "Eli Moss"}
+  ]}
+}

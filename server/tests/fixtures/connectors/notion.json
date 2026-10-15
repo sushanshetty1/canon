@@ -1,0 +1,112 @@
+{
+  "_note": "Recorded Notion API responses (Notion-Version 2022-06-28), shaped as https://developers.notion.com/reference documents them. Synthetic workspace.",
+  "users/me": {"object": "user", "id": "9a3b-bot", "name": "Canon", "avatar_url": null, "type": "bot", "bot": {"owner": {"type": "workspace", "workspace": true}, "workspace_name": "Kestrel"}},
+  "search": [
+    {
+      "object": "list",
+      "results": [
+        {
+          "object": "page", "id": "1f2e3d4c-0000-4000-8000-00000000aaaa",
+          "created_time": "2026-08-02T10:00:00.000Z", "last_edited_time": "2026-10-13T08:30:00.000Z",
+          "created_by": {"object": "user", "id": "u-ana"}, "last_edited_by": {"object": "user", "id": "u-ben"},
+          "archived": false, "in_trash": false,
+          "parent": {"type": "workspace", "workspace": true},
+          "properties": {"title": {"id": "title", "type": "title", "title": [{"type": "text", "text": {"content": "Deploy policy"}, "plain_text": "Deploy policy"}]}},
+          "url": "https://www.notion.so/Deploy-policy-1f2e3d4c00004000800000000000aaaa"
+        },
+        {
+          "object": "page", "id": "5b6c7d8e-0000-4000-8000-00000000bbbb",
+          "created_time": "2026-09-10T10:00:00.000Z", "last_edited_time": "2026-10-12T15:00:00.000Z",
+          "created_by": {"object": "user", "id": "u-ana"}, "last_edited_by": {"object": "user", "id": "u-ana"},
+          "archived": false, "in_trash": false,
+          "parent": {"type": "database_id", "database_id": "db-projects"},
+          "properties": {
+            "Name": {"id": "title", "type": "title", "title": [{"type": "text", "text": {"content": "Search relevance"}, "plain_text": "Search relevance"}]},
+            "Owner": {"id": "o1", "type": "people", "people": [{"object": "user", "id": "u-cal", "name": "Cal Diaz", "type": "person", "person": {"email": "cal@kestrel.example"}}]},
+            "Status": {"id": "s1", "type": "status", "status": {"id": "x", "name": "In progress", "color": "blue"}},
+            "Due": {"id": "d1", "type": "date", "date": {"start": "2026-11-30", "end": null, "time_zone": null}},
+            "Contact": {"id": "e1", "type": "email", "email": "cal@kestrel.example"}
+          },
+          "url": "https://www.notion.so/Search-relevance-5b6c7d8e00004000800000000000bbbb"
+        }
+      ],
+      "next_cursor": "c-page-2",
+      "has_more": true,
+      "type": "page_or_database",
+      "page_or_database": {}
+    },
+    {
+      "object": "list",
+      "results": [
+        {
+          "object": "page", "id": "aaaa0000-0000-4000-8000-00000000cccc",
+          "created_time": "2025-01-02T10:00:00.000Z", "last_edited_time": "2026-01-05T09:00:00.000Z",
+          "created_by": {"object": "user", "id": "u-ben"}, "last_edited_by": {"object": "user", "id": "u-ben"},
+          "archived": false, "in_trash": false,
+          "parent": {"type": "page_id", "page_id": "1f2e3d4c-0000-4000-8000-00000000aaaa"},
+          "properties": {"title": {"id": "title", "type": "title", "title": [{"plain_text": "Old offsite notes"}]}},
+          "url": "https://www.notion.so/Old-offsite-notes-aaaa000000004000800000000000cccc"
+        }
+      ],
+      "next_cursor": null,
+      "has_more": false,
+      "type": "page_or_database",
+      "page_or_database": {}
+    }
+  ],
+  "blocks": {
+    "1f2e3d4c-0000-4000-8000-00000000aaaa": {
+      "object": "list",
+      "results": [
+        {"object": "block", "id": "b1", "type": "heading_2", "has_children": false, "heading_2": {"rich_text": [{"plain_text": "When we deploy"}], "is_toggleable": false}},
+        {"object": "block", "id": "b2", "type": "paragraph", "has_children": false, "paragraph": {"rich_text": [{"plain_text": "We deploy every weekday before 3pm. "}, {"plain_text": "Friday deploys need approval from the Platform team."}]}},
+        {"object": "block", "id": "b3", "type": "bulleted_list_item", "has_children": true, "bulleted_list_item": {"rich_text": [{"plain_text": "Rollbacks"}]}},
+        {"object": "block", "id": "b4", "type": "code", "has_children": false, "code": {"rich_text": [{"plain_text": "make deploy"}], "language": "shell"}},
+        {"object": "block", "id": "b5", "type": "child_page", "has_children": true, "child_page": {"title": "Old offsite notes"}},
+        {"object": "block", "id": "b6", "type": "table", "has_children": true, "table": {"table_width": 2, "has_column_header": true}}
+      ],
+      "next_cursor": null,
+      "has_more": false
+    },
+    "b3": {
+      "object": "list",
+      "results": [
+        {"object": "block", "id": "b3a", "type": "bulleted_list_item", "has_children": false, "bulleted_list_item": {"rich_text": [{"plain_text": "Anyone on call may roll back without asking."}]}}
+      ],
+      "next_cursor": null,
+      "has_more": false
+    },
+    "b6": {
+      "object": "list",
+      "results": [
+        {"object": "block", "id": "r1", "type": "table_row", "has_children": false, "table_row": {"cells": [[{"plain_text": "Service"}], [{"plain_text": "Window"}]]}},
+        {"object": "block", "id": "r2", "type": "table_row", "has_children": false, "table_row": {"cells": [[{"plain_text": "API"}], [{"plain_text": "Weekdays"}]]}}
+      ],
+      "next_cursor": null,
+      "has_more": false
+    },
+    "5b6c7d8e-0000-4000-8000-00000000bbbb": {
+      "object": "list",
+      "results": [
+        {"object": "block", "id": "p1", "type": "paragraph", "has_children": false, "paragraph": {"rich_text": [{"plain_text": "Ranking changes ship behind a flag."}]}}
+      ],
+      "next_cursor": null,
+      "has_more": false
+    },
+    "aaaa0000-0000-4000-8000-00000000cccc": {
+      "object": "list",
+      "results": [
+        {"object": "block", "id": "o1", "type": "paragraph", "has_children": false, "paragraph": {"rich_text": [{"plain_text": "We talked about the roadmap."}]}}
+      ],
+      "next_cursor": null,
+      "has_more": false
+    }
+  },
+  "databases": {
+    "db-projects": {"object": "database", "id": "db-projects", "title": [{"plain_text": "Projects"}], "properties": {}}
+  },
+  "users": {
+    "u-ana": {"object": "user", "id": "u-ana", "type": "person", "name": "Ana Ruiz", "avatar_url": null, "person": {"email": "ana@kestrel.example"}},
+    "u-ben": {"object": "user", "id": "u-ben", "type": "person", "name": "Ben Okafor", "avatar_url": null, "person": {}}
+  }
+}
