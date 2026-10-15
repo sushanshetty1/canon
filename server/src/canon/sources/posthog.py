@@ -13,7 +13,6 @@ check later finds out of date.
 Public data only: people keep a name, a role and a GitHub handle. No emails, avatars or locations are kept.
 """
 
-import hashlib
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -26,7 +25,12 @@ import httpx
 
 from canon.sources import github as gh
 from canon.sources.cache import Cache
+from canon.sources.ownership import owned_by_facts, owner_windows
+from canon.sources.text import clean_mdx, frontmatter, passages_of, slugify, split_passages
+from canon.sources.text import day as _day
 from canon.types import Activity, Area, Batch, Doc, Fact, Passage, Person, Team
+
+__all__ = ["clean_mdx", "frontmatter", "load_posthog", "parse_ownership", "slugify", "split_passages"]
 
 SITE_REPO = "PostHog/posthog.com"
 RFC_REPO = "PostHog/requests-for-comments-public"
@@ -36,115 +40,6 @@ STRAPI = "https://better-animal-d658c56969.strapiapp.com/api"
 SITE = "https://posthog.com"
 
 Fetch = Callable[[str], Any]
-
-
-# ----- text ------------------------------------------------------------------------------------------------------
-
-
-def slugify(text: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
-
-
-def _day(iso: str | None) -> str:
-    return (iso or "")[:10]
-
-
-_FRONTMATTER = re.compile(r"\A---\n(.*?)\n---\n?", re.S)
-
-
-def frontmatter(text: str) -> tuple[dict[str, str], str]:
-    """Simple `key: value` frontmatter, and the body after it."""
-    m = _FRONTMATTER.match(text)
-    if not m:
-        return {}, text
-    meta = {}
-    for line in m.group(1).splitlines():
-        key, sep, value = line.partition(":")
-        if sep and not line.startswith(" "):
-            meta[key.strip()] = value.strip().strip("'\"")
-    return meta, text[m.end() :]
-
-
-def clean_mdx(body: str, team_names: dict[str, str]) -> str:
-    """MDX to plain Markdown. The components that name a team or a person become their names; the rest go."""
-
-    def small_team(m: re.Match) -> str:
-        slug = m.group(1)
-        return f"{team_names.get(slug, slug.replace('-', ' ').title())} team"
-
-    body = re.sub(r"<!--.*?-->", "", body, flags=re.S)
-    body = re.sub(r"^\s*(import|export)\s.*$", "", body, flags=re.M)
-    body = re.sub(r"```.*?```", "", body, flags=re.S)  # code is not knowledge about the company
-    body = re.sub(r"<SmallTeam\s+slug=[\"']([^\"']+)[\"'][^>]*/>", small_team, body)
-    body = re.sub(r"<TeamMember\s+name=[\"']([^\"']+)[\"'][^>]*/>", r"\1", body)
-    body = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", body)  # images
-    body = re.sub(r"<[A-Za-z][\w.]*(\s[^<>]*?)?/>", "", body, flags=re.S)  # other self-closing components
-    body = re.sub(r"</?[A-Za-z][\w.]*(\s[^<>]*?)?>", "", body, flags=re.S)  # tags around text: keep the text
-    body = re.sub(r"[ \t]+\n", "\n", body)
-    return re.sub(r"\n{3,}", "\n\n", body).strip()
-
-
-_HEADING = re.compile(r"^(#{1,6})\s+(.*)$")
-_SENTENCE = re.compile(r"(?<=[.!?])\s+")
-
-
-def split_passages(body: str, *, max_chars: int = 900) -> list[str]:
-    """Split by heading, then by paragraph, into chunks of at most about `max_chars`.
-
-    Each chunk starts with its section heading, so a passage read alone still says what it is about.
-    """
-    sections: list[tuple[str, list[str]]] = [("", [])]
-    for line in body.splitlines():
-        m = _HEADING.match(line)
-        if m:
-            sections.append((m.group(2).strip(), []))
-        else:
-            sections[-1][1].append(line)
-
-    passages: list[str] = []
-    for heading, lines in sections:
-        paragraphs = [p.strip() for p in re.split(r"\n\s*\n", "\n".join(lines)) if p.strip()]
-        pieces: list[str] = []
-        for p in paragraphs:
-            if len(p) <= max_chars:
-                pieces.append(p)
-                continue
-            # A long paragraph (often a list or a table) is split on lines, and a long line on sentences.
-            units: list[str] = []
-            for line in p.splitlines():
-                units += [line] if len(line) <= max_chars else _SENTENCE.split(line)
-            current = ""
-            for u in units:
-                if current and len(current) + len(u) + 1 > max_chars:
-                    pieces.append(current)
-                    current = u
-                else:
-                    current = f"{current}\n{u}" if current else u
-            if current:
-                pieces.append(current)
-        chunk = ""
-        for piece in pieces:
-            if chunk and len(chunk) + len(piece) + 2 > max_chars:
-                passages.append(f"{heading}\n{chunk}" if heading else chunk)
-                chunk = piece
-            else:
-                chunk = f"{chunk}\n\n{piece}" if chunk else piece
-        if chunk:
-            passages.append(f"{heading}\n{chunk}" if heading else chunk)
-    return passages
-
-
-def passages_of(doc_id: str, texts: list[str]) -> list[Passage]:
-    """Passages with content-addressed ids, `doc#<sha1(text)[:10]>`.
-
-    A passage whose text changes gets a new id, so the writer detaches the old one (and the facts it carried can
-    be closed) instead of rewriting its text in place. Repeated text within one document is kept once.
-    """
-    seen: dict[str, Passage] = {}
-    for text in texts:
-        pid = f"{doc_id}#{hashlib.sha1(text.encode()).hexdigest()[:10]}"
-        seen.setdefault(pid, Passage(pid, doc_id, text))
-    return list(seen.values())
 
 
 # ----- the ownership map -----------------------------------------------------------------------------------------
@@ -209,10 +104,6 @@ def parse_ownership(source: str) -> dict[str, Feature] | None:
     return features
 
 
-def _fact_id(subject: str, predicate: str, value: str, passage_id: str) -> str:
-    return hashlib.sha1(f"{subject}|{predicate}|{value}|{passage_id}".encode()).hexdigest()[:16]
-
-
 def _owner_text(area: str, team: str) -> str:
     return f"{area} is owned by the {team} team."
 
@@ -238,8 +129,7 @@ def ownership_history(versions: list[dict], team_name: Callable[[str], str]) -> 
     """
     out = Ownership([], [], [], [], {}, {}, {}, set())
     previous: dict[str, Feature] = {}
-    open_windows: dict[tuple[str, str], tuple[str, str]] = {}  # (area, team) -> (valid_from, passage id)
-    closed: list[tuple[str, str, str, str, str]] = []  # area, team, from, to, passage
+    owner_versions: list[tuple[str, str, dict[str, tuple[str, ...]]]] = []
 
     for v in versions:
         current = parse_ownership(v["text"])
@@ -282,21 +172,7 @@ def ownership_history(versions: list[dict], team_name: Callable[[str], str]) -> 
         out.docs.append(doc)
         out.passages.append(passage)
         out.activity.append((v.get("author_name") or "", v.get("author_handle") or "", doc.id, day))
-
-        # An area whose owner list changed starts a new window for every owner in its new list, stated in this
-        # commit. A co-owner that stays is restated alongside the one that joins, so the two read as co-owners
-        # from one source, not as one team replacing the other.
-        changed = {
-            slug
-            for slug in set(previous) | set(current)
-            if (previous[slug].owners if slug in previous else ()) != (current[slug].owners if slug in current else ())
-        }
-        for pair in sorted(p for p in open_windows if p[0] in changed):
-            start, pid = open_windows.pop(pair)
-            closed.append((*pair, start, day, pid))
-        for slug in sorted(changed & set(current)):
-            for team in current[slug].owners:
-                open_windows[(slug, team)] = (day, passage.id)
+        owner_versions.append((day, passage.id, {slug: f.owners for slug, f in current.items()}))
         previous = current
         for slug, f in current.items():
             out.names[slug] = f.name
@@ -305,24 +181,11 @@ def ownership_history(versions: list[dict], team_name: Callable[[str], str]) -> 
                 out.label_to_area[label] = slug
 
     out.current = previous
-    windows = [(a, t, s, e, p) for a, t, s, e, p in closed if s != e] + [
-        (a, t, s, None, p) for (a, t), (s, p) in open_windows.items()
-    ]
-    for area, team, start, end, pid in sorted(windows, key=lambda w: (w[0], w[2], w[1])):
-        subject, value = f"area:{area}", f"team:{team}"
-        out.facts.append(
-            Fact(
-                id=_fact_id(subject, "owned_by", value, pid),
-                subject=subject,
-                predicate="owned_by",
-                value=value,
-                text=_owner_text(out.names.get(area, area), team_name(team)),
-                valid_from=start,
-                passage_id=pid,
-                authority=3,
-                valid_to=end,
-            )
-        )
+    out.facts = owned_by_facts(
+        owner_windows(owner_versions),
+        value=lambda team: f"team:{team}",
+        text=lambda area, team: _owner_text(out.names.get(area, area), team_name(team)),
+    )
     return out
 
 
@@ -584,10 +447,7 @@ query($owner: String!, $name: String!, $cursor: String) {
 }"""
 
 
-def _login(node: dict | None) -> str | None:
-    if not node or node.get("__typename") == "Bot" or (node.get("login") or "").endswith("[bot]"):
-        return None
-    return (node.get("login") or "").lower() or None
+_login = gh.login_of
 
 
 class LiveSource:
@@ -713,21 +573,7 @@ class LiveSource:
     # -- GitHub: RFCs, pull requests, issues --
 
     def _paged(self, query: str, repo: str, key: str, keep: Callable[[dict], bool | None]) -> list[dict]:
-        """Page through a GraphQL connection. `keep` returns True to keep a node, False to skip it, None to stop."""
-        owner, name = repo.split("/")
-        rows, cursor = [], None
-        while True:
-            data = self.github.graphql(query, {"owner": owner, "name": name, "cursor": cursor})
-            conn = data["repository"][key]
-            for node in conn["nodes"]:
-                verdict = keep(node)
-                if verdict is None:
-                    return rows
-                if verdict:
-                    rows.append(node)
-            if not conn["pageInfo"]["hasNextPage"]:
-                return rows
-            cursor = conn["pageInfo"]["endCursor"]
+        return self.github.paged(query, repo, key, keep)
 
     def _pulls(self) -> list[dict]:
         def read() -> list[dict]:

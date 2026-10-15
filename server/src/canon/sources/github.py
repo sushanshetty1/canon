@@ -80,6 +80,37 @@ def show(repo: Path, sha: str, path: str) -> str:
     return git(repo, "show", f"{sha}:{path}")
 
 
+def file_commits(repo: Path, *paths: str) -> dict[str, list[Commit]]:
+    """For every file under `paths` (all files when none): every commit that touched it, newest first."""
+    out = git(repo, "log", "--name-only", f"--format=@@{_SEP}%H{_SEP}%aI{_SEP}%an{_SEP}%ae", "--", *paths)
+    commits: dict[str, list[Commit]] = {}
+    current: Commit | None = None
+    for line in out.splitlines():
+        if line.startswith("@@" + _SEP):
+            current = _commit(line[3:])
+        elif line and current:
+            commits.setdefault(line, []).append(current)
+    return commits
+
+
+def head(repo: Path) -> str:
+    return git(repo, "rev-parse", "HEAD").strip()
+
+
+def pull(repo: Path) -> str:
+    """Bring a clone up to date with its remote's default branch. Returns the new head."""
+    git(repo, "fetch", "-q", "origin")
+    git(repo, "reset", "-q", "--hard", "FETCH_HEAD")
+    return head(repo)
+
+
+def changed_paths(repo: Path, old: str, new: str) -> list[str]:
+    """Files that differ between two commits, renames as a delete and an add."""
+    if old == new:
+        return []
+    return [p for p in git(repo, "diff", "--name-only", "--no-renames", old, new).splitlines() if p]
+
+
 def handle_from_email(email: str) -> str | None:
     """`12345+octocat@users.noreply.github.com` -> `octocat`. Other addresses give nothing."""
     local, _, domain = email.partition("@")
@@ -87,6 +118,13 @@ def handle_from_email(email: str) -> str | None:
         return None
     handle = local.split("+", 1)[-1].lower()
     return None if not handle or handle.endswith("[bot]") else handle
+
+
+def login_of(node: dict | None) -> str | None:
+    """A GraphQL author node as a lowercase handle. Bots and deleted accounts give nothing."""
+    if not node or node.get("__typename") == "Bot" or (node.get("login") or "").endswith("[bot]"):
+        return None
+    return (node.get("login") or "").lower() or None
 
 
 # ----- the API ----------------------------------------------------------------------------------------------------
@@ -153,3 +191,21 @@ class GitHub:
                 raise RuntimeError(f"GitHub GraphQL error: {errors[0].get('message')}")
             return body["data"]
         raise RuntimeError("GitHub GraphQL kept rate limiting")
+
+    def paged(self, query: str, repo: str, key: str, keep, variables: dict | None = None) -> list[dict]:
+        """Page through a repository's GraphQL connection `key`. `keep(node)` returns True to keep a node, False to
+        skip it, None to stop."""
+        owner, name = repo.split("/")
+        rows, cursor = [], None
+        while True:
+            data = self.graphql(query, {"owner": owner, "name": name, "cursor": cursor, **(variables or {})})
+            conn = data["repository"][key]
+            for node in conn["nodes"]:
+                verdict = keep(node)
+                if verdict is None:
+                    return rows
+                if verdict:
+                    rows.append(node)
+            if not conn["pageInfo"]["hasNextPage"]:
+                return rows
+            cursor = conn["pageInfo"]["endCursor"]
