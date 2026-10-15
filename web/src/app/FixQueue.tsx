@@ -182,11 +182,13 @@ function Owner({ fix }: { fix: Fix }) {
             <p className="text-[18px] leading-snug font-semibold tracking-[-0.01em] text-ink">{t.name}</p>
             {leads(t).map((p) => (
               <p key={p.key} className="text-[14.5px] text-muted">
-                Led by {p.name}
-                {handleLink(p.key) && (
-                  <a href={`https://github.com/${p.key}`} target="_blank" rel="noreferrer" className="ml-1.5 text-cobalt hover:text-cobalt-deep">
+                Led by{' '}
+                {handleLink(p.key) ? (
+                  <a href={`https://github.com/${p.key}`} target="_blank" rel="noreferrer" className="text-cobalt hover:text-cobalt-deep">
                     {p.key}
                   </a>
+                ) : (
+                  p.name
                 )}
               </p>
             ))}
