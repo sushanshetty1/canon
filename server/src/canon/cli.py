@@ -212,10 +212,14 @@ def ingest_posthog(args) -> int:
         if usage.dropped:
             print("Dropped by validation:", ", ".join(f"{k} {n}" for k, n in sorted(usage.dropped.items())))
 
+    from canon.graph.privacy import handles_only
     from canon.llm import check_model
+    from canon.sources.rosters import write_rosters
     from canon.verify.conflicts import judge
     from canon.verify.supersede import link
 
+    # Who leads and belongs to each team, as facts with a source, so Ask can answer from them.
+    print("Roster facts:", write_rosters(graph, team_url="https://posthog.com/teams/{slug}"))
     print("Linked:", ", ".join(f"{k} {v}" for k, v in link(graph).items()))
     if not args.skip_extract:
         # Which current process and policy statements conflict is a question of meaning: a model reads each topic.
@@ -224,6 +228,8 @@ def ingest_posthog(args) -> int:
     _print_people(graph)
     # The pages that now say something out of date become the fix queue.
     run_fixes(graph, draft=not args.skip_extract, show=False)
+    # Canon's own text names people by their public GitHub handle; quotes stay as published.
+    print("Handles:", ", ".join(f"{k} {v}" for k, v in handles_only(graph).items()))
     return 0
 
 
