@@ -1,14 +1,24 @@
 """Sign-in, the signed-in user, workspaces, and the jobs that fill them.
 
 - `GET /auth/github?next=/app` sends the browser to GitHub with a random state, also kept in a short-lived cookie.
-- `GET /auth/callback` checks the two match (so another site cannot finish a sign-in for you), trades the code for
-  a token, reads the profile, stores the user with the token sealed, and sets the session cookie.
+  It asks for `read:user public_repo`: the profile, and public repositories (to file the issues a user approves).
+- `GET /auth/github?access=private&next=/app/new` is the separate step that connects private and organisation
+  repositories: the same flow, asking for `read:user repo read:org`. GitHub offers OAuth apps no read-only scope
+  for private repositories, so `repo` it is; Canon only reads with it.
+- `GET /auth/callback` checks the state matches the cookie (so another site cannot finish a sign-in for you), trades
+  the code for a token, reads the profile, stores the user with the token sealed and the scopes GitHub granted
+  (the token response's `scope`), and sets the session cookie.
 - `POST /auth/logout` clears the session.
 - `GET /auth/dev-login?login=dev&next=/app` signs in without GitHub, only with `CANON_DEV_LOGIN=1` outside prod.
-- `GET /api/me` is the signed-in user (or null) and which ways to sign in this server offers.
+- `GET /api/me` is the signed-in user (or null), whether their token reads private repositories, and which ways to
+  sign in this server offers.
+- `GET /api/github/repos?q=&owner=&page=` is a page of the user's repositories, grouped by owner, read from GitHub
+  with the user's token on the server.
 - `GET /api/workspaces` lists the public workspaces and the user's own; `POST /api/workspaces {repo}` makes one from
-  a public GitHub repository and starts reading it.
-- `POST /api/w/{ws}/sync` reads what changed since the last run; `GET /api/w/{ws}/jobs/latest` is the last job.
+  a repository the user's token can read (public, private or an organisation's) and starts reading it. Asking again
+  for a workspace the user already belongs to opens it.
+- `POST /api/w/{ws}/sync` reads what changed since the last run, with the token of a member who can still read the
+  repository; `GET /api/w/{ws}/jobs/latest` is the last job.
 """
 
 import hmac
@@ -20,9 +30,9 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
-from canon.cloud import crypto, session
+from canon.cloud import crypto, repos, session
 from canon.cloud.access import require_member, require_user
-from canon.cloud.accounts import LimitReached
+from canon.cloud.accounts import LimitReached, reads_private
 from canon.cloud.session import cloud_of, current_user
 
 log = logging.getLogger("canon.auth")
@@ -31,7 +41,9 @@ router = APIRouter()
 STATE_COOKIE = "canon_oauth_state"
 STATE_MAX_AGE = 600
 DEFAULT_NEXT = "/app"
-SCOPE = "read:user public_repo"
+SCOPE = "read:user public_repo"  # sign-in
+PRIVATE_SCOPE = "read:user repo read:org"  # connect private and organisation repositories
+MODES = {"signin": SCOPE, "private": PRIVATE_SCOPE}
 AUTHORIZE_URL = "https://github.com/login/oauth/authorize"
 TOKEN_URL = "https://github.com/login/oauth/access_token"
 API = "https://api.github.com"
@@ -61,37 +73,54 @@ def _set_session(cloud, request: Request, resp, user_id: str) -> None:
     )
 
 
+def _with(next_path: str, flag: str) -> str:
+    return f"{next_path}{'&' if '?' in next_path else '?'}{flag}"
+
+
 def _failed(next_path: str) -> RedirectResponse:
-    sep = "&" if "?" in next_path else "?"
-    return RedirectResponse(f"{next_path}{sep}signin=failed", status_code=302)
+    return RedirectResponse(_with(next_path, "signin=failed"), status_code=302)
+
+
+def _state_cookie(value: str) -> tuple[str, str, str]:
+    """(state, mode, next path) from the state cookie `<state>.<mode>.<quoted next>`. A cookie set before modes
+    existed is `<state>.<quoted next>`: a quoted path starts with `%2F`, never with a mode's name."""
+    expected, _, rest = value.partition(".")
+    mode, dot, encoded = rest.partition(".")
+    if not dot or mode not in MODES:
+        mode, encoded = "signin", rest
+    return expected, mode, safe_next(unquote(encoded))
 
 
 # ----- sign-in ---------------------------------------------------------------------------------------------------
 
 
 @router.get("/auth/github")
-def github_login(request: Request, next: str | None = None):
+def github_login(request: Request, next: str | None = None, access: str | None = None):
+    """Sign in (`read:user public_repo`), or with `access=private` connect private and organisation repositories
+    (`read:user repo read:org`)."""
     cloud = cloud_of(request)
     if not cloud.config.signin:
         return JSONResponse(status_code=503, content={"detail": "GitHub sign-in is not set up on this server."})
-    state = secrets.token_urlsafe(24)
+    mode = "private" if access == "private" else "signin"
+    state = secrets.token_urlsafe(24)  # URL-safe base64: never contains the cookie's dots
     query = urlencode({
         "client_id": cloud.config.github_client_id,
         "redirect_uri": f"{_base(cloud, request)}/auth/callback",
-        "scope": SCOPE,
+        "scope": MODES[mode],
         "state": state,
         "allow_signup": "true",
     })
     resp = RedirectResponse(f"{AUTHORIZE_URL}?{query}", status_code=302)
-    # The return path rides along in the state cookie; it is checked again on the way back.
+    # The mode and the return path ride along in the state cookie; the path is checked again on the way back.
     resp.set_cookie(
-        STATE_COOKIE, f"{state}.{quote(safe_next(next), safe='')}", max_age=STATE_MAX_AGE, httponly=True,
+        STATE_COOKIE, f"{state}.{mode}.{quote(safe_next(next), safe='')}", max_age=STATE_MAX_AGE, httponly=True,
         secure=_secure(cloud, request), samesite="lax", path="/",
     )
     return resp
 
 
-def _github_token_and_profile(cloud, request: Request, code: str) -> tuple[str, dict] | None:
+def _github_token_and_profile(cloud, request: Request, code: str) -> tuple[str, dict, str] | None:
+    """(token, profile, granted scopes) for an OAuth code, or None."""
     cfg = cloud.config
     try:
         with cloud.http() as client:
@@ -105,10 +134,12 @@ def _github_token_and_profile(cloud, request: Request, code: str) -> tuple[str, 
                 },
                 headers={"Accept": "application/json"},
             )
-            token = r.json().get("access_token") if r.status_code == 200 else None
+            body = r.json() if r.status_code == 200 else {}
+            token = body.get("access_token") if isinstance(body, dict) else None
             if not token:
                 log.warning("canon: GitHub token exchange failed (%s)", r.status_code)
                 return None
+            scopes = str(body.get("scope") or "")  # what the user granted, which can differ from what was asked
             r = client.get(f"{API}/user", headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"})
             profile = r.json() if r.status_code == 200 else None
     except Exception as e:
@@ -116,7 +147,7 @@ def _github_token_and_profile(cloud, request: Request, code: str) -> tuple[str, 
         return None
     if not isinstance(profile, dict) or not isinstance(profile.get("id"), int) or not profile.get("login"):
         return None
-    return token, profile
+    return token, profile, scopes
 
 
 @router.get("/auth/callback")
@@ -124,9 +155,7 @@ def github_callback(request: Request, code: str = "", state: str = ""):
     cloud = cloud_of(request)
     if not cloud.config.signin:
         return JSONResponse(status_code=503, content={"detail": "GitHub sign-in is not set up on this server."})
-    stored = request.cookies.get(STATE_COOKIE) or ""
-    expected, _, encoded_next = stored.partition(".")
-    next_path = safe_next(unquote(encoded_next))
+    expected, mode, next_path = _state_cookie(request.cookies.get(STATE_COOKIE) or "")
     if not expected or not state or not hmac.compare_digest(expected.encode(), state.encode()):
         return JSONResponse(status_code=400, content={"detail": "The sign-in state does not match. Sign in again."})
     got = _github_token_and_profile(cloud, request, code) if code else None
@@ -134,8 +163,10 @@ def github_callback(request: Request, code: str = "", state: str = ""):
         resp = _failed(next_path)
         resp.delete_cookie(STATE_COOKIE, path="/")
         return resp
-    token, profile = got
-    user_id = cloud.accounts().upsert_github_user(profile, crypto.seal(token, cloud.config.secret))
+    token, profile, scopes = got
+    user_id = cloud.accounts().upsert_github_user(profile, crypto.seal(token, cloud.config.secret), scopes)
+    if mode == "private" and not reads_private(cloud.accounts().user(user_id)["scopes"]):
+        next_path = _with(next_path, "connect=incomplete")  # the user unticked a scope on GitHub's page
     resp = RedirectResponse(next_path, status_code=302)
     resp.delete_cookie(STATE_COOKIE, path="/")
     _set_session(cloud, request, resp, user_id)
@@ -166,10 +197,30 @@ def me(request: Request) -> dict:
     cloud = cloud_of(request)
     user = current_user(request)
     return {
-        "user": {"login": user.login, "name": user.name, "dev": user.dev} if user else None,
+        "user": {"login": user.login, "name": user.name, "dev": user.dev, "private_repos": user.reads_private} if user else None,
         "signin": cloud.config.signin,
         "dev_login": cloud.config.dev_login and cloud.config.sessions,
+        "app_access_url": repos.app_access_url(cloud) if cloud.config.signin else None,
     }
+
+
+# ----- the user's repositories ------------------------------------------------------------------------------------
+
+
+@router.get("/api/github/repos")
+def github_repos(request: Request, q: str = "", owner: str = "", page: int = 1, refresh: bool = False):
+    """A page of the signed-in user's repositories. GitHub is called here with the user's token; the browser only
+    ever sees the list."""
+    cloud = cloud_of(request)
+    user = require_user(request)
+    base = {"connected": bool(user.token), "private": user.reads_private, "login": user.login, "truncated": False}
+    if not user.token:
+        return {**base, **repos.repo_page([], user.login)}
+    try:
+        rows, truncated = repos.user_repos(cloud, user, refresh=refresh)
+    except repos.Refusal as e:
+        return e.response()
+    return {**base, "truncated": truncated, **repos.repo_page(rows, user.login, q=q[:100], owner=owner[:40], page=page)}
 
 
 # ----- workspaces ------------------------------------------------------------------------------------------------
@@ -200,7 +251,7 @@ def suggestions(graph) -> list[str]:
 
 
 def _workspace_view(cloud, w: dict, *, with_job: bool) -> dict:
-    view = {k: w[k] for k in ("slug", "name", "repo", "public", "role")}
+    view = {k: w[k] for k in ("slug", "name", "repo", "public", "role", "private")}
     if with_job:
         graph = cloud.graph(w["slug"])
         view["job"] = cloud.jobs().latest(w["slug"])
@@ -214,28 +265,10 @@ def list_workspaces(request: Request) -> dict:
     accounts = cloud.accounts()
     user = current_user(request)
     public = [_workspace_view(cloud, w, with_job=False) for w in accounts.public_workspaces()]
+    if user:
+        accounts.claim_invites(user.id)  # an invite made while they were signed in shows up without signing in again
     own = [_workspace_view(cloud, w, with_job=True) for w in accounts.workspaces_of(user.id)] if user else []
     return {"public": public, "own": own}
-
-
-def _check_repo(cloud, repo: str, token: str | None) -> dict:
-    """The repository's API record when it exists and is public; else a 422 saying why."""
-    headers = {"Accept": "application/vnd.github+json", "User-Agent": "canon"}
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-    try:
-        with cloud.http() as client:
-            r = client.get(f"{API}/repos/{repo}", headers=headers)
-    except Exception:
-        raise HTTPException(502, "GitHub could not be reached. Try again in a moment.") from None
-    if r.status_code == 404:
-        raise HTTPException(422, f"GitHub has no public repository called {repo}.")
-    if r.status_code != 200:
-        raise HTTPException(502, "GitHub did not answer. Try again in a moment.")
-    body = r.json()
-    if body.get("private"):
-        raise HTTPException(422, "Canon reads public repositories only.")
-    return body
 
 
 def _start(cloud, slug: str, repo: str, kind: str, token: str | None) -> dict | None:
@@ -268,26 +301,40 @@ def _real_ingest(graph, repo: str, token: str | None, report) -> dict:
     )
 
 
-@router.post("/api/workspaces")
-def create_workspace(request: Request, body: NewWorkspace):
-    from canon.sources.repo import parse_repo
-
-    cloud = cloud_of(request)
-    user = require_user(request)
-    repo = parse_repo(body.repo)
-    if repo is None:
-        raise HTTPException(422, "Give a repository as owner/name, like cli/cli.")
-    meta = _check_repo(cloud, repo, user.token)
-    repo = meta.get("full_name") or repo  # GitHub's own spelling
-    try:
-        workspace, created = cloud.accounts().create_workspace(user.id, repo)
-    except LimitReached as e:
-        raise HTTPException(409, str(e)) from None
-    job = _start(cloud, workspace["slug"], repo, "create", user.token) if created else cloud.jobs().latest(workspace["slug"])
+def _opened(cloud, workspace: dict, job, created: bool) -> JSONResponse:
     return JSONResponse(
         status_code=201 if created else 200,
         content={"workspace": _workspace_view(cloud, workspace, with_job=False), "job": job, "created": created},
     )
+
+
+@router.post("/api/workspaces")
+def create_workspace(request: Request, body: NewWorkspace):
+    """Make a workspace from a repository the user's token can read, or open the one they already belong to."""
+    from canon.sources.repo import parse_repo
+
+    cloud = cloud_of(request)
+    user = require_user(request)
+    accounts = cloud.accounts()
+    repo = parse_repo(body.repo)
+    # A retry, a second click or the workspace's own slug opens the workspace the user already belongs to, before
+    # GitHub is asked anything: GitHub's answer can change (a rate limit, a lapsed grant) but membership has not.
+    existing = accounts.find_own(user.id, repo or body.repo)
+    if existing:
+        return _opened(cloud, existing, cloud.jobs().latest(existing["slug"]), False)
+    if repo is None:
+        raise HTTPException(422, "Give a repository as owner/name, like cli/cli.")
+    try:
+        meta = repos.check_repo(cloud, repo, user)
+    except repos.Refusal as e:
+        return e.response()
+    repo = meta.get("full_name") or repo  # GitHub's own spelling
+    try:
+        workspace, created = accounts.create_workspace(user.id, repo, private=bool(meta.get("private")))
+    except LimitReached as e:
+        raise HTTPException(409, str(e)) from None
+    job = _start(cloud, workspace["slug"], repo, "create", user.token) if created else cloud.jobs().latest(workspace["slug"])
+    return _opened(cloud, workspace, job, created)
 
 
 @router.post("/api/w/{ws}/sync")
@@ -297,7 +344,11 @@ def sync(request: Request, ws: str):
     workspace = cloud.accounts().workspace(ws)
     if not workspace or not workspace["repo"]:
         raise HTTPException(409, "This workspace has no repository to sync.")
-    job = _start(cloud, ws, workspace["repo"], "sync", user.token)
+    try:
+        token = repos.reader_token(cloud, ws, workspace["repo"], user, private=workspace["private"])
+    except repos.Refusal as e:
+        return e.response()
+    job = _start(cloud, ws, workspace["repo"], "sync", token)
     if job is None:
         raise HTTPException(409, "A sync is already running.")
     return {"job": job}

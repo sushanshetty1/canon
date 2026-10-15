@@ -205,6 +205,8 @@ def test_load_repo_builds_one_batch():
         ("github.com/pallets/flask.git", "pallets/flask"),
         ("https://github.com/cli/cli/tree/trunk/docs", "cli/cli"),
         ("  owner/name.js  ", "owner/name.js"),
+        ("git@github.com:PostHog/posthog.git", "PostHog/posthog"),
+        ("ssh://git@github.com/cli/cli.git", "cli/cli"),
         ("not a repo", None),
         ("../etc", None),
         ("a/..", None),
@@ -283,6 +285,47 @@ def test_since_reads_only_changed_docs_and_notices_deleted_ones(local_source):
     assert [d["path"] for d in docs] == ["docs/guide.md"]
     assert [c["handle"] for c in docs[0]["commits"]] == ["carol", "alice"]
     assert src.removed == ["docs/old.md"]
+
+
+def test_git_sends_the_token_as_a_header_and_never_stores_it(local_source, tmp_path, monkeypatch):
+    import base64
+
+    _, origin = local_source
+    token = "gho_privateTOKEN123"
+    encoded = base64.b64encode(f"x-access-token:{token}".encode()).decode()
+    runs = []
+    real = subprocess.run
+
+    def recording(args, **kwargs):
+        runs.append((list(args), dict(kwargs.get("env") or {})))
+        return real(args, **kwargs)
+
+    monkeypatch.setattr(gh.subprocess, "run", recording)
+    dest = tmp_path / "clone" / "git"
+    with gh.git_token(token):
+        gh.clone(f"file://{origin}", dest, sparse=["*.md", "/.github/CODEOWNERS"])
+        head = gh.pull(dest)
+        assert "core team" in gh.show(dest, head, "docs/guide.md")
+    assert runs and all(token not in " ".join(args) and encoded not in " ".join(args) for args, _ in runs)
+    for _, env in runs:
+        assert env["GIT_TERMINAL_PROMPT"] == "0"  # never waits for a password
+        assert env["GIT_CONFIG_KEY_0"] == "http.https://github.com/.extraheader"  # sent to github.com only
+        assert env["GIT_CONFIG_VALUE_0"] == f"Authorization: Basic {encoded}"
+    # Nothing under .git holds the token: not the remote URL, not the config, not a log.
+    for f in (dest / ".git").rglob("*"):
+        if f.is_file():
+            data = f.read_bytes()
+            assert token.encode() not in data and encoded.encode() not in data, f
+    assert "github.com" not in gh.git(dest, "config", "--local", "--list")
+    # Outside the block git runs with no token.
+    assert "GIT_CONFIG_COUNT" not in gh.git_env()
+
+    # The live source reads under its own token: a blob-less clone fetches old versions as it reads them.
+    src = RepoSource("acme/app", tmp_path / "clone", token=token)
+    src._emails, src.head = {}, head
+    runs.clear()
+    assert [d["path"] for d in src("docs")] == ["docs/guide.md", "docs/old.md"]
+    assert runs and all(env.get("GIT_CONFIG_VALUE_0") == f"Authorization: Basic {encoded}" for _, env in runs)
 
 
 # ----- ingest, first run and sync ----------------------------------------------------------------------------------
