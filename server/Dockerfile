@@ -23,6 +23,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable
 
 FROM ${PYTHON_IMAGE} AS runtime
+# git reads a workspace's repository: its docs, their history and CODEOWNERS.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 RUN groupadd --system --gid 10001 canon \
  && useradd --system --uid 10001 --gid canon --create-home --home-dir /home/canon canon
 
