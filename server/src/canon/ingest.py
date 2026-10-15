@@ -393,6 +393,10 @@ def ingest_repo(
         return build(graph, records, pull_rows(graph), model=model) if records else {}
 
     done = finish(graph, check=check, report=report, counts=read, decisions=decisions)
+    # Who knows each area and its bus factor, from the activity just written.
+    from canon.people import recompute
+
+    done["people"] = recompute(graph)
     graph.query(
         "MERGE (s:Source {repo: $repo}) SET s.head = $head, s.synced_at = $at",
         {"repo": repo, "head": head, "at": started},

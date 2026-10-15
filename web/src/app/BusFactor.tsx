@@ -93,7 +93,7 @@ function Flow({ area, index, compact }: { area: AreaSummary; index: number; comp
   const reduce = !!useReducedMotion()
   const run = seen || reduce
   const later = (t: number) => (reduce ? 0 : t)
-  const { drawn, pages, height, hidden } = plan(area, compact ? 3 : 5, compact ? 5 : 7, compact ? 22 : 30, compact ? 11 : 13)
+  const { drawn, pages, height, hidden } = plan(area, compact ? 3 : 5, compact ? 5 : 7, compact ? 22 : 30, compact ? 13 : 15.5)
 
   const src = { x: 11, y: height / 2 }
   const x1 = compact ? width * 0.42 : Math.max(110, Math.min(190, width * 0.3)) // documents
@@ -231,7 +231,7 @@ function Flow({ area, index, compact }: { area: AreaSummary; index: number; comp
                     {name}
                     <tspan fill="var(--faint)" fontWeight="450" fontSize="12.5">
                       {'  '}
-                      {plural(d.person.docs, 'document')}
+                      {width < 420 ? d.person.docs : plural(d.person.docs, 'document')}
                     </tspan>
                   </text>
                 )}
@@ -271,7 +271,7 @@ function Row({ area, index, compact }: { area: AreaSummary; index: number; compa
           e.preventDefault()
           navigate(href)
         }}
-        className="group grid grid-cols-[30px_minmax(0,1fr)_118px] items-center gap-x-3 rounded-[16px] px-1 py-4 transition-colors hover:bg-paper-2/70 focus-visible:bg-paper-2 focus-visible:outline-none sm:grid-cols-[64px_minmax(180px,240px)_minmax(0,1fr)] sm:gap-x-6 sm:rounded-[18px] sm:px-4 sm:py-5"
+        className="group grid grid-cols-[30px_minmax(0,1fr)] items-center gap-x-3 gap-y-3 rounded-[16px] px-1 py-4 transition-colors hover:bg-paper-2/70 focus-visible:bg-paper-2 focus-visible:outline-none sm:grid-cols-[64px_minmax(180px,240px)_minmax(0,1fr)] sm:gap-x-6 sm:rounded-[18px] sm:px-4 sm:py-5"
       >
         <span className={`font-display text-[34px] leading-none font-semibold tracking-[-0.05em] tabular-nums sm:text-[52px] ${one ? 'text-proof' : 'text-ink'}`}>
           {area.bus_factor}
@@ -292,8 +292,8 @@ function Row({ area, index, compact }: { area: AreaSummary; index: number; compa
             )}
           </span>
         </span>
-        <span className="min-w-0">
-          <Flow area={area} index={index} compact={compact} />
+        <span className="col-span-2 min-w-0 sm:col-span-1">
+          <Flow area={area} index={index} compact={false} />
           {!compact && area.hinges_on.length > 0 && (
             <span className="mt-2 block text-[13px] leading-snug text-muted">
               Hinges on{' '}
