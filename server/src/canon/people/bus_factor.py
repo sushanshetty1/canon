@@ -49,6 +49,7 @@ MIN_SCORE = 3.0  # about one pull request authored this half year
 SHARE = 0.25  # of the area's top KNOWS score
 SINK = "knowledge"
 WIDE = 1_000_000  # a document reaches all its people; its own edge from the area is the limit
+FLOW_TIMEOUT_MS = 120_000
 
 
 @dataclass(frozen=True)
@@ -117,7 +118,8 @@ RETURN [e IN edges | id(e)], edgeFlows, maxFlow
 
 def max_flow(graph, source: int, sink: str = SINK) -> tuple[float, dict[int, float]]:
     """`algo.maxFlow` from a node to the sink: the flow's value, and the flow on each edge that carries some."""
-    rows = graph.query(MAX_FLOW, {"source": source, "sink": sink}).result_set
+    # The flow over a busy area's thousands of documents takes a few seconds, past the server's default limit.
+    rows = graph.query(MAX_FLOW, {"source": source, "sink": sink}, timeout=FLOW_TIMEOUT_MS).result_set
     if not rows:
         return 0.0, {}
     ids, flows, value = rows[0]

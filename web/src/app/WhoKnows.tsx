@@ -620,7 +620,7 @@ export function WhoKnows({ ws }: { ws: Workspace }) {
                   {area.owners.length ? <>Owned by {area.owners.map((o) => o.name).join(' and ')}. </> : null}
                   {area.bus_factor > 0 ? (
                     <>
-                      {area.bus_factor === 1 ? 'One person' : `${area.bus_factor} people`} could answer for it today.{' '}
+                      {area.bus_factor === 1 ? 'One person' : `${area.bus_factor} people`} {area.bus_factor === 1 ? 'holds' : 'hold'} it through work of their own.{' '}
                       <a
                         href={ROUTES.busFactor}
                         onClick={(e) => {

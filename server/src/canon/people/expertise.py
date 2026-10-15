@@ -38,12 +38,13 @@ def _day_expr(expr: str) -> str:
     )
 
 
-# The documents about each area: linked directly, or through facts their passages state.
+# The documents about an area: linked directly, or through facts their passages state. One area per query keeps
+# each query small on a workspace with tens of thousands of pull requests.
 AREA_DOCS = """
 CALL {
-  MATCH (d:Document)-[:ABOUT]->(a:Area) RETURN d, a
+  MATCH (d:Document)-[:ABOUT]->(a:Area {slug: $area}) RETURN d, a
   UNION
-  MATCH (a:Area)<-[:ABOUT]-(:Fact)-[:STATED_IN]->(:Passage)<-[:HAS]-(d:Document)
+  MATCH (a:Area {slug: $area})<-[:ABOUT]-(:Fact)-[:STATED_IN]->(:Passage)<-[:HAS]-(d:Document)
   WHERE d.kind <> 'ownership_map'
   RETURN d, a
 }
@@ -116,7 +117,8 @@ def compute(graph, *, today: str | None = None) -> dict[str, int]:
         "run": time.time_ns(),
     }
     one = lambda q: graph.query(q, params).result_set[0][0]  # noqa: E731
-    from_activity = one(ACTIVITY)
+    areas = [r[0] for r in graph.query("MATCH (a:Area) RETURN a.slug").result_set]
+    from_activity = sum(graph.query(ACTIVITY, {**params, "area": a}).result_set[0][0] for a in areas)
     from_membership = one(MEMBERS)
     written = one(EVIDENCE)
     removed = one(PRUNE)

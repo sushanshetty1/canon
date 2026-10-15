@@ -347,7 +347,7 @@ function Spread({ areas }: { areas: AreaSummary[] }) {
 }
 
 /** How to read a row, drawn small: the area, documents, people, and the cut. */
-function Key() {
+function Key({ shared }: { shared: boolean }) {
   return (
     <ul className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13.5px] text-muted">
       <li className="flex items-center gap-2">
@@ -368,12 +368,14 @@ function Key() {
         </svg>
         Counted
       </li>
-      <li className="flex items-center gap-2">
-        <svg viewBox="0 0 14 14" className="size-3.5" aria-hidden="true">
-          <circle cx="7" cy="7" r="5.5" fill="var(--paper)" stroke="var(--line-strong)" strokeWidth="1.6" />
-        </svg>
-        Knows it only through work another holds
-      </li>
+      {shared && (
+        <li className="flex items-center gap-2">
+          <svg viewBox="0 0 14 14" className="size-3.5" aria-hidden="true">
+            <circle cx="7" cy="7" r="5.5" fill="var(--paper)" stroke="var(--line-strong)" strokeWidth="1.6" />
+          </svg>
+          Knows it only through work another holds
+        </li>
+      )}
       <li className="flex items-center gap-2">
         <svg viewBox="0 0 22 10" className="h-2.5 w-[22px]" aria-hidden="true">
           <path d="M1 5 H21" stroke="var(--proof)" strokeWidth="2" strokeDasharray="4 3" strokeLinecap="round" />
@@ -465,7 +467,7 @@ export function BusFactor({ ws }: { ws: Workspace }) {
               <Spread areas={risky} />
             </div>
             <div className="mt-8">
-              <Key />
+              <Key shared={risky.some((a) => a.network.some((p) => !p.via))} />
             </div>
 
             <ol className="mt-8 divide-y divide-line border-y border-line">
