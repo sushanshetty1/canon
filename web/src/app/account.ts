@@ -3,9 +3,24 @@
 import { useCallback, useEffect, useState } from 'react'
 
 export type Me = {
-  user: { login: string; name: string; dev: boolean } | null
+  user: { login: string; name: string; dev: boolean; private_repos?: boolean } | null
   signin: boolean
   dev_login: boolean
+  /** Where on GitHub a user grants or requests Canon's access to an organisation. */
+  app_access_url?: string | null
+}
+
+/** An error from the API, with the server's short reason and a link that fixes it, when it gave them. */
+export class ApiError extends Error {
+  status: number
+  reason: string | null
+  link: string | null
+  constructor(message: string, status: number, reason: string | null = null, link: string | null = null) {
+    super(message)
+    this.status = status
+    this.reason = reason
+    this.link = link
+  }
 }
 
 export type Job = {
@@ -27,8 +42,46 @@ export type ServerWorkspace = {
   repo: string | null
   public: boolean
   role: string | null
+  /** Made from a private repository. */
+  private?: boolean
   job?: Job | null
   suggestions?: string[]
+}
+
+export type Repo = {
+  full_name: string
+  owner: string
+  owner_kind: 'user' | 'org'
+  name: string
+  private: boolean
+  description: string
+  pushed_at: string | null
+  archived: boolean
+}
+
+export type RepoOwner = { login: string; kind: 'user' | 'org'; count: number }
+
+export type RepoList = {
+  connected: boolean
+  private: boolean
+  login: string
+  truncated: boolean
+  owners: RepoOwner[]
+  groups: { owner: string; kind: 'user' | 'org'; you: boolean; repos: Repo[] }[]
+  page: number
+  pages: number
+  total: number
+  size: number
+}
+
+export type Member = { login: string; name: string; role: 'owner' | 'member'; you: boolean }
+
+export type Members = {
+  role: 'owner' | 'member' | null
+  private: boolean
+  repo: string | null
+  members: Member[]
+  invites: { login: string; at: string | null }[]
 }
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
@@ -41,13 +94,17 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   }
   if (!res.ok) {
     let detail = ''
+    let reason: string | null = null
+    let link: string | null = null
     try {
       const body = await res.json()
       detail = typeof body?.detail === 'string' ? body.detail : ''
+      reason = typeof body?.reason === 'string' ? body.reason : null
+      link = typeof body?.link === 'string' && body.link.startsWith('https://github.com/') ? body.link : null
     } catch {
       // not JSON
     }
-    throw new Error(detail || (res.status === 401 ? 'Sign in first.' : 'Canon could not do that. Try again in a moment.'))
+    throw new ApiError(detail || (res.status === 401 ? 'Sign in first.' : 'Canon could not do that. Try again in a moment.'), res.status, reason, link)
   }
   return (await res.json()) as T
 }
@@ -60,6 +117,18 @@ export const syncWorkspace = (ws: string) => call<{ job: Job }>(`/api/w/${encode
 export const latestJob = (ws: string, signal?: AbortSignal) => call<{ job: Job | null }>(`/api/w/${encodeURIComponent(ws)}/jobs/latest`, { signal })
 export const signOut = () => call<{ ok: boolean }>('/auth/logout', { method: 'POST' })
 
+export function listRepos({ q = '', owner = '', page = 1 }: { q?: string; owner?: string; page?: number }, signal?: AbortSignal) {
+  const query = new URLSearchParams({ q, owner, page: String(page) })
+  return call<RepoList>(`/api/github/repos?${query}`, { signal })
+}
+
+const membersPath = (ws: string) => `/api/w/${encodeURIComponent(ws)}/members`
+export const getMembers = (ws: string, signal?: AbortSignal) => call<Members>(membersPath(ws), { signal })
+export const inviteMember = (ws: string, login: string) =>
+  call<Members & { status: 'invited' | 'member'; login: string }>(membersPath(ws), { method: 'POST', body: JSON.stringify({ login }) })
+export const removeMember = (ws: string, login: string) =>
+  call<Members | { left: true }>(`${membersPath(ws)}/${encodeURIComponent(login)}`, { method: 'DELETE' })
+
 /** Where sign-in goes, and comes back to. */
 export function signInUrl(me: Me | null, next = window.location.pathname): string | null {
   if (!me) return null
@@ -67,6 +136,12 @@ export function signInUrl(me: Me | null, next = window.location.pathname): strin
   if (me.signin) return `/auth/github?next=${back}`
   if (me.dev_login) return `/auth/dev-login?next=${back}`
   return null
+}
+
+/** The second GitHub step: connect private and organisation repositories (`repo read:org`). */
+export function connectUrl(me: Me | null, next = '/app/new'): string | null {
+  if (!me?.signin) return null
+  return `/auth/github?access=private&next=${encodeURIComponent(next)}`
 }
 
 export function useMe() {

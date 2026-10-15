@@ -17,7 +17,7 @@ from canon.cloud.crypto import unseal
 API = "https://api.github.com"
 LIST_TTL = 120.0
 LIST_PAGES = 5  # at most 500 repositories, most recently pushed first
-PAGE_SIZE = 20
+PAGE_SIZE = 15
 AFFILIATION = "owner,collaborator,organization_member"
 
 
@@ -146,7 +146,7 @@ def repo_page(rows: list[dict], login: str, *, q: str = "", owner: str = "", pag
         if not groups or groups[-1]["owner"] != r["owner"]:
             groups.append({"owner": r["owner"], "kind": r["owner_kind"], "you": r["owner"] == login, "repos": []})
         groups[-1]["repos"].append(r)
-    return {"owners": owners, "groups": groups, "page": page, "pages": pages, "total": len(found)}
+    return {"owners": owners, "groups": groups, "page": page, "pages": pages, "total": len(found), "size": size}
 
 
 # ----- one repository ----------------------------------------------------------------------------------------------

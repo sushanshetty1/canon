@@ -1,12 +1,44 @@
-// New workspace from GitHub: name a public repository, then watch it read into a graph of its own.
+// New workspace from GitHub: pick one of your repositories or name any you can read (public, private or an
+// organisation's), then watch it read into a graph of its own.
 
-import { ArrowRight, GithubLogo } from '@phosphor-icons/react'
+import { ArrowRight, ArrowUpRight, GithubLogo } from '@phosphor-icons/react'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { createWorkspace, signInUrl, syncWorkspace, useJob, type Job, type Me } from './account'
+import { ApiError, connectUrl, createWorkspace, signInUrl, syncWorkspace, useJob, type Job, type Me } from './account'
 import { IngestDrawing, Legend } from './IngestDrawing'
+import { RepoPicker } from './RepoPicker'
 import { plural } from './text'
-import type { Workspace } from './workspaces'
+import { fromServer, type Workspace } from './workspaces'
+
+/** Why a repository was refused, and the one link that fixes it: GitHub's access page for an organisation that
+ * limits OAuth apps, the second GitHub step, or signing in again. */
+function Refused({ error, me }: { error: Error; me: Me | null }) {
+  const reason = error instanceof ApiError ? error.reason : null
+  const link = error instanceof ApiError ? error.link : null
+  const action =
+    reason === 'org_restricted' && link
+      ? { href: link, label: 'Request access on GitHub', away: true }
+      : reason === 'connect' && connectUrl(me)
+        ? { href: connectUrl(me)!, label: 'Connect private and organisation repositories', away: false }
+        : reason === 'reauth' && signInUrl(me, '/app/new')
+          ? { href: signInUrl(me, '/app/new')!, label: 'Sign in again', away: false }
+          : null
+  return (
+    <div role="alert" className="mt-4 max-w-[680px]">
+      <p className="text-[16px] leading-relaxed text-proof">{error.message}</p>
+      {action && (
+        <a
+          href={action.href}
+          {...(action.away ? { target: '_blank', rel: 'noreferrer' } : {})}
+          className="mt-2 inline-flex items-center gap-1 text-[15px] font-semibold text-cobalt hover:text-cobalt-deep"
+        >
+          {action.label}
+          {action.away ? <ArrowUpRight size={13} weight="bold" /> : <ArrowRight size={13} weight="bold" />}
+        </a>
+      )}
+    </div>
+  )
+}
 
 const ease = [0.22, 1, 0.36, 1] as const
 const EXAMPLES = ['cli/cli', 'pallets/flask', 'astral-sh/ruff']
@@ -19,7 +51,7 @@ function slugFromUrl(): string | null {
   }
 }
 
-function RepoField({ me, onCreate, busy, error }: { me: Me | null; onCreate: (repo: string) => void; busy: boolean; error: string | null }) {
+function RepoField({ me, onCreate, busy, error }: { me: Me | null; onCreate: (repo: string) => void; busy: boolean; error: Error | null }) {
   const [value, setValue] = useState('')
   const field = useRef<HTMLInputElement>(null)
   const signedIn = !!me?.user
@@ -36,7 +68,7 @@ function RepoField({ me, onCreate, busy, error }: { me: Me | null; onCreate: (re
   return (
     <form onSubmit={submit}>
       <label htmlFor="repo" className="text-[15px] text-muted">
-        A public GitHub repository
+        A GitHub repository
       </label>
       <div className="mt-3 flex items-end gap-4 border-b-[1.5px] border-line-strong pb-4 transition-colors focus-within:border-ink">
         <input
@@ -61,7 +93,7 @@ function RepoField({ me, onCreate, busy, error }: { me: Me | null; onCreate: (re
           <ArrowRight size={20} weight="bold" />
         </button>
       </div>
-      {error && <p className="mt-4 text-[16px] text-proof">{error}</p>}
+      {error && <Refused error={error} me={me} />}
       {signedIn ? (
         <div className="mt-6 flex flex-col items-start gap-2.5 text-[16px] sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-7">
           <span className="text-faint">Try</span>
@@ -89,7 +121,7 @@ function RepoField({ me, onCreate, busy, error }: { me: Me | null; onCreate: (re
           ) : (
             <p className="text-[16px] text-muted">{me ? 'Sign-in is not set up on this server yet.' : ''}</p>
           )}
-          {signIn && <p className="mt-3 text-[14.5px] text-faint">A workspace belongs to the person who makes it.</p>}
+          {signIn && <p className="mt-3 text-[14.5px] text-faint">A workspace is open only to the person who makes it and the people they invite.</p>}
         </div>
       )}
     </form>
@@ -147,9 +179,10 @@ export function NewWorkspace({
   const [slug, setSlug] = useState<string | null>(slugFromUrl)
   const [repo, setRepo] = useState<string>('')
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<Error | null>(null)
   const { job, kick, setJob } = useJob(slug)
   const reduce = useReducedMotion()
+  const top = useRef<HTMLDivElement>(null)
 
   // Opened from a link with ?ws=: the repository's name comes from the workspace list.
   const known = own.find((w) => w.slug === slug)
@@ -159,17 +192,23 @@ export function NewWorkspace({
     setBusy(true)
     setError(null)
     createWorkspace(text).then(
-      ({ workspace, job }) => {
+      ({ workspace, job, created }) => {
+        setBusy(false)
+        // A workspace you already belong to (a retry, a teammate's) opens, unless it is still reading or stopped.
+        if (!created && job?.status !== 'running' && job?.status !== 'failed') {
+          onOpen(fromServer(workspace))
+          return
+        }
         setRepo(workspace.repo ?? workspace.name)
         setJob(job)
         setSlug(workspace.slug)
         window.history.replaceState(null, '', `/app/new?ws=${encodeURIComponent(workspace.slug)}`)
         onCreated()
-        setBusy(false)
       },
       (e: Error) => {
-        setError(e.message)
+        setError(e)
         setBusy(false)
+        top.current?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
       },
     )
   }
@@ -181,7 +220,7 @@ export function NewWorkspace({
         setJob(job)
         kick()
       },
-      (e: Error) => setError(e.message),
+      (e: Error) => setError(e),
     )
   }
 
@@ -191,15 +230,20 @@ export function NewWorkspace({
     <main className="slab relative flex min-w-0 flex-1 flex-col bg-paper">
       {!slug ? (
         <div className="flex flex-1 flex-col px-6 pt-10 pb-8 sm:px-12 lg:px-16">
-          <div className="mx-auto w-full max-w-[880px] pt-[10vh] pb-16 sm:pt-[16vh]">
+          <div ref={top} className="mx-auto w-full max-w-[880px] scroll-mt-6 pt-[6vh] pb-16 sm:pt-[9vh]">
             <h1 className="display text-[40px] text-balance text-ink sm:text-[56px]">New workspace from GitHub</h1>
-            <p className="mt-5 max-w-[560px] text-[17px] leading-relaxed text-pretty text-muted">
+            <p className="mt-5 max-w-[580px] text-[17px] leading-relaxed text-pretty text-muted">
               Canon reads the repository&rsquo;s Markdown docs, the history of its CODEOWNERS file, recent issues and pull requests, and its
-              contributors, into a graph of its own.
+              contributors, into a graph of its own. Only you and the people you invite can open it.
             </p>
-            <div className="mt-14">
+            <div className="mt-12">
               <RepoField me={me} onCreate={create} busy={busy} error={error} />
             </div>
+            {me?.user && (
+              <div className="mt-16">
+                <RepoPicker me={me} busy={busy} onPick={create} />
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -240,7 +284,7 @@ export function NewWorkspace({
             )}
             <Legend />
           </div>
-          {error && <p className="mt-4 text-[15px] text-proof">{error}</p>}
+          {error && <Refused error={error} me={me} />}
         </motion.div>
       )}
     </main>
