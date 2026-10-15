@@ -72,6 +72,9 @@ def main(argv: list[str] | None = None) -> int:
     ask.add_argument("question")
     ask.add_argument("--workspace", default="posthog")
 
+    people = sub.add_parser("people", help="recompute who knows each area and its bus factor")
+    people.add_argument("workspace")
+
     seed = sub.add_parser("seed", help="load the small Kestrel demo company into a workspace")
     seed.add_argument("workspace")
     seed.add_argument("--reset", action="store_true", help="delete the workspace graph first")
@@ -102,6 +105,8 @@ def main(argv: list[str] | None = None) -> int:
         counts = seed_graph(workspace_graph(db, args.workspace))
         print(f"Seeded workspace {args.workspace}: " + ", ".join(f"{k} {v}" for k, v in counts.items()))
         return 0
+    if args.command == "people":
+        return people_command(args.workspace)
     if args.command == "ask":
         import asyncio
 
@@ -190,4 +195,34 @@ def ingest_posthog(args) -> int:
     if not args.skip_extract:
         # Which current process and policy statements conflict is a question of meaning: a model reads each topic.
         print("Judged:", ", ".join(f"{k} {v}" for k, v in asyncio.run(judge(graph, check_model())).items()))
+    _print_people(graph)
+    return 0
+
+
+def _print_people(graph) -> None:
+    from canon.people import recompute
+
+    result = recompute(graph)
+    print("Expertise:", ", ".join(f"{k} {v}" for k, v in result["expertise"].items()))
+    print("Bus factor:", ", ".join(f"{k} {v}" for k, v in result["bus_factor"].items()))
+
+
+def people_command(workspace: str) -> int:
+    """Recompute expertise and bus factor for a workspace, then print the riskiest areas."""
+    from canon.graph.db import connect, workspace_graph, workspace_graph_name
+    from canon.people.bus_factor import org_view
+
+    db = connect()
+    if workspace_graph_name(workspace) not in db.list_graphs():
+        print(f"No workspace {workspace}.")
+        return 1
+    graph = workspace_graph(db, workspace)
+    _print_people(graph)
+    risky = [a for a in org_view(graph) if a["bus_factor"]][:10]
+    if risky:
+        print("\nRiskiest areas:")
+        for a in risky:
+            owners = ", ".join(t["name"] for t in a["owners"]) or "no owner"
+            people = ", ".join(p["handle"] for p in a["depends_on"])
+            print(f"  {a['bus_factor']}  {a['name']} ({owners}): {people}")
     return 0
