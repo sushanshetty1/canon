@@ -35,7 +35,9 @@ ANSWER_SCHEMA = {
 }
 
 SUPPORT_SYSTEM = """You check whether the cited text states a sentence. supported = true only if everything the
-sentence claims is stated in the cited text. Different wording is fine; added names, dates or claims are not."""
+sentence claims is stated in the cited text. Different wording is fine; added names, dates or claims are not. Short
+identifiers count as the names they abbreviate ("context-and-mcp" is the Context & MCP team). Words placing the claim
+in time ("currently", "now", "still") are not judged: one passage cannot show that nothing changed later."""
 
 SUPPORT_SCHEMA = {
     "type": "object",
