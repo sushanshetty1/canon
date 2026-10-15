@@ -12,11 +12,12 @@ import logging
 from collections.abc import Callable
 from functools import cache
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from canon.api.fixes_routes import router as fixes_router
+from canon.api.limits import Limits, client_address, replay
 from canon.api.people_routes import router as people_router
 from canon.config import settings
 from canon.graph import read
@@ -87,10 +88,11 @@ def stats(graph) -> dict:
     }
 
 
-def create_app(*, graph_for: Callable | None = None, ask_fn: Callable | None = None) -> FastAPI:
+def create_app(*, graph_for: Callable | None = None, ask_fn: Callable | None = None, limits: Limits | None = None) -> FastAPI:
     """`graph_for(slug)` returns a workspace graph or None; `ask_fn(graph, question)` yields Ask events. Both
-    default to the real ones and are injected in tests."""
+    default to the real ones and are injected in tests, as are the spend `limits`."""
     app = FastAPI(title="Canon", docs_url=None, redoc_url=None)
+    limits = limits or Limits()
     graph_for = graph_for or _default_graph
 
     def workspace(ws: str):
@@ -119,23 +121,33 @@ def create_app(*, graph_for: Callable | None = None, ask_fn: Callable | None = N
         return {"service": "canon", "graph": graph, "answers": "on" if s.anthropic_api_key else "off"}
 
     @app.post("/api/w/{ws}/ask")
-    def ask_route(ws: str, body: AskBody) -> StreamingResponse:
+    def ask_route(ws: str, body: AskBody, request: Request) -> StreamingResponse:
         graph = workspace(ws)
+        question = body.question.strip()
+        headers = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+        cached = limits.cached(ws, question)
+        if cached is not None:
+            return StreamingResponse((_sse(e) async for e in replay(cached)), media_type="text/event-stream", headers=headers)
         run = ask_fn
         if run is None:
             if not settings().anthropic_api_key:
                 raise HTTPException(503, "Answers are off: no model key is set on the server.")
             from canon.answer.ask import ask as run
+        refused = limits.refusal(client_address(request))
+        if refused:
+            raise HTTPException(429, refused)
 
         async def events():
+            seen: list[dict] = []
             try:
-                async for event in run(graph, body.question.strip()):
+                async for event in run(graph, question):
+                    seen.append(event)
                     yield _sse(event)
+                limits.store(ws, question, seen)
             except Exception:
                 log.exception("ask failed")
                 yield _sse({"type": "error", "message": "Canon could not finish this answer. Try again."})
 
-        headers = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
         return StreamingResponse(events(), media_type="text/event-stream", headers=headers)
 
     @app.get("/api/w/{ws}/facts/{fact_id}")

@@ -81,3 +81,25 @@ def test_stats(graph):
     body = _client(graph).get("/api/w/demo/stats").json()
     assert body["labels"]["Document"] == 9 and body["labels"]["Fact"] > 0
     assert body["stale_facts"] == 1 and body["stale_pages"] == 1 and body["disputes"] == 1
+
+
+def test_ask_is_cached_and_limited(graph):
+    from fastapi.testclient import TestClient
+
+    from canon.api.app import create_app
+    from canon.api.limits import Limits
+    from canon.demo_seed import seed
+
+    seed(graph)
+    calls = []
+
+    async def fake(g, q):
+        calls.append(q)
+        yield {"type": "evidence", "facts": 1, "documents": 1}
+        yield {"type": "done", "counts": {}}
+
+    client = TestClient(create_app(graph_for=lambda ws: graph, ask_fn=fake, limits=Limits(per_hour=1, per_day=10)))
+    assert client.post("/api/w/demo/ask", json={"question": "Who owns replay?"}).status_code == 200
+    assert client.post("/api/w/demo/ask", json={"question": "who owns replay"}).status_code == 200  # cached
+    assert calls == ["Who owns replay?"]
+    assert client.post("/api/w/demo/ask", json={"question": "Something new?"}).status_code == 429
