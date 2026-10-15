@@ -13,6 +13,11 @@
 
 **Try it:** [canon.sushans.dev](https://canon.sushans.dev) runs on PostHog's public handbook, design docs, issues, pull requests and forum. Ask "Which team owns the MCP server?", then open the Fix queue.
 
+<p align="center">
+  <a href="https://github.com/sushanshetty1/canon/releases/tag/demo-video"><img alt="Watch the 2:41 demo" src="assets/readme/video-poster.jpg" width="100%"></a>
+  <br><sub><a href="https://github.com/sushanshetty1/canon/releases/tag/demo-video">Watch the demo (2:41)</a></sub>
+</p>
+
 Every company-brain tool today can find text and cite it. None of them checks whether what it cites is still true. A handbook page that says the PostHog AI team owns the MCP server, written after ownership moved, gets quoted with a confident citation. Canon was built so that does not happen.
 
 <p align="center">
