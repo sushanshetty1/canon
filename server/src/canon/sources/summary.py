@@ -44,12 +44,6 @@ WITH coalesce(d.kind, '') AS kind, x
 RETURN kind, count(DISTINCT x)
 """
 DECISIONS = "MATCH (d:Decision) WITH coalesce(d.status, '') AS status RETURN status, count(*)"
-ROSTER = """
-MATCH (f:Fact) WHERE f.predicate IN ['member_of', 'leads']
-OPTIONAL MATCH (f)-[s:SUPERSEDED_BY]->(:Fact)
-WITH f, min(CASE WHEN f.valid_to IS NULL AND s IS NULL THEN 1 ELSE 0 END) AS now
-RETURN count(f), sum(now)
-"""
 OWNED = """
 MATCH (a:Area)<-[:ABOUT]-(f:Fact {predicate: 'owned_by'}) WHERE f.valid_to IS NULL AND NOT (f)-[:SUPERSEDED_BY]->()
 RETURN count(DISTINCT a)
@@ -119,9 +113,7 @@ def summary(graph) -> dict:
     families["decisions"]["statuses"] = statuses
     families["code_owners"]["areas"] = (_one(graph, OWNED) or [0])[0]
 
-    roster = _one(graph, ROSTER) or [0, 0]
     people = families["people"]
-    people["facts"], people["current_facts"] = roster[0], int(roster[1] or 0)
     people["people"] = (_one(graph, "MATCH (p:Person) RETURN count(p)") or [0])[0]
     people["teams"] = (_one(graph, "MATCH (t:Team) RETURN count(t)") or [0])[0]
     people["speakers"] = (_one(graph, "MATCH (p:Person)-[:SAID]->(:Passage) RETURN count(DISTINCT p)") or [0])[0]

@@ -10,7 +10,7 @@ export type Me = {
 
 export type Job = {
   id: string
-  kind: 'create' | 'sync'
+  kind: 'create' | 'sync' | 'upload'
   status: 'running' | 'done' | 'failed'
   step: string | null
   step_label: string

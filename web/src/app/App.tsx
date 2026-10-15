@@ -1,6 +1,6 @@
 // The Canon app: a slim rail on the page, and the screen on a sheet of paper beside it.
 
-import { ArrowsClockwise, Bus, CaretUpDown, Check, ClockCounterClockwise, GithubLogo, Plus, Question, Signpost, UsersThree, Wrench, type Icon } from '@phosphor-icons/react'
+import { ArrowsClockwise, Bus, CaretUpDown, Check, ClockCounterClockwise, GithubLogo, Plus, Question, Signpost, Tray, UsersThree, Wrench, type Icon } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Wordmark } from '../ui'
@@ -12,6 +12,7 @@ import { CatchUp } from './CatchUp'
 import { Decisions } from './Decisions'
 import { FixQueue } from './FixQueue'
 import { NewWorkspace } from './NewWorkspace'
+import { Sources } from './Sources'
 import { navigate, ROUTES, screenOf, usePath, type Screen } from './router'
 import { plural } from './text'
 import { WhoKnows } from './WhoKnows'
@@ -25,6 +26,7 @@ const NAV: { label: string; icon: Icon; screen?: Screen; soon?: boolean }[] = [
   { label: 'Decisions', icon: Signpost, screen: 'decisions' },
   { label: 'Catch me up', icon: ClockCounterClockwise, screen: 'catchUp' },
   { label: 'Fix queue', icon: Wrench, screen: 'fixQueue' },
+  { label: 'Sources', icon: Tray, screen: 'sources' },
 ]
 
 type Lists = { public: Workspace[]; own: Workspace[] }
@@ -222,7 +224,7 @@ function Sync({ ws, onSynced }: { ws: Workspace; onSynced: () => void }) {
     <div className="px-3 text-[13px]">
       {running ? (
         <div>
-          <p className="text-ink">{job.kind === 'create' ? 'Reading' : 'Syncing'}: {job.step_label.toLowerCase()}</p>
+          <p className="text-ink">{job.kind === 'create' ? 'Reading' : job.kind === 'upload' ? 'Reading an export' : 'Syncing'}: {job.step_label.toLowerCase()}</p>
           <div className="relative mt-2 h-[3px] overflow-hidden rounded-full bg-line" aria-hidden="true">
             <motion.div className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-ink" initial={false} animate={{ scaleX: Math.max(0.04, job.progress) }} />
           </div>
@@ -429,6 +431,7 @@ export default function CanonApp() {
           {screen === 'decisions' && <Decisions key={ws.slug} ws={ws} />}
           {screen === 'catchUp' && <CatchUp key={ws.slug} ws={ws} />}
           {screen === 'fixQueue' && <FixQueue key={ws.slug} ws={ws} />}
+          {screen === 'sources' && <Sources key={ws.slug} ws={ws} own={lists.own.some((w) => w.slug === ws.slug)} />}
         </div>
       </div>
     </div>
