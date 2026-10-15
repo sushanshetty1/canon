@@ -118,7 +118,10 @@ function Progress({ state }: { state: AskState }) {
   let label = 'Searching the graph'
   if (ev) {
     const read = `${plural(ev.facts, 'fact')} in ${plural(ev.documents, 'document')}`
-    label = ev.facts === 0 ? 'Nothing found in the graph' : finished ? `Read ${read}` : `Reading ${read}`
+    if (ev.facts > 0) label = finished ? `Read ${read}` : `Reading ${read}`
+    // An answer about the workspace itself reads its documents, not facts.
+    else if (state.sentences.length) label = `Read the workspace: ${plural(ev.documents, 'document')}`
+    else label = 'Nothing found in the graph'
   } else if (state.phase === 'error') label = 'Stopped'
 
   return (
