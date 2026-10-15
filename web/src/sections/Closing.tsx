@@ -78,7 +78,6 @@ function Stamp({ run, reduce }: { run: boolean; reduce: boolean }) {
 const colophon = [
   ['Built for', 'The FalkorDB Hackathon 2026, Track 03'],
   ['Licence', 'Open source under Apache-2.0'],
-  ['Made with', 'Claude Code as a coding assistant, disclosed in the README'],
   ['Set in', 'Funnel Display and Funnel Sans, code in JetBrains Mono'],
 ]
 
