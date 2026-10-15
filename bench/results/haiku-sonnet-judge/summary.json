@@ -1,0 +1,178 @@
+{
+  "meta": {
+    "name": "haiku-sonnet-judge",
+    "questions": 56,
+    "answer_model": "claude-haiku-5-5",
+    "check_model": "claude-haiku-5-5",
+    "judge_model": "claude-sonnet-5-5",
+    "date": "2026-10-15"
+  },
+  "canon": {
+    "all": {
+      "questions": 56,
+      "correct": 0.9821428571428571,
+      "stale_stated": 0.0,
+      "answered": 1.0,
+      "string_match": 1.0,
+      "sentences": 105,
+      "citation_support": 0.8571428571428571
+    },
+    "changed": {
+      "questions": 21,
+      "correct": 1.0,
+      "stale_stated": 0.0,
+      "answered": 1.0,
+      "string_match": 1.0,
+      "sentences": 47,
+      "citation_support": 0.851063829787234
+    },
+    "control": {
+      "questions": 6,
+      "correct": 1.0,
+      "stale_stated": 0.0,
+      "answered": 1.0,
+      "string_match": 1.0,
+      "sentences": 6,
+      "citation_support": 1.0
+    },
+    "history": {
+      "questions": 6,
+      "correct": 0.8333333333333334,
+      "stale_stated": 0.0,
+      "answered": 1.0,
+      "string_match": 1.0,
+      "sentences": 7,
+      "citation_support": 0.8571428571428571
+    },
+    "lead": {
+      "questions": 10,
+      "correct": 1.0,
+      "stale_stated": 0.0,
+      "answered": 1.0,
+      "string_match": 1.0,
+      "sentences": 10,
+      "citation_support": 1.0
+    },
+    "stale-trap": {
+      "questions": 13,
+      "correct": 1.0,
+      "stale_stated": 0.0,
+      "answered": 1.0,
+      "string_match": 1.0,
+      "sentences": 35,
+      "citation_support": 0.8
+    }
+  },
+  "baseline": {
+    "all": {
+      "questions": 56,
+      "correct": 0.9464285714285714,
+      "stale_stated": 0.017857142857142856,
+      "answered": 0.9821428571428571,
+      "string_match": 0.9285714285714286,
+      "sentences": 111,
+      "citation_support": 0.8198198198198198
+    },
+    "changed": {
+      "questions": 21,
+      "correct": 1.0,
+      "stale_stated": 0.0,
+      "answered": 1.0,
+      "string_match": 0.9047619047619048,
+      "sentences": 49,
+      "citation_support": 0.7959183673469388
+    },
+    "control": {
+      "questions": 6,
+      "correct": 1.0,
+      "stale_stated": 0.0,
+      "answered": 1.0,
+      "string_match": 1.0,
+      "sentences": 6,
+      "citation_support": 1.0
+    },
+    "history": {
+      "questions": 6,
+      "correct": 1.0,
+      "stale_stated": 0.0,
+      "answered": 1.0,
+      "string_match": 1.0,
+      "sentences": 13,
+      "citation_support": 0.9230769230769231
+    },
+    "lead": {
+      "questions": 10,
+      "correct": 1.0,
+      "stale_stated": 0.0,
+      "answered": 1.0,
+      "string_match": 1.0,
+      "sentences": 10,
+      "citation_support": 1.0
+    },
+    "stale-trap": {
+      "questions": 13,
+      "correct": 0.7692307692307693,
+      "stale_stated": 0.07692307692307693,
+      "answered": 0.9230769230769231,
+      "string_match": 0.8461538461538461,
+      "sentences": 33,
+      "citation_support": 0.7272727272727273
+    }
+  },
+  "search": {
+    "all": {
+      "questions": 56,
+      "correct": 0.19642857142857142,
+      "stale_stated": 0.05357142857142857,
+      "answered": 0.2857142857142857,
+      "string_match": 0.19642857142857142,
+      "sentences": 28,
+      "citation_support": 0.8571428571428571
+    },
+    "changed": {
+      "questions": 21,
+      "correct": 0.2857142857142857,
+      "stale_stated": 0.047619047619047616,
+      "answered": 0.3333333333333333,
+      "string_match": 0.2857142857142857,
+      "sentences": 15,
+      "citation_support": 0.8
+    },
+    "control": {
+      "questions": 6,
+      "correct": 0.16666666666666666,
+      "stale_stated": 0.0,
+      "answered": 0.16666666666666666,
+      "string_match": 0.16666666666666666,
+      "sentences": 2,
+      "citation_support": 1.0
+    },
+    "history": {
+      "questions": 6,
+      "correct": 0.0,
+      "stale_stated": 0.0,
+      "answered": 0.0,
+      "string_match": 0.0,
+      "sentences": 0,
+      "citation_support": null
+    },
+    "lead": {
+      "questions": 10,
+      "correct": 0.4,
+      "stale_stated": 0.0,
+      "answered": 0.4,
+      "string_match": 0.4,
+      "sentences": 4,
+      "citation_support": 1.0
+    },
+    "stale-trap": {
+      "questions": 13,
+      "correct": 0.0,
+      "stale_stated": 0.15384615384615385,
+      "answered": 0.3076923076923077,
+      "string_match": 0.0,
+      "sentences": 7,
+      "citation_support": 0.8571428571428571
+    }
+  }
+}
