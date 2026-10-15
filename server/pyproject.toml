@@ -8,6 +8,7 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "anthropic>=1.13.0",
+    "cryptography>=50.0.2",
     "falkordb>=1.7.1",
     "fastapi>=0.143.0",
     "httpx>=0.28.1",

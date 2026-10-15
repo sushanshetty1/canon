@@ -38,6 +38,7 @@ AUTHORITY: dict[Kind, int] = {
     "team_page": 2,
     "rfc": 2,
     "handbook": 1,
+    "doc": 1,  # a Markdown page in a repository
     "pull": 1,
     "issue": 0,
     "forum": 0,

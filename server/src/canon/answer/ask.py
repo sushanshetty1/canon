@@ -53,6 +53,9 @@ def who_to_ask(graph, entities: list[str], *, limit: int = 3) -> list[dict]:
             for value, area in graph.query(OWNERS, {"slug": slug}).result_set:
                 if str(value).startswith("team:"):
                     people += _team_people(graph, value[5:], f"Leads {{team}}, which owns {area}.", f"On {{team}}, which owns {area}.")
+                elif str(value).startswith("person:"):  # a CODEOWNERS owner can be one person
+                    rows = graph.query("MATCH (p:Person {handle: $h}) RETURN coalesce(p.name, p.handle)", {"h": value[7:]}).result_set
+                    people.append({"handle": value[7:], "name": rows[0][0] if rows else value[7:], "why": f"Owns {area}."})
     if not people:
         for key in entities:
             if key.startswith("team:"):
