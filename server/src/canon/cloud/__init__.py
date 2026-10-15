@@ -126,6 +126,8 @@ class Cloud:
         self._db: Any = None
         self._accounts: Any = None
         self._jobs: Any = None
+        # Each signed-in user's GitHub repository list, briefly, keyed by (user id, scopes). Never shared between users.
+        self.repo_lists: dict[tuple[str, str], tuple[float, list[dict], bool]] = {}
         if self.config.secret and not self.config.sessions:
             log.warning("canon: CANON_SESSION_SECRET is shorter than %d bytes, so sign-in is off", MIN_SECRET)
         if self.config.ephemeral_secret:

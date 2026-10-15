@@ -1,91 +1,16 @@
 """Sign-in, sessions, workspace access, workspaces from a repository and their jobs. GitHub is mocked throughout."""
 
 import json
-import uuid
 from urllib.parse import parse_qs, urlparse
 
 import httpx
-import pytest
+from cloud_kit import OWNER, REPO, SECRET, SLUG, FakeGitHub, make, sign_in, tc
 from fastapi import APIRouter, Request
-from fastapi.testclient import TestClient
 
 from canon.api.app import create_app
-from canon.cloud import Cloud, CloudConfig, crypto, session
+from canon.cloud import CloudConfig, crypto, session
 from canon.cloud.session import current_user
 from canon.demo_seed import seed
-
-SECRET = "s" * 40
-# A repository name no real workspace has, so tests never touch a real workspace graph.
-OWNER = f"t{uuid.uuid4().hex[:8]}"
-REPO, SLUG = f"{OWNER}/cli", f"{OWNER}-cli"
-
-
-class FakeGitHub:
-    """The parts of GitHub sign-in and the repository API Canon calls."""
-
-    def __init__(self):
-        self.calls = []
-        self.repos = {f"{REPO}": {"full_name": f"{REPO}", "private": False}, "acme/secret": {"full_name": "acme/secret", "private": True}}
-        self.profiles = {"code-alice": {"id": 101, "login": "Alice", "name": "Alice Ng"}, "code-bob": {"id": 202, "login": "bob", "name": None}}
-
-    def handler(self, request: httpx.Request) -> httpx.Response:
-        self.calls.append((request.method, str(request.url)))
-        url = request.url
-        if url.path == "/login/oauth/access_token":
-            code = parse_qs(request.content.decode())["code"][0]
-            if code not in self.profiles:
-                return httpx.Response(200, json={"error": "bad_verification_code"})
-            return httpx.Response(200, json={"access_token": f"gho_{code}", "scope": "public_repo,read:user"})
-        if url.path == "/user":
-            token = request.headers["authorization"].removeprefix("Bearer gho_")
-            return httpx.Response(200, json=self.profiles[token])
-        if url.path.startswith("/repos/"):
-            repo = url.path.removeprefix("/repos/")
-            return httpx.Response(200, json=self.repos[repo]) if repo in self.repos else httpx.Response(404, json={})
-        return httpx.Response(404)
-
-    def client(self):
-        return httpx.Client(transport=httpx.MockTransport(self.handler))
-
-
-@pytest.fixture
-def accounts_graph(db):
-    name = f"test_canon_accounts_{uuid.uuid4().hex[:12]}"
-    yield name
-    if name in db.list_graphs():
-        db.select_graph(name).delete()
-
-
-@pytest.fixture
-def made(db):
-    """Workspace graphs a test creates, deleted afterwards. A graph that existed before the test is never touched."""
-    before = set(db.list_graphs())
-    slugs = []
-    yield slugs
-    for slug in slugs:
-        if f"canon_{slug}" in set(db.list_graphs()) - before:
-            db.select_graph(f"canon_{slug}").delete()
-
-
-def make(db, accounts_graph, *, ingest=None, dev_login=False, profile="dev", github=None, **config):
-    github = github or FakeGitHub()
-    cfg = CloudConfig(
-        github_client_id="cid", github_client_secret="csecret", secret=SECRET, public_url="https://canon.test",
-        accounts_graph=accounts_graph, dev_login=dev_login, profile=profile, **config,
-    )
-    cloud = Cloud(cfg, connect=lambda: db, http=github.client, runner=lambda fn: fn(), ingest=ingest)
-    return cloud, github
-
-
-def tc(app) -> TestClient:
-    """A client over https, as the session cookie is Secure when the public URL is."""
-    return TestClient(app, base_url="https://testserver")
-
-
-def sign_in(client: TestClient, code="code-alice"):
-    res = client.get("/auth/github", params={"next": "/app/new"}, follow_redirects=False)
-    state = parse_qs(urlparse(res.headers["location"]).query)["state"][0]
-    return client.get("/auth/callback", params={"code": code, "state": state}, follow_redirects=False)
 
 
 # ----- sessions and tokens -----------------------------------------------------------------------------------------
@@ -139,7 +64,12 @@ def test_github_sign_in(db, accounts_graph):
 
     res = client.get("/auth/callback", params={"code": "code-alice", "state": q["state"][0]}, follow_redirects=False)
     assert res.status_code == 302 and res.headers["location"] == "/app/new"
-    assert client.get("/api/me").json() == {"user": {"login": "alice", "name": "Alice Ng", "dev": False}, "signin": True, "dev_login": False}
+    assert client.get("/api/me").json() == {
+        "user": {"login": "alice", "name": "Alice Ng", "dev": False, "private_repos": False},
+        "signin": True,
+        "dev_login": False,
+        "app_access_url": "https://github.com/settings/connections/applications/cid",
+    }
 
     # The token is stored sealed, and `current_user` gives it back decrypted.
     stored = db.select_graph(accounts_graph).query("MATCH (u:User {id: 'gh101'}) RETURN u.token").result_set[0][0]
@@ -184,7 +114,7 @@ def test_sign_in_off_without_an_oauth_app(db, accounts_graph):
     cloud.config = CloudConfig(secret=SECRET, accounts_graph=accounts_graph)
     client = tc(create_app(cloud=cloud))
     assert client.get("/auth/github", follow_redirects=False).status_code == 503
-    assert client.get("/api/me").json() == {"user": None, "signin": False, "dev_login": False}
+    assert client.get("/api/me").json() == {"user": None, "signin": False, "dev_login": False, "app_access_url": None}
 
 
 def test_dev_login(db, accounts_graph):
@@ -197,7 +127,7 @@ def test_dev_login(db, accounts_graph):
     client = tc(create_app(cloud=cloud))
     res = client.get("/auth/dev-login", params={"login": "Sam", "next": "/app"}, follow_redirects=False)
     assert res.status_code == 302 and res.headers["location"] == "/app"
-    assert client.get("/api/me").json()["user"] == {"login": "sam", "name": "sam", "dev": True}
+    assert client.get("/api/me").json()["user"] == {"login": "sam", "name": "sam", "dev": True, "private_repos": False}
 
 
 # ----- workspace access --------------------------------------------------------------------------------------------
@@ -270,14 +200,15 @@ def test_create_a_workspace_from_a_repository(db, accounts_graph, made):
 
     sign_in(client)
     assert client.post("/api/workspaces", json={"repo": "not a repo"}).status_code == 422
-    assert "public" in client.post("/api/workspaces", json={"repo": "acme/secret"}).json()["detail"]
+    refused = client.post("/api/workspaces", json={"repo": "acme/secret"})  # private, and not connected yet
+    assert refused.status_code == 422 and refused.json()["reason"] == "connect"
     assert client.post("/api/workspaces", json={"repo": "acme/missing"}).status_code == 422
 
     made.append(f"{SLUG}")
     res = client.post("/api/workspaces", json={"repo": f"https://github.com/{REPO}"})
     assert res.status_code == 201
     body = res.json()
-    assert body["workspace"] == {"slug": f"{SLUG}", "name": f"{REPO}", "repo": f"{REPO}", "public": False, "role": "owner"}
+    assert body["workspace"] == {"slug": f"{SLUG}", "name": f"{REPO}", "repo": f"{REPO}", "public": False, "role": "owner", "private": False}
     assert body["job"]["status"] == "done" and body["job"]["kind"] == "create" and body["job"]["progress"] == 1.0
     assert body["job"]["counts"] == {"docs": 3, "documents": 9, "facts": 4}
     assert seen == [(f"{REPO}", "gho_code-alice")]  # read with the signed-in user's token

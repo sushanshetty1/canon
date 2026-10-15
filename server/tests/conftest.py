@@ -39,6 +39,26 @@ def _throwaway_accounts():
 
 
 @pytest.fixture
+def accounts_graph(db):
+    """A throwaway accounts graph for one test."""
+    name = f"test_canon_accounts_{uuid.uuid4().hex[:12]}"
+    yield name
+    if name in db.list_graphs():
+        db.select_graph(name).delete()
+
+
+@pytest.fixture
+def made(db):
+    """Workspace graphs a test creates, deleted afterwards. A graph that existed before the test is never touched."""
+    before = set(db.list_graphs())
+    slugs = []
+    yield slugs
+    for slug in slugs:
+        if f"canon_{slug}" in set(db.list_graphs()) - before:
+            db.select_graph(f"canon_{slug}").delete()
+
+
+@pytest.fixture
 def graph(db):
     """A fresh, uniquely named graph per test, deleted afterwards."""
     g = db.select_graph(f"test_canon_{uuid.uuid4().hex[:12]}")

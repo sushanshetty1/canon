@@ -1,6 +1,16 @@
 import type { ServerWorkspace } from './account'
 
-export type Workspace = { slug: string; name: string; label: string; suggestions: string[]; own?: boolean; repo?: string | null }
+export type Workspace = {
+  slug: string
+  name: string
+  label: string
+  suggestions: string[]
+  own?: boolean
+  repo?: string | null
+  /** Made from a private repository. */
+  private?: boolean
+  role?: string | null
+}
 
 export const WORKSPACES: Workspace[] = [
   {
@@ -28,6 +38,8 @@ export function fromServer(w: ServerWorkspace): Workspace {
     suggestions: w.suggestions ?? [],
     own: !w.public,
     repo: w.repo,
+    private: !!w.private,
+    role: w.role,
   }
 }
 

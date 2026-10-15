@@ -1,5 +1,5 @@
-"""A connector for any public GitHub repository: its Markdown docs, CODEOWNERS history, issues, pull requests and
-contributors, as one `Batch`.
+"""A connector for any GitHub repository the token can read (public, private or an organisation's): its Markdown
+docs, CODEOWNERS history, issues, pull requests and contributors, as one `Batch`.
 
 Like the PostHog connector it works in two steps. A source fetches raw pieces by name (`"meta"`, `"docs"`,
 `"codeowners"`, `"pulls"`, `"issues"`, `"contributors"`); tests pass a callable over small fixtures instead. Then
@@ -367,9 +367,9 @@ _REPO = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})/[A-Za-z0-9._-]{1,100}$")
 
 
 def parse_repo(text: str) -> str | None:
-    """`owner/name` from what a person types: `owner/name`, a github.com URL, with or without `.git`."""
+    """`owner/name` from what a person types: `owner/name`, a github.com URL or SSH address, with or without `.git`."""
     t = (text or "").strip()
-    t = re.sub(r"^(https?://)?(www\.)?github\.com/", "", t, flags=re.I)
+    t = re.sub(r"^(https?://|ssh://)?(git@)?(www\.)?github\.com[/:]", "", t, flags=re.I)
     t = re.sub(r"(\.git)?/*$", "", t)
     t = "/".join(t.split("/")[:2])
     return t if _REPO.match(t) and not t.endswith((".", "/..")) and ".." not in t else None
@@ -397,7 +397,9 @@ class RepoSource:
         self.repo, self.root = repo, Path(root)
         self.since_head, self.since = since_head, since
         self.max_pulls, self.max_issues, self.max_contributors = max_pulls, max_issues, max_contributors
-        self.github = gh.GitHub(token=token if token is not None else os.environ.get("GITHUB_TOKEN", ""))
+        # The token reads private repositories: through the API, and through git as a header (`gh.git_token`).
+        self.token = token if token is not None else os.environ.get("GITHUB_TOKEN", "")
+        self.github = gh.GitHub(token=self.token)
         self.head: str | None = None
         self.removed: list[str] = []
         self._emails: dict[str, str] | None = None
@@ -409,16 +411,18 @@ class RepoSource:
     def prepare(self) -> str:
         """Clone once (blob-less and sparse: only Markdown and CODEOWNERS files are downloaded), else pull."""
         exists = (self.clone_dir / ".git").exists()
-        gh.clone(
-            f"https://github.com/{self.repo}.git",
-            self.clone_dir,
-            sparse=["*.md", "*.mdx", *(f"/{p}" for p in CODEOWNERS_PATHS)],
-        )
-        self.head = gh.pull(self.clone_dir) if exists else gh.head(self.clone_dir)
+        with gh.git_token(self.token):
+            gh.clone(
+                f"https://github.com/{self.repo}.git",
+                self.clone_dir,
+                sparse=["*.md", "*.mdx", *(f"/{p}" for p in CODEOWNERS_PATHS)],
+            )
+            self.head = gh.pull(self.clone_dir) if exists else gh.head(self.clone_dir)
         return self.head
 
     def __call__(self, name: str) -> Any:
-        return getattr(self, f"_{name}")()
+        with gh.git_token(self.token):  # a blob-less clone fetches old file versions as it reads them
+            return getattr(self, f"_{name}")()
 
     def _meta(self) -> dict:
         r = self.github.get(f"/repos/{self.repo}").json()

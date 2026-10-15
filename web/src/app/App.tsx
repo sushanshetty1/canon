@@ -1,16 +1,17 @@
 // The Canon app: a slim rail on the page, and the screen on a sheet of paper beside it.
 
-import { ArrowsClockwise, Bus, CaretUpDown, Check, ClockCounterClockwise, GithubLogo, Plus, Question, Signpost, UsersThree, Wrench, type Icon } from '@phosphor-icons/react'
+import { ArrowsClockwise, ArrowUpRight, Bus, CaretUpDown, Check, ClockCounterClockwise, GithubLogo, Plus, Question, Signpost, UserPlus, UsersThree, Wrench, type Icon } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Wordmark } from '../ui'
-import { ago, listWorkspaces, signInUrl, signOut, syncWorkspace, useJob, useMe, type Me } from './account'
+import { ago, ApiError, listWorkspaces, signInUrl, signOut, syncWorkspace, useJob, useMe, type Me } from './account'
 import { isMock, stats as getStats, type Stats } from './api'
 import { Ask } from './Ask'
 import { BusFactor } from './BusFactor'
 import { CatchUp } from './CatchUp'
 import { Decisions } from './Decisions'
 import { FixQueue } from './FixQueue'
+import { MembersSheet } from './Members'
 import { NewWorkspace } from './NewWorkspace'
 import { navigate, ROUTES, screenOf, usePath, type Screen } from './router'
 import { plural } from './text'
@@ -53,7 +54,10 @@ function MenuItem({ w, current, onPick }: { w: Workspace; current: boolean; onPi
         onClick={onPick}
         className="flex h-10 w-full items-center justify-between gap-3 rounded-[11px] px-3 text-left text-[14.5px] font-medium text-ink hover:bg-paper-2 focus-visible:bg-paper-2 focus-visible:outline-none"
       >
-        <span className="truncate">{w.label}</span>
+        <span className="flex min-w-0 items-baseline gap-2">
+          <span className="truncate">{w.label}</span>
+          {w.private && <span className="shrink-0 text-[12.5px] font-normal text-faint">Private</span>}
+        </span>
         {current && <Check size={14} weight="bold" className="shrink-0 text-cobalt" />}
       </button>
     </li>
@@ -65,12 +69,14 @@ function WorkspaceSwitcher({
   lists,
   me,
   onChange,
+  onMembers,
   compact = false,
 }: {
   ws: Workspace
   lists: Lists
   me: Me | null
   onChange: (w: Workspace) => void
+  onMembers: () => void
   compact?: boolean
 }) {
   const [open, setOpen] = useState(false)
@@ -134,6 +140,19 @@ function WorkspaceSwitcher({
               </>
             )}
             <div className="mt-1.5 border-t border-line pt-1.5">
+              {!creating && lists.own.some((w) => w.slug === ws.slug) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false)
+                    onMembers()
+                  }}
+                  className="flex h-10 w-full items-center gap-2.5 rounded-[11px] px-3 text-left text-[14.5px] font-medium text-ink hover:bg-paper-2 focus-visible:bg-paper-2 focus-visible:outline-none"
+                >
+                  <UserPlus size={15} weight="bold" className="text-muted" />
+                  Members of {ws.label}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -199,7 +218,7 @@ function GraphStats({ ws, version }: { ws: Workspace; version: number }) {
 /** For a workspace of your own: when it last read its repository, and a way to read what changed since. */
 function Sync({ ws, onSynced }: { ws: Workspace; onSynced: () => void }) {
   const { job, kick, setJob } = useJob(ws.slug)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<Error | null>(null)
   const running = job?.status === 'running'
   const wasRunning = useRef(false)
   useEffect(() => {
@@ -214,7 +233,7 @@ function Sync({ ws, onSynced }: { ws: Workspace; onSynced: () => void }) {
         setJob(job)
         kick()
       },
-      (e: Error) => setError(e.message),
+      (e: Error) => setError(e),
     )
   }
 
@@ -238,7 +257,16 @@ function Sync({ ws, onSynced }: { ws: Workspace; onSynced: () => void }) {
           </button>
         </div>
       )}
-      {error && <p className="mt-2 text-proof">{error}</p>}
+      {error && (
+        <p className="mt-2 leading-relaxed text-proof">
+          {error.message}
+          {error instanceof ApiError && error.link && (
+            <a href={error.link} target="_blank" rel="noreferrer" className="ml-1 inline-flex items-center gap-0.5 font-semibold text-cobalt hover:text-cobalt-deep">
+              Request access <ArrowUpRight size={11} weight="bold" />
+            </a>
+          )}
+        </p>
+      )}
     </div>
   )
 }
@@ -289,6 +317,7 @@ function Rail({
   version,
   onWorkspace,
   onSynced,
+  onMembers,
 }: {
   ws: Workspace
   screen: Screen
@@ -298,6 +327,7 @@ function Rail({
   version: number
   onWorkspace: (w: Workspace) => void
   onSynced: () => void
+  onMembers: () => void
 }) {
   const own = !creating && lists.own.some((w) => w.slug === ws.slug)
   return (
@@ -306,7 +336,7 @@ function Rail({
         <Wordmark />
       </a>
       <div className="mt-5">
-        <WorkspaceSwitcher ws={ws} lists={lists} me={me} onChange={onWorkspace} />
+        <WorkspaceSwitcher ws={ws} lists={lists} me={me} onChange={onWorkspace} onMembers={onMembers} />
       </div>
       <nav aria-label="Canon" className="mt-6">
         <ul className="space-y-0.5">
@@ -338,7 +368,19 @@ function Rail({
       </nav>
       <div className="mt-auto space-y-6 pb-2">
         {!creating && <GraphStats ws={ws} version={version} />}
-        {own && <Sync ws={ws} onSynced={onSynced} />}
+        {own && (
+          <div className="space-y-3">
+            <Sync ws={ws} onSynced={onSynced} />
+            <button
+              type="button"
+              onClick={onMembers}
+              className="mx-3 inline-flex items-center gap-1.5 text-[13px] font-semibold text-cobalt hover:text-cobalt-deep"
+            >
+              <UserPlus size={13} weight="bold" />
+              Members
+            </button>
+          </div>
+        )}
         <div className="space-y-4 px-3">
           <Account me={me} />
           <div className="space-y-1.5 text-[13px]">
@@ -385,6 +427,7 @@ export default function CanonApp() {
   const { lists, reload } = useWorkspaces(me?.user?.login ?? null)
   const [ws, setWs] = useState(savedWorkspace)
   const [version, setVersion] = useState(0)
+  const [members, setMembers] = useState(false)
 
   // A saved workspace that is no longer listed (signed out, or deleted) falls back to the first public one.
   useEffect(() => {
@@ -396,22 +439,31 @@ export default function CanonApp() {
   const change = (w: Workspace) => {
     saveWorkspace(w)
     setWs(w)
+    setMembers(false)
     if (creating) navigate('/app')
   }
   const synced = useCallback(() => setVersion((v) => v + 1), [])
+  const openMembers = useCallback(() => setMembers(true), [])
+  const closeMembers = useCallback(() => setMembers(false), [])
+  const own = !creating && lists.own.some((w) => w.slug === ws.slug)
+  const left = () => {
+    setMembers(false)
+    reload()
+    change(WORKSPACES[0])
+  }
 
   return (
     <div className="flex min-h-[100dvh] gap-3 bg-page p-2 sm:p-3">
-      <Rail ws={ws} screen={screen} lists={lists} me={me} creating={creating} version={version} onWorkspace={change} onSynced={synced} />
+      <Rail ws={ws} screen={screen} lists={lists} me={me} creating={creating} version={version} onWorkspace={change} onSynced={synced} onMembers={openMembers} />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <header className="flex h-12 items-center justify-between px-2 min-[900px]:hidden">
           <a href="/" className="text-ink" aria-label="Canon home">
             <Wordmark />
           </a>
-          <WorkspaceSwitcher ws={ws} lists={lists} me={me} onChange={change} compact />
+          <WorkspaceSwitcher ws={ws} lists={lists} me={me} onChange={change} onMembers={openMembers} compact />
         </header>
         <MobileNav screen={screen} />
-        <div className="flex min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 gap-3">
           {creating && (
             <NewWorkspace
               me={me}
@@ -429,6 +481,7 @@ export default function CanonApp() {
           {screen === 'decisions' && <Decisions key={ws.slug} ws={ws} />}
           {screen === 'catchUp' && <CatchUp key={ws.slug} ws={ws} />}
           {screen === 'fixQueue' && <FixQueue key={ws.slug} ws={ws} />}
+          <MembersSheet ws={ws} open={members && own} onClose={closeMembers} onLeft={left} />
         </div>
       </div>
     </div>

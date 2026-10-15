@@ -4,17 +4,28 @@ Files and their history come from git, not the API: a blob-less clone with a spa
 can then answer "who last changed this file" and "what did it say at this commit" offline. Issues, pull requests and
 reviews come from GraphQL, which returns a page of a hundred pull requests with their labels and reviewers in one
 request. `GITHUB_TOKEN` is used when set and never logged. On a rate limit the client sleeps until the reset.
+
+**Private repositories.** Inside `with git_token(token):` every git command sends the token to github.com as an
+`http.extraHeader`, set through `GIT_CONFIG_COUNT` (the environment form of `git -c`). So the token is never in the
+remote URL, never written to `.git/config`, never in the command line (which other local users can list), and never
+in an error or a log. A blob-less clone fetches old file versions lazily, so `git show` needs the header as much as
+`clone` and `fetch` do. Git never asks for a password: without access a command fails at once.
 """
 
+import base64
 import os
 import subprocess
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from pathlib import Path
 
 import httpx
 
 API = "https://api.github.com"
+GIT_HOST = "https://github.com/"
 # Seconds a request may wait out a rate limit. Long batch fetches (the PostHog cache) can raise it.
 MAX_WAIT = float(os.environ.get("CANON_GITHUB_MAX_WAIT", "120"))
 
@@ -25,10 +36,41 @@ class RateLimited(RuntimeError):
 
 # ----- git over a local clone -------------------------------------------------------------------------------------
 
+_token: ContextVar[str | None] = ContextVar("canon_git_token", default=None)
+
+
+@contextmanager
+def git_token(token: str | None) -> Iterator[None]:
+    """Git commands in this block authenticate to github.com with `token` (a context variable, so a job in another
+    thread keeps its own)."""
+    reset = _token.set(token or None)
+    try:
+        yield
+    finally:
+        _token.reset(reset)
+
+
+def git_env(token: str | None = None) -> dict[str, str]:
+    """The environment git runs with: no prompts, and the token as a header for github.com only."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_CONFIG_")}
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    token = token if token is not None else _token.get()
+    if token:
+        basic = base64.b64encode(f"x-access-token:{token}".encode()).decode()
+        env.update({
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": f"http.{GIT_HOST}.extraheader",
+            "GIT_CONFIG_VALUE_0": f"Authorization: Basic {basic}",
+        })
+    return env
+
+
+def _run(args: list[str]) -> subprocess.CompletedProcess:
+    return subprocess.run(args, capture_output=True, text=True, check=True, env=git_env())
+
 
 def git(repo: Path, *args: str) -> str:
-    out = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True, check=True)
-    return out.stdout
+    return _run(["git", "-C", str(repo), *args]).stdout
 
 
 def clone(url: str, dest: Path, *, sparse: list[str] | None = None) -> Path:
@@ -37,11 +79,11 @@ def clone(url: str, dest: Path, *, sparse: list[str] | None = None) -> Path:
         return dest
     dest.parent.mkdir(parents=True, exist_ok=True)
     if sparse:
-        subprocess.run(["git", "clone", "-q", "--filter=blob:none", "--no-checkout", url, str(dest)], check=True)
+        _run(["git", "clone", "-q", "--filter=blob:none", "--no-checkout", url, str(dest)])
         git(dest, "sparse-checkout", "set", "--no-cone", *sparse)
         git(dest, "checkout", "-q")
     else:
-        subprocess.run(["git", "clone", "-q", url, str(dest)], check=True)
+        _run(["git", "clone", "-q", url, str(dest)])
     return dest
 
 

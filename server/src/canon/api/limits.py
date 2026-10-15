@@ -7,6 +7,10 @@
 - **Per day.** At most `CANON_ASK_PER_DAY` new answers across everyone.
 
 Cached answers count against neither limit. State is in memory: one API process, reset on restart.
+
+The cache is keyed by workspace slug and question, and is the only state answers share. A slug is one workspace
+(another user's workspace from the same repository gets its own slug), and the access check runs before the Ask
+route reads the cache, so an answer from a private workspace is replayed only to members of that workspace.
 """
 
 import asyncio
