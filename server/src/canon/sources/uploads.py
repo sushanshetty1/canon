@@ -1,9 +1,8 @@
 """Chats and docs from outside GitHub, uploaded as an export: a Slack export, or a Notion or Confluence export.
 
-Both arrive as one zip. It is read in memory, never unpacked to disk, and read carefully: a size limit on the upload,
-on every file and on everything inside together, a cap on how many files there are and on how far a file may
-compress, so a small zip that unpacks to gigabytes is refused before it is read. Only the files a parser wants
-(`.json` from Slack, `.md` and `.html` from Notion and Confluence) are read at all.
+Both arrive as one zip, read with the zip reader every upload shares (`canon.sources.archive`: in memory, within one
+set of limits). Only the files a parser wants (`.json` from Slack, `.md` and `.html` from Notion and Confluence) are
+read at all.
 
 - **Slack** (`channels.json`, `users.json`, `<channel>/<date>.json`). Messages are grouped into threads: a reply
   belongs to its thread, and messages outside any thread that follow each other within half an hour are one
@@ -18,90 +17,22 @@ through the shared pipeline, like any source.
 """
 
 import html
-import io
 import json
 import re
-import zipfile
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from html.parser import HTMLParser
 from pathlib import PurePosixPath
 
+from canon.sources.archive import MAX_UPLOAD, UploadError, read_zip  # noqa: F401 (callers import them from here too)
 from canon.sources.connector import Report, Result
 from canon.sources.text import Turn, clean_mdx, day, frontmatter, passages_of, slugify, split_passages, turn_passages
 from canon.types import Activity, Batch, Doc, Person
 
 KINDS = ("slack", "pages")
-
-MAX_UPLOAD = 50 * 1024 * 1024  # bytes sent
-MAX_FILE = 20 * 1024 * 1024  # one file inside, unpacked
-MAX_TOTAL = 250 * 1024 * 1024  # everything read, unpacked
-MAX_FILES = 20_000  # entries in the archive
-MAX_RATIO = 150  # how far a file may have been compressed
 MAX_THREADS = 3000  # Slack threads kept, newest first
 MAX_PAGES = 2000
 GAP_SECONDS = 30 * 60  # messages outside a thread this close together are one conversation
-
-
-class UploadError(ValueError):
-    """The upload cannot be read. The message is safe to show."""
-
-
-# ----- reading a zip safely --------------------------------------------------------------------------------------
-
-
-@dataclass
-class _Budget:
-    files: int = 0
-    total: int = 0
-
-
-def read_zip(data: bytes, suffixes: tuple[str, ...], *, budget: _Budget | None = None, depth: int = 0) -> dict[str, bytes]:
-    """The files in a zip whose names end in `suffixes`, by their path inside. A zip inside the zip (Notion splits
-    big exports into parts) is read once more, within the same limits."""
-    if len(data) > MAX_UPLOAD:
-        raise UploadError("The export is larger than 50 MB.")
-    try:
-        archive = zipfile.ZipFile(io.BytesIO(data))
-    except (zipfile.BadZipFile, OSError):
-        raise UploadError("This is not a zip file.") from None
-    budget = budget or _Budget()
-    out: dict[str, bytes] = {}
-    with archive:
-        for info in archive.infolist():
-            budget.files += 1
-            if budget.files > MAX_FILES:
-                raise UploadError("The export holds too many files.")
-            if info.is_dir():
-                continue
-            name = info.filename.replace("\\", "/")
-            parts = PurePosixPath(name).parts
-            if name.startswith("/") or ".." in parts or parts[:1] == ("__MACOSX",) or parts[-1].startswith("."):
-                continue
-            nested = name.lower().endswith(".zip") and depth == 0
-            if not nested and not name.lower().endswith(suffixes):
-                continue
-            if info.flag_bits & 0x1:
-                raise UploadError("The export is encrypted.")
-            if info.file_size > MAX_FILE and not nested:
-                raise UploadError("A file in the export is larger than 20 MB.")
-            if info.file_size > 1024 * 1024 and info.file_size > MAX_RATIO * max(info.compress_size, 1):
-                raise UploadError("The export unpacks to far more than its size. It was not read.")
-            if budget.total + info.file_size > MAX_TOTAL:
-                raise UploadError("The export unpacks to more than 250 MB.")
-            limit = MAX_UPLOAD if nested else MAX_FILE
-            with archive.open(info) as f:
-                blob = f.read(limit + 1)  # the size in the header can lie: never read past the limit
-            if len(blob) > limit:
-                raise UploadError("A file in the export is larger than it says.")
-            if nested:
-                out.update({f"{name}/{k}": v for k, v in read_zip(blob, suffixes, budget=budget, depth=1).items()})
-                continue
-            budget.total += len(blob)
-            if budget.total > MAX_TOTAL:
-                raise UploadError("The export unpacks to more than 250 MB.")
-            out[name] = blob
-    return out
 
 
 def _json(blob: bytes):

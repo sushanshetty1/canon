@@ -1,6 +1,6 @@
 // The Canon app: a slim rail on the page, and the screen on a sheet of paper beside it.
 
-import { ArrowsClockwise, ArrowUpRight, Bus, CaretUpDown, Check, ClockCounterClockwise, GithubLogo, Plus, Question, Signpost, Tray, UserPlus, UsersThree, Wrench, type Icon } from '@phosphor-icons/react'
+import { ArrowsClockwise, ArrowUpRight, Bus, CaretUpDown, Check, ClockCounterClockwise, GithubLogo, Plugs, Plus, Question, Signpost, Tray, UserPlus, UsersThree, Wrench, type Icon } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Wordmark } from '../ui'
@@ -9,6 +9,7 @@ import { isMock, stats as getStats, type Stats } from './api'
 import { Ask } from './Ask'
 import { BusFactor } from './BusFactor'
 import { CatchUp } from './CatchUp'
+import { Connect } from './Connect'
 import { Decisions } from './Decisions'
 import { FixQueue } from './FixQueue'
 import { MembersSheet } from './Members'
@@ -155,6 +156,19 @@ function WorkspaceSwitcher({
                   Members of {ws.label}
                 </button>
               )}
+              {!creating && lists.own.some((w) => w.slug === ws.slug) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false)
+                    navigate(`${ROUTES.connect}?ws=${encodeURIComponent(ws.slug)}`)
+                  }}
+                  className="flex h-10 w-full items-center gap-2.5 rounded-[11px] px-3 text-left text-[14.5px] font-medium text-ink hover:bg-paper-2 focus-visible:bg-paper-2 focus-visible:outline-none"
+                >
+                  <Plugs size={15} weight="bold" className="text-muted" />
+                  Connect a source
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -251,12 +265,31 @@ function Sync({ ws, onSynced }: { ws: Workspace; onSynced: () => void }) {
       ) : (
         <div className="space-y-1.5">
           <p className={job?.status === 'failed' ? 'text-proof' : 'text-faint'}>
-            {job?.status === 'failed' ? 'The last sync stopped' : job?.finished_at ? `Read from GitHub ${ago(job.finished_at)}` : ''}
+            {job?.status === 'failed'
+              ? 'The last sync stopped'
+              : job?.finished_at
+                ? `${ws.repo && !(job as { connection?: string | null }).connection && job.kind !== 'upload' ? 'Read from GitHub' : 'Last read'} ${ago(job.finished_at)}`
+                : ''}
           </p>
-          <button type="button" onClick={start} className="inline-flex items-center gap-1.5 font-semibold text-cobalt hover:text-cobalt-deep">
-            <ArrowsClockwise size={13} weight="bold" />
-            Sync now
-          </button>
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+            {ws.repo && (
+              <button type="button" onClick={start} className="inline-flex items-center gap-1.5 font-semibold text-cobalt hover:text-cobalt-deep">
+                <ArrowsClockwise size={13} weight="bold" />
+                Sync now
+              </button>
+            )}
+            <a
+              href={`${ROUTES.connect}?ws=${encodeURIComponent(ws.slug)}`}
+              onClick={(e) => {
+                e.preventDefault()
+                navigate(`${ROUTES.connect}?ws=${encodeURIComponent(ws.slug)}`)
+              }}
+              className="inline-flex items-center gap-1.5 font-semibold text-cobalt hover:text-cobalt-deep"
+            >
+              <Plugs size={13} weight="bold" />
+              Connect a source
+            </a>
+          </div>
         </div>
       )}
       {error && (
@@ -270,6 +303,20 @@ function Sync({ ws, onSynced }: { ws: Workspace; onSynced: () => void }) {
         </p>
       )}
     </div>
+  )
+}
+
+/** The Sources screen's way into Connect, for a workspace you own. */
+function ConnectButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full bg-ink px-4 text-[14px] font-semibold text-paper transition-colors hover:bg-[#23252d]"
+    >
+      <Plugs size={14} weight="bold" />
+      Connect a source
+    </button>
   )
 }
 
@@ -438,16 +485,25 @@ export default function CanonApp() {
     if (listed && listed !== ws) setWs(listed)
   }, [lists, me, ws])
 
-  const change = (w: Workspace) => {
+  const pickOnly = useCallback((w: Workspace) => {
     saveWorkspace(w)
     setWs(w)
     setMembers(false)
+  }, [])
+  const change = (w: Workspace) => {
+    pickOnly(w)
     if (creating) navigate('/app')
+    // On Connect, another workspace of your own opens its sources; any other workspace opens Ask.
+    if (screen === 'connect') navigate(lists.own.some((o) => o.slug === w.slug) ? `${ROUTES.connect}?ws=${encodeURIComponent(w.slug)}` : ROUTES.sources)
   }
   const synced = useCallback(() => setVersion((v) => v + 1), [])
   const openMembers = useCallback(() => setMembers(true), [])
   const closeMembers = useCallback(() => setMembers(false), [])
   const own = !creating && lists.own.some((w) => w.slug === ws.slug)
+  // Connect is part of Sources: the rail shows Sources while it is open.
+  const tab: Screen = screen === 'connect' ? 'sources' : screen
+  const connectTo = (source?: string) =>
+    navigate(`${ROUTES.connect}?ws=${encodeURIComponent(ws.slug)}${source ? `&source=${source}` : ''}`)
   const left = () => {
     setMembers(false)
     reload()
@@ -456,7 +512,7 @@ export default function CanonApp() {
 
   return (
     <div className="flex min-h-[100dvh] gap-3 bg-page p-2 sm:p-3">
-      <Rail ws={ws} screen={screen} lists={lists} me={me} creating={creating} version={version} onWorkspace={change} onSynced={synced} onMembers={openMembers} />
+      <Rail ws={ws} screen={tab} lists={lists} me={me} creating={creating} version={version} onWorkspace={change} onSynced={synced} onMembers={openMembers} />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <header className="flex h-12 items-center justify-between px-2 min-[900px]:hidden">
           <a href="/" className="text-ink" aria-label="Canon home">
@@ -464,7 +520,7 @@ export default function CanonApp() {
           </a>
           <WorkspaceSwitcher ws={ws} lists={lists} me={me} onChange={change} onMembers={openMembers} compact />
         </header>
-        <MobileNav screen={screen} />
+        <MobileNav screen={tab} />
         <div className="flex min-w-0 flex-1 gap-3">
           {creating && (
             <NewWorkspace
@@ -483,7 +539,10 @@ export default function CanonApp() {
           {screen === 'decisions' && <Decisions key={ws.slug} ws={ws} />}
           {screen === 'catchUp' && <CatchUp key={ws.slug} ws={ws} />}
           {screen === 'fixQueue' && <FixQueue key={ws.slug} ws={ws} />}
-          {screen === 'sources' && <Sources key={ws.slug} ws={ws} own={own} />}
+          {screen === 'connect' && <Connect ws={ws} own={lists.own} me={me} onWorkspace={pickOnly} onCreated={reload} onSynced={synced} />}
+          {screen === 'sources' && (
+            <Sources key={ws.slug} ws={ws} own={own} onConnect={own ? connectTo : undefined} connect={own ? <ConnectButton onClick={() => connectTo()} /> : undefined} />
+          )}
           <MembersSheet ws={ws} open={members && own} onClose={closeMembers} onLeft={left} />
         </div>
       </div>

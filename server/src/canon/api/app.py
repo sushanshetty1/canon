@@ -11,6 +11,7 @@ before any of these run (`canon.cloud.access`); sign-in and workspaces themselve
 import json
 import logging
 from collections.abc import Callable
+from contextlib import asynccontextmanager
 from functools import cache
 
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -18,6 +19,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from canon.api import changes_routes
+from canon.api import connections_routes
 from canon.api import decisions_routes
 from canon.api import sources_routes
 from canon.api.fixes_routes import router as fixes_router
@@ -105,7 +107,7 @@ def create_app(
     from canon.cloud import Cloud
     from canon.cloud.access import workspace_access
 
-    app = FastAPI(title="Canon", docs_url=None, redoc_url=None, dependencies=[Depends(workspace_access)])
+    app = FastAPI(title="Canon", docs_url=None, redoc_url=None, dependencies=[Depends(workspace_access)], lifespan=_lifespan)
     app.state.cloud = cloud or Cloud.from_env()
     app.include_router(accounts_routes.router)
     app.include_router(members_routes.router)
@@ -180,5 +182,20 @@ def create_app(
 
     app.include_router(decisions_routes.router)
     app.include_router(changes_routes.router)
+    app.include_router(connections_routes.router)
     app.include_router(sources_routes.router)
     return app
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    """Connections re-sync on a schedule while the server runs (CANON_SYNC_MINUTES, default 60; 0 or tests turn it
+    off)."""
+    from canon.sources.connections import start_scheduler
+
+    scheduler = start_scheduler(app.state.cloud)
+    try:
+        yield
+    finally:
+        if scheduler is not None:
+            scheduler.stop()

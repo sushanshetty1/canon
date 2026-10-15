@@ -1,0 +1,72 @@
+{
+  "_note": "Recorded Slack Web API responses, shaped as https://api.slack.com/methods documents them. Synthetic workspace.",
+  "auth.test": {
+    "ok": true,
+    "url": "https://kestrel-eng.slack.com/",
+    "team": "Kestrel",
+    "user": "canon",
+    "team_id": "T0KESTREL",
+    "user_id": "U0CANONBOT",
+    "bot_id": "B0CANON",
+    "is_enterprise_install": false
+  },
+  "auth.test.scopes": "channels:history,channels:read,users:read,users:read.email",
+  "conversations.list": [
+    {
+      "ok": true,
+      "channels": [
+        {"id": "C0ENG", "name": "eng", "is_channel": true, "is_group": false, "is_im": false, "created": 1700000000, "is_archived": false, "is_general": false, "is_private": false, "is_member": true, "topic": {"value": "Engineering", "creator": "U0ANA", "last_set": 1700000000}, "purpose": {"value": "", "creator": "", "last_set": 0}, "num_members": 14},
+        {"id": "C0RANDOM", "name": "random", "is_channel": true, "is_archived": false, "is_private": false, "is_member": false, "num_members": 40}
+      ],
+      "response_metadata": {"next_cursor": "dGVhbTpDMERFUExPWVM="}
+    },
+    {
+      "ok": true,
+      "channels": [
+        {"id": "C0DEPLOYS", "name": "deploys", "is_channel": true, "is_archived": false, "is_private": false, "is_member": true, "num_members": 9},
+        {"id": "C0OLD", "name": "old-launch", "is_channel": true, "is_archived": true, "is_private": false, "is_member": true, "num_members": 3}
+      ],
+      "response_metadata": {"next_cursor": ""}
+    }
+  ],
+  "conversations.history": {
+    "C0ENG": {
+      "ok": true,
+      "messages": [
+        {"type": "message", "user": "U0BEN", "text": "Thanks <@U0ANA>, I will update the runbook.", "ts": "1791969600.000300"},
+        {"type": "message", "user": "U0ANA", "text": "Reminder: the deploy freeze starts Friday at noon.", "ts": "1791968700.000200"},
+        {"type": "message", "user": "U0ANA", "text": "Decision: Billing moves to the Payments team from November. <@U0BEN> owns the migration plan.", "ts": "1791968400.000100", "thread_ts": "1791968400.000100", "reply_count": 2, "reply_users_count": 2, "latest_reply": "1791969000.000500"},
+        {"type": "message", "subtype": "channel_join", "user": "U0CAL", "text": "<@U0CAL> has joined the channel", "ts": "1791907320.000700"},
+        {"type": "message", "user": "U0CAL", "text": "Is the on-call rotation still weekly? See <https://wiki.example.com/oncall|the on-call page>.", "ts": "1791907200.000600"}
+      ],
+      "has_more": false,
+      "pin_count": 0,
+      "response_metadata": {"next_cursor": ""}
+    },
+    "C0DEPLOYS": {
+      "ok": true,
+      "messages": [
+        {"type": "message", "subtype": "bot_message", "bot_id": "B0CI", "username": "ci-bot", "text": "Deploy 412 finished in 6 minutes.", "ts": "1791799200.000900"}
+      ],
+      "has_more": false,
+      "response_metadata": {"next_cursor": ""}
+    }
+  },
+  "conversations.replies": {
+    "1791968400.000100": {
+      "ok": true,
+      "messages": [
+        {"type": "message", "user": "U0ANA", "text": "Decision: Billing moves to the Payments team from November. <@U0BEN> owns the migration plan.", "ts": "1791968400.000100", "thread_ts": "1791968400.000100", "reply_count": 2},
+        {"type": "message", "user": "U0BEN", "text": "Got it. I will write the plan this week.", "ts": "1791968460.000400", "thread_ts": "1791968400.000100", "parent_user_id": "U0ANA"},
+        {"type": "message", "user": "U0CAL", "text": "Does that include invoicing?\n```select * from invoices```", "ts": "1791969000.000500", "thread_ts": "1791968400.000100", "parent_user_id": "U0ANA"}
+      ],
+      "has_more": false,
+      "response_metadata": {"next_cursor": ""}
+    }
+  },
+  "users.info": {
+    "U0ANA": {"ok": true, "user": {"id": "U0ANA", "team_id": "T0KESTREL", "name": "ana", "deleted": false, "real_name": "Ana Ruiz", "is_bot": false, "profile": {"display_name": "Ana Ruiz", "real_name": "Ana Ruiz", "email": "ana@kestrel.example"}}},
+    "U0BEN": {"ok": true, "user": {"id": "U0BEN", "team_id": "T0KESTREL", "name": "ben", "deleted": false, "real_name": "Ben Okafor", "is_bot": false, "profile": {"display_name": "", "real_name": "Ben Okafor"}}},
+    "U0CAL": {"ok": true, "user": {"id": "U0CAL", "team_id": "T0KESTREL", "name": "cal", "deleted": false, "real_name": "Cal Diaz", "is_bot": false, "profile": {"display_name": "cal", "real_name": "Cal Diaz", "email": "cal@kestrel.example"}}}
+  }
+}

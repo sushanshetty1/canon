@@ -39,6 +39,7 @@ def _view(props: dict, now: float) -> dict:
         "status": status,
         "step": step,
         "step_label": STEPS.get(step or "", "Starting"),
+        "connection": props.get("connection"),
         "progress": float(props.get("progress") or 0),
         "counts": json.loads(props.get("counts") or "{}"),
         "error": error,
@@ -62,9 +63,12 @@ class Jobs:
         rows = graph.query("MATCH (j:Job) RETURN j ORDER BY j.started DESC LIMIT 1").result_set
         return _view(dict(rows[0][0].properties), self.cloud.clock()) if rows else None
 
-    def start(self, slug: str, kind: str, work: Callable[[Callable[..., None]], dict], *, step: str = "clone") -> dict | None:
-        """Start `work(report)` for the workspace. None when a job is already running there. `step` is the step the
-        job starts on: reading the repository, or unpacking an upload."""
+    def start(
+        self, slug: str, kind: str, work: Callable[[Callable[..., None]], dict], *, connection: str | None = None,
+        step: str = "clone",
+    ) -> dict | None:
+        """Start `work(report)` for the workspace. None when a job is already running there. `connection` is the
+        connection a sync reads (`canon.sources.connections`), and `step` the step it starts on."""
         with self._lock:
             current = self.latest(slug)
             if slug in self._running or (current and current["status"] == "running"):
@@ -75,8 +79,8 @@ class Jobs:
         job_id = secrets.token_hex(6)
         graph.query(
             """CREATE (:Job {id: $id, kind: $kind, status: 'running', step: $step, progress: 0.0, counts: '{}',
-                             started: $now, updated: $now, started_at: $at})""",
-            {"id": job_id, "kind": kind, "step": step, "now": now, "at": _iso(now)},
+                             started: $now, updated: $now, started_at: $at, connection: $connection})""",
+            {"id": job_id, "kind": kind, "now": now, "at": _iso(now), "step": step, "connection": connection},
         )
         state = {"step": step, "progress": 0.0, "counts": {}, "written": 0.0}
 
@@ -129,10 +133,11 @@ def _calm(e: Exception) -> str:
 
     import httpx
 
-    from canon.sources.uploads import UploadError
-
-    if isinstance(e, UploadError):
-        return str(e)  # written to be shown
+    # A connector's or an upload's own message, written to be shown (`sources.client.SourceError`,
+    # `sources.archive.UploadError`).
+    public = getattr(e, "public_message", None)
+    if isinstance(public, str) and public:
+        return public
     if isinstance(e, subprocess.CalledProcessError):
         return "The repository could not be read from GitHub."
     if isinstance(e, httpx.HTTPStatusError):

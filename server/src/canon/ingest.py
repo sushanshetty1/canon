@@ -23,7 +23,7 @@ commit and time) and shares `extract_new` and `finish`; it is recorded as a conn
 import asyncio
 import json
 from collections.abc import Callable
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -46,6 +46,13 @@ STEPS = {
     "releases": "Reading releases",
     "people": "Reading contributors",
     "read": "Reading the source",
+    "connect": "Checking the connection",
+    "read_slack": "Reading Slack channels",
+    "read_notion": "Reading Notion pages",
+    "read_linear": "Reading Linear issues",
+    "read_jira": "Reading Jira issues",
+    "read_confluence": "Reading Confluence pages",
+    "read_upload": "Reading files",
     "unpack": "Unpacking the export",
     "upload": "Reading the export",
     "write": "Writing the graph",
@@ -219,12 +226,42 @@ def _calm(e: Exception) -> str:
     return calm(e)
 
 
+PERSON_IDS = ("slack_id", "notion_id", "linear_id", "jira_id", "confluence_id")  # a person's id in each tool
+
+
+def keep_first_dates(graph, batch: Batch) -> None:
+    """A structured fact read again keeps the day it was first seen, so a source that cannot date a fact (a Jira
+    project's lead) does not move it forward on every sync."""
+    if not batch.facts:
+        return
+    rows = graph.query(
+        "UNWIND $ids AS id MATCH (f:Fact {id: id}) RETURN f.id, f.valid_from", {"ids": [f.id for f in batch.facts]}
+    ).result_set
+    first = {fid: since for fid, since in rows if since}
+    batch.facts = [replace(f, valid_from=first[f.id]) if first.get(f.id, "9") < f.valid_from else f for f in batch.facts]
+
+
+def connection_counts(graph, connection_id: str) -> dict[str, int]:
+    """What a connection has in the graph now: its documents, their passages, the facts they state, their people."""
+    one = lambda q: graph.query(q, {"id": connection_id}).result_set[0][0]  # noqa: E731
+    return {
+        "documents": one("MATCH (d:Document {connection: $id}) WHERE d.removed_at IS NULL RETURN count(d)"),
+        "passages": one("MATCH (d:Document {connection: $id})-[:HAS]->(p:Passage) RETURN count(p)"),
+        "facts": one("MATCH (d:Document {connection: $id})-[:HAS]->(:Passage)<-[:STATED_IN]-(f:Fact) RETURN count(DISTINCT f)"),
+        "people": one(
+            """MATCH (d:Document {connection: $id})<-[:AUTHORED|COMMENTED|REVIEWED|DECIDED]-(p:Person)
+               RETURN count(DISTINCT p)"""
+        ),
+    }
+
+
 def ingest_connector(
     graph,
     connector,
     *,
     connection_id: str | None = None,
     config: dict | None = None,
+    label: str | None = None,
     cursor: str | None = None,
     report: Report = lambda **_: None,
     extract_model: str | None = None,
@@ -239,19 +276,30 @@ def ingest_connector(
     """The pipeline every connector shares (`canon.sources.connector`): read, write, extract, link, decisions, judge,
     then refresh who knows what and the fix queue.
 
-    The connection is kept as `(:Connection {id, kind, label, config, status, last_synced_at, cursor, error})`:
-    `reading` while it runs, then `done` with the connector's new cursor, or `failed` with a calm reason. `config`
-    is JSON; the counts of what was read are added to it. `decisions(model)` builds decisions after linking, when the
-    source has decision records. `refresh` False skips people and fixes (a caller that runs them itself)."""
+    The connection is kept as `(:Connection {id, kind, label, config, status, last_synced_at, last_tried_at, cursor,
+    counts, notes, error})`: `reading` while it runs, then `done` with the connector's new cursor, or `failed` with a
+    calm reason. `config` is JSON, merged into what the connection already keeps (a live connection's site and caps);
+    the counts of what the connection has in the graph are added to it and kept as `counts`. A label already set (a
+    connection named when it was made) is kept. Documents read are tagged with the connection (`d.connection`), so it
+    can be removed with or without them; people get their id in the tool (`slack_id` ...); documents the source says
+    are gone are detached, so their facts close. `decisions(model)` builds decisions after linking, when the source
+    has decision records. `refresh` False skips people and fixes (a caller that runs them itself)."""
     import secrets
 
     ensure_schema(graph)
     started = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     cid = connection_id or f"{connector.kind}-{secrets.token_hex(5)}"
+    rows = graph.query("MATCH (c:Connection {id: $id}) RETURN c.config", {"id": cid}).result_set
+    try:
+        kept = json.loads(rows[0][0] or "{}") if rows else {}
+    except (TypeError, json.JSONDecodeError):
+        kept = {}
+    config = {**(kept if isinstance(kept, dict) else {}), **(config or {})}
     graph.query(
-        """MERGE (c:Connection {id: $id}) SET c.kind = $kind, c.label = $label, c.status = 'reading', c.error = NULL,
-           c.config = coalesce($config, c.config, '{}')""",
-        {"id": cid, "kind": connector.kind, "label": connector.label, "config": json.dumps(config) if config else None},
+        """MERGE (c:Connection {id: $id}) SET c.kind = $kind, c.label = coalesce($label, c.label, $default),
+           c.status = 'reading', c.error = NULL, c.config = $config, c.last_tried_at = $at""",
+        {"id": cid, "kind": connector.kind, "label": label, "default": connector.label, "config": json.dumps(config),
+         "at": started},
     )
     read: dict[str, int] = {}
 
@@ -263,7 +311,8 @@ def ingest_connector(
             read["read"] = done
         if total is not None:
             read["to_read"] = total
-        report(step=step if step in STEPS else ("read" if step else None), counts=dict(read))
+        share = 0.04 + 0.2 * min(1.0, done / total) if done is not None and total else None
+        report(step=step if step in STEPS else ("read" if step else None), counts=dict(read), progress=share)
 
     try:
         report(step="read", progress=0.04)
@@ -271,11 +320,20 @@ def ingest_connector(
         batch = result.batch
         found = {"documents": len(batch.docs), "passages": len(batch.passages), "people": len(batch.people)}
         report(step="write", counts={**read, **found}, progress=0.25)
+        keep_first_dates(graph, batch)
         written = write_batch(graph, batch)
         graph.query(
-            "MATCH (c:Connection {id: $id}) SET c.config = $config",
-            {"id": cid, "config": json.dumps({**(config or {}), **found})},
+            """UNWIND $ids AS id MATCH (d:Document {id: id})
+               SET d.connection = $conn, d.source = $kind, d.removed_at = NULL, d.removed = NULL""",
+            {"ids": [d.id for d in batch.docs], "conn": cid, "kind": connector.kind},
         )
+        ids = getattr(result, "people_props", None) or {}
+        if ids:
+            sets = ", ".join(f"p.{k} = coalesce(r.{k}, p.{k})" for k in PERSON_IDS)
+            graph.query(f"UNWIND $rows AS r MATCH (p:Person {{handle: r.handle}}) SET {sets}",
+                        {"rows": [{"handle": h, **{k: v.get(k) for k in PERSON_IDS}} for h, v in ids.items()]})
+        removed = list(getattr(result, "removed", None) or [])
+        remove_docs(graph, removed)
         base = {**read, **found}
         report(counts={**base, **graph_counts(graph)})
 
@@ -299,15 +357,17 @@ def ingest_connector(
             {"id": cid, "error": _calm(e)},
         )
         raise
+    totals = connection_counts(graph, cid)
     graph.query(
         """MATCH (c:Connection {id: $id}) SET c.status = 'done', c.last_synced_at = $at, c.cursor = $cursor,
-           c.error = NULL, c.notes = $notes""",
-        {"id": cid, "at": started, "cursor": result.cursor, "notes": json.dumps(result.notes)},
+           c.error = NULL, c.notes = $notes, c.config = $config, c.counts = $counts""",
+        {"id": cid, "at": started, "cursor": result.cursor, "notes": json.dumps(result.notes),
+         "config": json.dumps({**config, **totals}), "counts": json.dumps(totals)},
     )
-    counts = {**base, **graph_counts(graph), "extracted_facts": extracted}
+    counts = {**base, **graph_counts(graph), "extracted_facts": extracted, "removed_docs": len(removed)}
     report(counts=counts, progress=1.0)
-    return {"connection": cid, "counts": counts, "written": written, "notes": result.notes, **done,
-            "usage": asdict(usage)}
+    return {"connection": cid, "counts": counts, "written": written, "notes": result.notes, "cursor": result.cursor,
+            "totals": totals, **done, "usage": asdict(usage)}
 
 
 def ingest_upload(

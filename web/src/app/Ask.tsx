@@ -278,7 +278,7 @@ export function Ask({ ws }: { ws: Workspace }) {
                       {state.people.map((p) => (
                         <li key={p.handle} className="text-[18px] leading-relaxed text-muted sm:text-[20px]">
                           Ask <span className="font-semibold text-ink">{p.name}</span>: {p.why.charAt(0).toLowerCase() + p.why.slice(1)}
-                          {!p.handle.startsWith('name:') && (
+                          {!p.handle.includes(':') && (
                             <a
                               href={`https://github.com/${p.handle}`}
                               target="_blank"

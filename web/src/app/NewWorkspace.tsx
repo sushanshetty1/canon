@@ -1,11 +1,12 @@
 // New workspace from GitHub: pick one of your repositories or name any you can read (public, private or an
 // organisation's), then watch it read into a graph of its own.
 
-import { ArrowRight, ArrowUpRight, GithubLogo } from '@phosphor-icons/react'
+import { ArrowRight, ArrowUpRight, FileText, GithubLogo, Kanban, NotionLogo, SlackLogo } from '@phosphor-icons/react'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ApiError, connectUrl, createWorkspace, signInUrl, syncWorkspace, useJob, type Job, type Me } from './account'
 import { IngestDrawing, Legend } from './IngestDrawing'
+import { navigate, ROUTES } from './router'
 import { RepoPicker } from './RepoPicker'
 import { plural } from './text'
 import { fromServer, type Workspace } from './workspaces'
@@ -244,6 +245,27 @@ export function NewWorkspace({
                 <RepoPicker me={me} busy={busy} onPick={create} />
               </div>
             )}
+            <a
+              href={`${ROUTES.connect}?new=1`}
+              onClick={(e) => {
+                e.preventDefault()
+                navigate(`${ROUTES.connect}?new=1`)
+              }}
+              className="group mt-16 flex items-center gap-4 border-t border-line pt-6 text-left"
+            >
+              <span className="flex shrink-0 -space-x-1.5" aria-hidden="true">
+                {[SlackLogo, NotionLogo, Kanban, FileText].map((I, i) => (
+                  <span key={i} className="grid size-9 place-items-center rounded-full bg-paper-2 text-ink ring-2 ring-paper">
+                    <I size={17} weight={i < 2 ? 'fill' : 'regular'} />
+                  </span>
+                ))}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[16px] font-semibold text-ink group-hover:text-cobalt">No repository? Start from your tools</span>
+                <span className="mt-0.5 block text-[14.5px] text-muted">Slack, Notion, Linear, Jira, Confluence, or files you upload.</span>
+              </span>
+              <ArrowRight size={18} weight="bold" className="shrink-0 text-faint transition-transform group-hover:translate-x-0.5 group-hover:text-cobalt" />
+            </a>
           </div>
         </div>
       ) : (

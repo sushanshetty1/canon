@@ -282,7 +282,7 @@ def test_an_upload_goes_through_the_shared_pipeline(graph):
     assert out["counts"]["documents"] == 2 and out["notes"]
     conn = graph.query("MATCH (c:Connection) RETURN c.kind, c.label, c.status, c.config").result_set
     assert conn[0][:3] == ["upload", "Slack export", "done"]
-    assert json.loads(conn[0][3]) == {"format": "slack", "filename": "kestrel.zip", "by": "maya", "documents": 2, "passages": 5, "people": 3}
+    assert json.loads(conn[0][3]) == {"format": "slack", "filename": "kestrel.zip", "by": "maya", "documents": 2, "passages": 5, "facts": 0, "people": 3}
     view = summary(graph)
     chats = next(f for f in view["families"] if f["key"] == "chats")
     assert chats["documents"] == 2 and chats["kinds"][0]["kind"] == "slack_thread" and chats["kinds"][0]["speakers"] == 3

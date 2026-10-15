@@ -24,6 +24,7 @@ export const ROUTES = {
   catchUp: '/app/catch-up',
   sources: '/app/sources',
   newWorkspace: '/app/new',
+  connect: '/app/connect',
 } as const
 
 export type Screen = keyof typeof ROUTES

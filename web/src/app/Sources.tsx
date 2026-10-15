@@ -7,6 +7,7 @@ import { FileZip, GithubLogo, Plug, SlackLogo, UploadSimple, type Icon } from '@
 import { motion, useInView, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ago, useJob } from './account'
+import { SOURCES as CONNECTABLE } from './Connect'
 import { sources as getSources, uploadExport, type Connection, type SourceFamily, type SourceKey, type SourcesView, type UploadKind } from './api'
 import { ease } from './Answer'
 import { useWide } from './Sheet'
@@ -405,26 +406,61 @@ function Details({ families }: { families: SourceFamily[] }) {
 
 // ----- where it reads from, and adding an export ------------------------------------------------------------------
 
-const CONNECTION_ICONS: Record<string, Icon> = { github: GithubLogo, upload: FileZip, slack: SlackLogo }
+// An export upload is a zip; uploaded files and the live connectors draw the mark the Connect panel draws.
+const CONNECTION_ICONS: Record<string, Icon> = {
+  github: GithubLogo,
+  ...Object.fromEntries(CONNECTABLE.map((s) => [s.kind, s.icon])),
+}
+const iconOf = (c: Connection): Icon => (c.kind === 'upload' && c.config.format ? FileZip : (CONNECTION_ICONS[c.kind] ?? Plug))
 
 function connectionDetail(c: Connection): string {
   const cfg = c.config
   if (c.kind === 'github' && cfg.repo) return String(cfg.repo)
-  if (c.kind === 'upload') {
+  if (c.kind === 'upload' && cfg.format) {
     const what = cfg.format === 'slack' ? count(Number(cfg.documents ?? 0), 'thread') : count(Number(cfg.documents ?? 0), 'page')
     return [cfg.filename, what].filter(Boolean).join(', ')
   }
-  return ''
+  // Uploaded files and the live connectors: where, and how much of it is in the graph.
+  const site = typeof cfg.site === 'string' ? cfg.site.replace(/^https:\/\//, '') : ''
+  const docs = Number(cfg.documents ?? 0)
+  return [site, docs ? count(docs, c.kind === 'upload' ? 'file' : 'document') : ''].filter(Boolean).join(', ')
 }
 
-function Connections({ items }: { items: Connection[] }) {
+/** A way into each live connector, on a workspace of your own. */
+function ConnectRow({ onConnect }: { onConnect: (source: string) => void }) {
+  return (
+    <div className="mt-5">
+      <p className="text-[14px] text-muted">Read it live, and again every hour</p>
+      <ul className="mt-2.5 flex flex-wrap gap-2">
+        {CONNECTABLE.map((s) => (
+          <li key={s.kind}>
+            <button
+              type="button"
+              onClick={() => onConnect(s.kind)}
+              className="inline-flex h-10 items-center gap-2 rounded-full px-3.5 text-[14.5px] font-medium text-ink shadow-[inset_0_0_0_1.5px_var(--line-strong)] transition-shadow hover:shadow-[inset_0_0_0_1.5px_var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cobalt"
+            >
+              <s.icon size={16} weight={s.kind === 'slack' || s.kind === 'notion' ? 'fill' : 'regular'} aria-hidden="true" />
+              {s.kind === 'upload' ? 'Upload files' : `Connect ${s.name}`}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function Connections({ items, onConnect }: { items: Connection[]; onConnect?: (source?: string) => void }) {
   if (!items.length) {
-    return <p className="text-[15px] leading-relaxed text-muted">Loaded from public sources by the people who run Canon.</p>
+    return onConnect ? (
+      <p className="text-[15px] leading-relaxed text-muted">Nothing is connected yet. Connect a tool your company writes in, or upload files.</p>
+    ) : (
+      <p className="text-[15px] leading-relaxed text-muted">Loaded from public sources by the people who run Canon.</p>
+    )
   }
   return (
     <ul className="divide-y divide-line border-y border-line">
       {items.map((c) => {
-        const Glyph = CONNECTION_ICONS[c.kind] ?? Plug
+        const Glyph = iconOf(c)
         const failed = c.status === 'failed'
         return (
           <li key={c.id} className="flex items-start gap-3.5 py-4">
@@ -432,7 +468,13 @@ function Connections({ items }: { items: Connection[] }) {
               <Glyph size={17} />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-[15.5px] font-semibold text-ink">{c.label}</p>
+              {onConnect && c.kind !== 'github' && !(c.kind === 'upload' && c.config.format) ? (
+                <button type="button" onClick={() => onConnect()} className="text-left text-[15.5px] font-semibold text-ink hover:text-cobalt">
+                  {c.label}
+                </button>
+              ) : (
+                <p className="text-[15.5px] font-semibold text-ink">{c.label}</p>
+              )}
               <p className="truncate text-[14px] text-muted">{connectionDetail(c)}</p>
             </div>
             <p className={`shrink-0 pt-0.5 text-right text-[13.5px] ${failed ? 'text-proof' : 'text-faint'}`}>
@@ -553,7 +595,17 @@ function Waiting() {
   )
 }
 
-export function Sources({ ws, own, connect }: { ws: Workspace; own: boolean; connect?: ReactNode }) {
+export function Sources({
+  ws,
+  own,
+  connect,
+  onConnect,
+}: {
+  ws: Workspace
+  own: boolean
+  connect?: ReactNode
+  onConnect?: (source?: string) => void
+}) {
   const [load, setLoad] = useState<Load>({ status: 'loading' })
   const [version, setVersion] = useState(0)
   const wide = useWide()
@@ -606,7 +658,8 @@ export function Sources({ ws, own, connect }: { ws: Workspace; own: boolean; con
                 </h2>
                 {connect}
               </div>
-              <Connections items={view.connections} />
+              <Connections items={view.connections} onConnect={onConnect} />
+              {onConnect && <ConnectRow onConnect={onConnect} />}
             </section>
 
             {canUpload && (
