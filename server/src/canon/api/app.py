@@ -17,6 +17,8 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from canon.api import changes_routes
+from canon.api import decisions_routes
 from canon.api.fixes_routes import router as fixes_router
 from canon.api.limits import Limits, client_address, replay
 from canon.api.people_routes import router as people_router
@@ -174,4 +176,6 @@ def create_app(
     def stats_route(ws: str) -> dict:
         return stats(workspace(ws))
 
+    app.include_router(decisions_routes.router)
+    app.include_router(changes_routes.router)
     return app

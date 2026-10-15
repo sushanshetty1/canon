@@ -8,6 +8,8 @@ import { ago, listWorkspaces, signInUrl, signOut, syncWorkspace, useJob, useMe, 
 import { isMock, stats as getStats, type Stats } from './api'
 import { Ask } from './Ask'
 import { BusFactor } from './BusFactor'
+import { CatchUp } from './CatchUp'
+import { Decisions } from './Decisions'
 import { FixQueue } from './FixQueue'
 import { NewWorkspace } from './NewWorkspace'
 import { navigate, ROUTES, screenOf, usePath, type Screen } from './router'
@@ -20,8 +22,8 @@ const NAV: { label: string; icon: Icon; screen?: Screen; soon?: boolean }[] = [
   { label: 'Ask', icon: Question, screen: 'ask' },
   { label: 'Who knows', icon: UsersThree, screen: 'whoKnows' },
   { label: 'Bus factor', icon: Bus, screen: 'busFactor' },
-  { label: 'Decisions', icon: Signpost, soon: true },
-  { label: 'Catch me up', icon: ClockCounterClockwise, soon: true },
+  { label: 'Decisions', icon: Signpost, screen: 'decisions' },
+  { label: 'Catch me up', icon: ClockCounterClockwise, screen: 'catchUp' },
   { label: 'Fix queue', icon: Wrench, screen: 'fixQueue' },
 ]
 
@@ -424,6 +426,8 @@ export default function CanonApp() {
           {screen === 'ask' && <Ask key={ws.slug} ws={ws} />}
           {screen === 'whoKnows' && <WhoKnows key={ws.slug} ws={ws} />}
           {screen === 'busFactor' && <BusFactor key={ws.slug} ws={ws} />}
+          {screen === 'decisions' && <Decisions key={ws.slug} ws={ws} />}
+          {screen === 'catchUp' && <CatchUp key={ws.slug} ws={ws} />}
           {screen === 'fixQueue' && <FixQueue key={ws.slug} ws={ws} />}
         </div>
       </div>

@@ -20,6 +20,8 @@ export const ROUTES = {
   whoKnows: '/app/who-knows',
   busFactor: '/app/bus-factor',
   fixQueue: '/app/fixes',
+  decisions: '/app/decisions',
+  catchUp: '/app/catch-up',
   newWorkspace: '/app/new',
 } as const
 
