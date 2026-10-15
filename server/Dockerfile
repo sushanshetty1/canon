@@ -28,6 +28,8 @@ RUN groupadd --system --gid 10001 canon \
 
 COPY --from=build /app/.venv /app/.venv
 COPY --chmod=0755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+# Repositories and caches the API writes while reading a workspace. A new volume takes this owner.
+RUN mkdir -p /data && chown canon:canon /data
 
 ENV PATH=/app/.venv/bin:$PATH \
     PYTHONUNBUFFERED=1 \
