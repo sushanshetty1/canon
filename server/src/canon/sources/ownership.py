@@ -47,10 +47,10 @@ def owned_by_facts(
     windows: Iterable[Window],
     *,
     value: Callable[[str], str],
-    text: Callable[[str, str], str],
+    text: Callable[[Window], str],
     authority: int = 3,
 ) -> list[Fact]:
-    """One `owned_by` fact per window. `value(owner)` is the entity key, `text(area, owner)` the sentence."""
+    """One `owned_by` fact per window. `value(owner)` is the entity key, `text(window)` the sentence."""
     facts = []
     for w in windows:
         subject, val = f"area:{w.area}", value(w.owner)
@@ -60,7 +60,7 @@ def owned_by_facts(
                 subject=subject,
                 predicate="owned_by",
                 value=val,
-                text=text(w.area, w.owner),
+                text=text(w),
                 valid_from=w.start,
                 passage_id=w.passage_id,
                 authority=authority,

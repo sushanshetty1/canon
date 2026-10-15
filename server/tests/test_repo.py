@@ -14,6 +14,7 @@ from canon.sources.repo import (
     RepoSource,
     area_for,
     area_name,
+    is_doc,
     codeowners_history,
     load_repo,
     matches,
@@ -42,6 +43,24 @@ def versions():
         {"sha": "c" * 40, "date": "2026-03-02T12:00:00Z", "author_handle": None, "text": V2},  # no change
         {"sha": "d" * 40, "date": "2026-06-20T09:00:00Z", "author_handle": "bob", "text": V3},
     ]
+
+
+@pytest.mark.parametrize(
+    "path, doc",
+    [
+        ("docs/releasing.md", True),
+        ("README.mdx", True),
+        ("CHANGELOG.md", False),
+        ("main.go", False),
+        (".github/ISSUE_TEMPLATE/bug.md", False),
+        ("pkg/cmd/pr/fixtures/repo/.github/PULL_REQUEST_TEMPLATE/fix.md", False),
+        ("docs/pull_request_template.md", False),
+        ("internal/attachments/testdata/input.md", False),
+        ("web/node_modules/x/README.md", False),
+    ],
+)
+def test_which_files_are_docs(path, doc):
+    assert is_doc(path) is doc
 
 
 def test_parse_codeowners_drops_comments_and_emails():
@@ -101,6 +120,11 @@ def test_codeowners_history_gives_dated_windows_with_co_owners():
     }
     assert all(f.authority == 3 and f.predicate == "owned_by" for f in own.facts)
     assert {f.text for f in own.facts if f.value == "person:alice"} == {"docs (docs/) is owned by alice."}
+    # Co-owners name each other, so a reader sees one shared area, not two sources disagreeing.
+    assert {f.text for f in own.facts if f.subject == "area:docs" and f.valid_to is None} == {
+        "docs (docs/) is owned by the acme/docs team, together with the acme/core team.",
+        "docs (docs/) is owned by the acme/core team, together with the acme/docs team.",
+    }
     assert "pkg/cmd/billing/ removed from CODEOWNERS." in own.passages[2].text
     assert own.teams == {"core": "acme/core", "billing": "acme/billing", "docs": "acme/docs"}
 

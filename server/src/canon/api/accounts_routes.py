@@ -186,7 +186,7 @@ def suggestions(graph) -> list[str]:
         rows = graph.query(
             """MATCH (f:Fact {predicate: 'owned_by'})-[:ABOUT]->(a:Area)
                WHERE f.valid_to IS NULL AND NOT (f)-[:SUPERSEDED_BY]->() AND a.slug <> 'all'
-               RETURN DISTINCT coalesce(a.name, a.slug) AS name ORDER BY name LIMIT 2"""
+               WITH DISTINCT coalesce(a.name, a.slug) AS name RETURN name ORDER BY size(name), name LIMIT 2"""
         ).result_set
         out += [f"Who owns {name}?" for (name,) in rows]
         rows = graph.query(

@@ -184,7 +184,7 @@ def ownership_history(versions: list[dict], team_name: Callable[[str], str]) -> 
     out.facts = owned_by_facts(
         owner_windows(owner_versions),
         value=lambda team: f"team:{team}",
-        text=lambda area, team: _owner_text(out.names.get(area, area), team_name(team)),
+        text=lambda w: _owner_text(out.names.get(w.area, w.area), team_name(w.owner)),
     )
     return out
 

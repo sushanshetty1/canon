@@ -54,6 +54,7 @@ def graph_counts(graph) -> dict[str, int]:
         "people": one("MATCH (p:Person) RETURN count(p)"),
         "teams": one("MATCH (t:Team) RETURN count(t)"),
         "areas": one("MATCH (a:Area) RETURN count(a)"),
+        "stale": one("MATCH (f:Fact {stale: true}) RETURN count(f)"),
     }
 
 

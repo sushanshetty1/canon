@@ -15,6 +15,9 @@ from canon.cloud.session import current_user
 from canon.demo_seed import seed
 
 SECRET = "s" * 40
+# A repository name no real workspace has, so tests never touch a real workspace graph.
+OWNER = f"t{uuid.uuid4().hex[:8]}"
+REPO, SLUG = f"{OWNER}/cli", f"{OWNER}-cli"
 
 
 class FakeGitHub:
@@ -22,7 +25,7 @@ class FakeGitHub:
 
     def __init__(self):
         self.calls = []
-        self.repos = {"cli/cli": {"full_name": "cli/cli", "private": False}, "acme/secret": {"full_name": "acme/secret", "private": True}}
+        self.repos = {f"{REPO}": {"full_name": f"{REPO}", "private": False}, "acme/secret": {"full_name": "acme/secret", "private": True}}
         self.profiles = {"code-alice": {"id": 101, "login": "Alice", "name": "Alice Ng"}, "code-bob": {"id": 202, "login": "bob", "name": None}}
 
     def handler(self, request: httpx.Request) -> httpx.Response:
@@ -55,11 +58,12 @@ def accounts_graph(db):
 
 @pytest.fixture
 def made(db):
-    """Workspace graphs a test creates, deleted afterwards."""
+    """Workspace graphs a test creates, deleted afterwards. A graph that existed before the test is never touched."""
+    before = set(db.list_graphs())
     slugs = []
     yield slugs
     for slug in slugs:
-        if f"canon_{slug}" in db.list_graphs():
+        if f"canon_{slug}" in set(db.list_graphs()) - before:
             db.select_graph(f"canon_{slug}").delete()
 
 
@@ -224,22 +228,22 @@ def test_public_workspaces_are_open_and_private_ones_are_members_only(db, accoun
 
     alice = tc(app())
     sign_in(alice)
-    made.append("cli-cli")
-    assert alice.post("/api/workspaces", json={"repo": "cli/cli"}).status_code == 201
-    graphs["cli-cli"] = graph  # the workspace's routes read this graph
+    made.append(f"{SLUG}")
+    assert alice.post("/api/workspaces", json={"repo": f"{REPO}"}).status_code == 201
+    graphs[f"{SLUG}"] = graph  # the workspace's routes read this graph
 
-    assert alice.get("/api/w/cli-cli/stats").status_code == 200
-    assert alice.get("/api/w/cli-cli/later").json() == {"ws": "cli-cli"}
-    assert anon.get("/api/w/cli-cli/stats").status_code == 401
-    assert anon.post("/api/w/cli-cli/ask", json={"question": "Who?"}).status_code == 401
-    assert anon.get("/api/w/cli-cli/later").status_code == 401
-    assert anon.get("/api/w/cli-cli/jobs/latest").status_code == 401
+    assert alice.get(f"/api/w/{SLUG}/stats").status_code == 200
+    assert alice.get(f"/api/w/{SLUG}/later").json() == {"ws": f"{SLUG}"}
+    assert anon.get(f"/api/w/{SLUG}/stats").status_code == 401
+    assert anon.post(f"/api/w/{SLUG}/ask", json={"question": "Who?"}).status_code == 401
+    assert anon.get(f"/api/w/{SLUG}/later").status_code == 401
+    assert anon.get(f"/api/w/{SLUG}/jobs/latest").status_code == 401
 
     bob = tc(app())
     sign_in(bob, code="code-bob")
-    assert bob.get("/api/w/cli-cli/stats").status_code == 404
-    assert bob.get("/api/w/cli-cli/facts/x").status_code == 404
-    assert bob.post("/api/w/cli-cli/sync").status_code == 404
+    assert bob.get(f"/api/w/{SLUG}/stats").status_code == 404
+    assert bob.get(f"/api/w/{SLUG}/facts/x").status_code == 404
+    assert bob.post(f"/api/w/{SLUG}/sync").status_code == 404
     assert anon.get("/api/w/nowhere/stats").status_code == 404
 
     # Public workspaces are read-only, even to a signed-in user.
@@ -262,50 +266,50 @@ def test_create_a_workspace_from_a_repository(db, accounts_graph, made):
 
     cloud, _ = make(db, accounts_graph, ingest=ingest)
     client = tc(create_app(cloud=cloud))
-    assert client.post("/api/workspaces", json={"repo": "cli/cli"}).status_code == 401
+    assert client.post("/api/workspaces", json={"repo": f"{REPO}"}).status_code == 401
 
     sign_in(client)
     assert client.post("/api/workspaces", json={"repo": "not a repo"}).status_code == 422
     assert "public" in client.post("/api/workspaces", json={"repo": "acme/secret"}).json()["detail"]
     assert client.post("/api/workspaces", json={"repo": "acme/missing"}).status_code == 422
 
-    made.append("cli-cli")
-    res = client.post("/api/workspaces", json={"repo": "https://github.com/cli/cli"})
+    made.append(f"{SLUG}")
+    res = client.post("/api/workspaces", json={"repo": f"https://github.com/{REPO}"})
     assert res.status_code == 201
     body = res.json()
-    assert body["workspace"] == {"slug": "cli-cli", "name": "cli/cli", "repo": "cli/cli", "public": False, "role": "owner"}
+    assert body["workspace"] == {"slug": f"{SLUG}", "name": f"{REPO}", "repo": f"{REPO}", "public": False, "role": "owner"}
     assert body["job"]["status"] == "done" and body["job"]["kind"] == "create" and body["job"]["progress"] == 1.0
     assert body["job"]["counts"] == {"docs": 3, "documents": 9, "facts": 4}
-    assert seen == [("cli/cli", "gho_code-alice")]  # read with the signed-in user's token
+    assert seen == [(f"{REPO}", "gho_code-alice")]  # read with the signed-in user's token
 
     # The same repository again is the same workspace, not a second one.
-    again = client.post("/api/workspaces", json={"repo": "cli/cli"})
+    again = client.post("/api/workspaces", json={"repo": f"{REPO}"})
     assert again.status_code == 200 and again.json()["created"] is False and len(seen) == 1
 
     listed = client.get("/api/workspaces").json()
     assert [w["slug"] for w in listed["public"]] == ["posthog", "demo"]
-    assert [w["slug"] for w in listed["own"]] == ["cli-cli"]
+    assert [w["slug"] for w in listed["own"]] == [f"{SLUG}"]
     assert listed["own"][0]["job"]["status"] == "done" and listed["own"][0]["suggestions"]
     assert tc(create_app(cloud=cloud)).get("/api/workspaces").json()["own"] == []
 
     # Another user making the same repository's workspace gets a slug of their own.
     bob = tc(create_app(cloud=cloud))
     sign_in(bob, code="code-bob")
-    made.append("cli-cli-2")
-    assert bob.post("/api/workspaces", json={"repo": "cli/cli"}).json()["workspace"]["slug"] == "cli-cli-2"
+    made.append(f"{SLUG}-2")
+    assert bob.post("/api/workspaces", json={"repo": f"{REPO}"}).json()["workspace"]["slug"] == f"{SLUG}-2"
 
 
 def test_workspace_limit(db, accounts_graph, made):
     github = FakeGitHub()
     for i in range(6):
-        github.repos[f"acme/r{i}"] = {"full_name": f"acme/r{i}", "private": False}
+        github.repos[f"{OWNER}/r{i}"] = {"full_name": f"{OWNER}/r{i}", "private": False}
     cloud, _ = make(db, accounts_graph, github=github, ingest=lambda g, repo, token, report: {})
     client = tc(create_app(cloud=cloud))
     sign_in(client)
     for i in range(5):
-        made.append(f"acme-r{i}")
-        assert client.post("/api/workspaces", json={"repo": f"acme/r{i}"}).status_code == 201
-    assert client.post("/api/workspaces", json={"repo": "acme/r5"}).status_code == 409
+        made.append(f"{OWNER}-r{i}")
+        assert client.post("/api/workspaces", json={"repo": f"{OWNER}/r{i}"}).status_code == 201
+    assert client.post("/api/workspaces", json={"repo": f"{OWNER}/r5"}).status_code == 409
 
 
 def test_sync_and_job_progress(db, accounts_graph, made):
@@ -322,39 +326,39 @@ def test_sync_and_job_progress(db, accounts_graph, made):
     cloud, _ = make(db, accounts_graph, ingest=ingest)
     client = tc(create_app(cloud=cloud))
     sign_in(client)
-    made.append("cli-cli")
-    client.post("/api/workspaces", json={"repo": "cli/cli"})
+    made.append(f"{SLUG}")
+    client.post("/api/workspaces", json={"repo": f"{REPO}"})
 
-    res = client.post("/api/w/cli-cli/sync")
-    assert res.status_code == 200 and res.json()["job"]["kind"] == "sync" and runs == ["cli/cli", "cli/cli"]
+    res = client.post(f"/api/w/{SLUG}/sync")
+    assert res.status_code == 200 and res.json()["job"]["kind"] == "sync" and runs == [f"{REPO}", f"{REPO}"]
 
     # A failure is stored as a calm sentence, never the error text (which can carry a token).
-    client.post("/api/w/cli-cli/sync")
-    job = client.get("/api/w/cli-cli/jobs/latest").json()["job"]
+    client.post(f"/api/w/{SLUG}/sync")
+    job = client.get(f"/api/w/{SLUG}/jobs/latest").json()["job"]
     assert job["status"] == "failed" and "gho_secret" not in json.dumps(job) and "GitHub" in job["error"]
     assert job["step"] == "extract" and job["counts"] == {"extracted": 1, "to_extract": 4}
 
     # One job at a time: while one runs, another is refused.
     cloud.runner = pending.append
-    assert client.post("/api/w/cli-cli/sync").status_code == 200
-    job = client.get("/api/w/cli-cli/jobs/latest").json()["job"]
+    assert client.post(f"/api/w/{SLUG}/sync").status_code == 200
+    job = client.get(f"/api/w/{SLUG}/jobs/latest").json()["job"]
     assert job["status"] == "running" and job["step_label"] == "Reading the repository"
-    assert client.post("/api/w/cli-cli/sync").status_code == 409
+    assert client.post(f"/api/w/{SLUG}/sync").status_code == 409
     pending.pop()()
-    assert client.get("/api/w/cli-cli/jobs/latest").json()["job"]["status"] == "done"
+    assert client.get(f"/api/w/{SLUG}/jobs/latest").json()["job"]["status"] == "done"
 
 
 def test_a_job_left_running_by_a_stopped_server_reads_as_failed(db, accounts_graph, made):
     cloud, _ = make(db, accounts_graph, ingest=lambda g, r, t, report: {})
     client = tc(create_app(cloud=cloud))
     sign_in(client)
-    made.append("cli-cli")
+    made.append(f"{SLUG}")
     cloud.runner = lambda fn: None  # the job never runs: the server "stopped"
-    client.post("/api/workspaces", json={"repo": "cli/cli"})
-    assert client.get("/api/w/cli-cli/jobs/latest").json()["job"]["status"] == "running"
+    client.post("/api/workspaces", json={"repo": f"{REPO}"})
+    assert client.get(f"/api/w/{SLUG}/jobs/latest").json()["job"]["status"] == "running"
     real = cloud.clock
     cloud.clock = lambda: real() + 3600
     cloud.jobs()._running.clear()
-    assert client.get("/api/w/cli-cli/jobs/latest").json()["job"]["status"] == "failed"
+    assert client.get(f"/api/w/{SLUG}/jobs/latest").json()["job"]["status"] == "failed"
     cloud.runner = lambda fn: fn()
-    assert client.post("/api/w/cli-cli/sync").status_code == 200
+    assert client.post(f"/api/w/{SLUG}/sync").status_code == 200

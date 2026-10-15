@@ -40,9 +40,9 @@ Fetch = Callable[[str], Any]
 CODEOWNERS_PATHS = (".github/CODEOWNERS", "CODEOWNERS", "docs/CODEOWNERS")  # GitHub's order of precedence
 DOC_SUFFIXES = (".md", ".mdx")
 _SKIP_DOC = re.compile(
-    r"(^|/)(node_modules|vendor|third_party|\.git)/"
+    r"(^|/)(node_modules|vendor|third_party|\.git|fixtures?|testdata|__snapshots__)/"
     r"|(^|/)(CHANGELOG|CHANGES|HISTORY|LICENSE|LICENCE|NOTICE|COPYING)[^/]*$"
-    r"|^\.github/(ISSUE_TEMPLATE|PULL_REQUEST_TEMPLATE|pull_request_template)",
+    r"|(^|/)(ISSUE_TEMPLATE|PULL_REQUEST_TEMPLATE)(/|\.md$)",
     re.I,
 )
 _DECISIONS = re.compile(r"(^|/)(rfcs?|adrs?|decisions?|proposals?|design)/", re.I)
@@ -203,8 +203,14 @@ def codeowners_history(repo: str, versions: list[dict]) -> CodeOwners:
         previous = current
     out.rules = out.history[-1][1] if out.history else []
 
-    def text(area: str, owner: str) -> str:
-        return f"{out.names[area]} ({out.patterns[area]}) is owned by {owner_label(owner)}."
+    # Owners listed together on one rule are co-owners: each fact names the others, so two owners read as a shared
+    # area, not as two sources that disagree.
+    listed = {(pid, area): owners for _, pid, current in owner_versions for area, owners in current.items()}
+
+    def text(w) -> str:
+        others = [o for o in listed.get((w.passage_id, w.area), ()) if o != w.owner]
+        also = f", together with {' and '.join(owner_label(o) for o in others)}" if others else ""
+        return f"{out.names[w.area]} ({out.patterns[w.area]}) is owned by {owner_label(w.owner)}{also}."
 
     out.facts = owned_by_facts(owner_windows(owner_versions), value=owner_key, text=text)
     return out
