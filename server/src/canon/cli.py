@@ -72,6 +72,11 @@ def main(argv: list[str] | None = None) -> int:
     ask.add_argument("question")
     ask.add_argument("--workspace", default="posthog")
 
+    fixes = sub.add_parser("fixes", help="build the fix queue for a workspace and draft its corrections")
+    fixes.add_argument("workspace")
+    fixes.add_argument("--no-draft", action="store_true", help="build and route only, call no model")
+    fixes.add_argument("--retry", action="store_true", help="draft again the fixes whose last draft was rejected")
+
     seed = sub.add_parser("seed", help="load the small Kestrel demo company into a workspace")
     seed.add_argument("workspace")
     seed.add_argument("--reset", action="store_true", help="delete the workspace graph first")
@@ -92,6 +97,14 @@ def main(argv: list[str] | None = None) -> int:
         ensure_schema(workspace_graph(connect(), args.workspace))
         print(f"Indexes ready for workspace {args.workspace}")
         return 0
+    if args.command == "fixes":
+        from canon.graph.db import connect, workspace_graph, workspace_graph_name
+
+        db = connect()
+        if workspace_graph_name(args.workspace) not in db.list_graphs():
+            print(f"No workspace {args.workspace}.")
+            return 1
+        return run_fixes(workspace_graph(db, args.workspace), draft=not args.no_draft, retry=args.retry)
     if args.command == "seed":
         from canon.demo_seed import seed as seed_graph
         from canon.graph.db import connect, workspace_graph, workspace_graph_name
@@ -190,4 +203,41 @@ def ingest_posthog(args) -> int:
     if not args.skip_extract:
         # Which current process and policy statements conflict is a question of meaning: a model reads each topic.
         print("Judged:", ", ".join(f"{k} {v}" for k, v in asyncio.run(judge(graph, check_model())).items()))
+    # The pages that now say something out of date become the fix queue.
+    run_fixes(graph, draft=not args.skip_extract, show=False)
+    return 0
+
+
+def render_fix(fix: dict) -> str:
+    owner = ", ".join(f"{r['name']} ({r['role']})" for r in fix["routed"]) or "nobody"
+    lines = [f"{fix['page']['title']}  {fix['page']['url']}"]
+    if fix["old"]:
+        lines.append(_wrap(f"Old: {fix['old']}", 2))
+    lines.append(_wrap(f"New: {fix['new']}" if fix["new"] else f"No draft: {fix['draft_error'] or 'not drafted yet'}", 2))
+    lines.append(_wrap(f"To: {owner}. {fix['reason'] or ''}".rstrip(), 2))
+    return "\n".join(lines)
+
+
+def run_fixes(graph, *, draft: bool = True, retry: bool = False, show: bool = True) -> int:
+    """Build the fix queue, then draft its corrections when a model key is set."""
+    import asyncio
+
+    from canon.config import settings
+    from canon.fixes import build, list_fixes, totals
+    from canon.fixes import draft as draft_fixes
+
+    print("Fixes:", ", ".join(f"{k} {v}" for k, v in build(graph).items()))
+    if draft and not settings().anthropic_api_key:
+        print("Drafting needs ANTHROPIC_API_KEY; the fixes are built but not drafted.")
+    elif draft:
+        from canon.llm import answer_model, check_model
+        from canon.verify.check import make_entail
+
+        drafted = asyncio.run(draft_fixes(graph, model=answer_model(), entail=make_entail(check_model()), retry=retry))
+        print("Drafted:", ", ".join(f"{k} {v}" for k, v in drafted.items()))
+    print("Queue:", ", ".join(f"{k} {v}" for k, v in totals(graph).items()))
+    if show:
+        for fix in list_fixes(graph, ("open", "approved")):
+            print()
+            print(render_fix(fix))
     return 0

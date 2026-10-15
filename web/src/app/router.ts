@@ -14,6 +14,15 @@ export function usePath(): string {
 
 export const isAppPath = (path: string) => path === '/app' || path.startsWith('/app/')
 
+/** Each screen's path, by its name in the rail. A screen without a path here is still to come. */
+export const ROUTES: Record<string, string> = {
+  Ask: '/app',
+  'Fix queue': '/app/fixes',
+}
+
+/** The screen a path shows: Ask for anything unknown. */
+export const screenFor = (path: string) => Object.keys(ROUTES).find((name) => ROUTES[name] === path.replace(/\/+$/, '')) ?? 'Ask'
+
 /** Go to a path in the app, keeping the query (so `?mock=1` survives). */
 export function navigate(to: string) {
   if (to === window.location.pathname) return

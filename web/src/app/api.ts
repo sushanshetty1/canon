@@ -143,3 +143,52 @@ export async function stats(ws: string, signal?: AbortSignal): Promise<Stats> {
     throw e
   }
 }
+
+// --- The fix queue -----------------------------------------------------------------------------------
+
+export type FixStatus = 'open' | 'approved' | 'filed' | 'dismissed' | 'resolved'
+export type FixFilter = 'open' | 'filed' | 'dismissed'
+
+/** Who a fix goes to: the owning team, its lead, or the page's last author. */
+export type Routed = { kind: 'team' | 'person'; key: string; name: string; role: 'owner' | 'lead' | 'author'; team?: string }
+
+export type Fix = {
+  id: string
+  status: FixStatus
+  old: string | null
+  new: string | null
+  checked: string[] | null
+  draft_error: string | null
+  reason: string | null
+  created_at: string | null
+  resolved_at: string | null
+  page: { id: string | null; title: string | null; url: string | null; kind: string | null; updated_at: string | null; author: string | null }
+  passage: { id: string | null; text: string | null }
+  stale: Source[]
+  evidence: Source[]
+  routed: Routed[]
+  approved_by: string | null
+  issue: { repo: string | null; url: string | null; title: string | null; body: string | null; dry_run: boolean; error: string | null; filed_at: string | null }
+  dismissed: { by: string | null; at: string | null; reason: string | null }
+}
+
+export type FixList = { fixes: Fix[]; counts: Record<FixStatus, number>; dry_run: boolean }
+
+async function postJson<T>(path: string, body: unknown): Promise<T> {
+  let res: Response
+  try {
+    res = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify(body) })
+  } catch {
+    throw new Error('Canon could not be reached. Try again in a moment.')
+  }
+  if (!res.ok) throw await failure(res)
+  return (await res.json()) as T
+}
+
+const fixPath = (ws: string, rest = '') => `/api/w/${encodeURIComponent(ws)}/fixes${rest}`
+
+export const fixes = (ws: string, status: FixFilter, signal?: AbortSignal) => getJson<FixList>(fixPath(ws, `?status=${status}`), signal)
+
+export const approveFix = (ws: string, id: string, repo: string) => postJson<Fix>(fixPath(ws, `/${encodeURIComponent(id)}/approve`), { repo })
+
+export const dismissFix = (ws: string, id: string, reason: string) => postJson<Fix>(fixPath(ws, `/${encodeURIComponent(id)}/dismiss`), { reason })
