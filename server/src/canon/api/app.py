@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 
 from canon.api import changes_routes
 from canon.api import decisions_routes
+from canon.api import sources_routes
 from canon.api.fixes_routes import router as fixes_router
 from canon.api.limits import Limits, client_address, replay
 from canon.api.people_routes import router as people_router
@@ -178,4 +179,5 @@ def create_app(
 
     app.include_router(decisions_routes.router)
     app.include_router(changes_routes.router)
+    app.include_router(sources_routes.router)
     return app

@@ -104,6 +104,8 @@ class Cloud:
     - `http()` makes the client GitHub is called with (a mocked transport in tests).
     - `runner(fn)` runs a job: in a thread by default, inline in tests.
     - `ingest(graph, repo, token, report)` fills a workspace; the real one reads GitHub and calls the model.
+    - `upload(graph, kind, data, filename, by, report)` reads an uploaded export into a workspace; the real one
+      calls the model when a key is set.
     """
 
     def __init__(
@@ -114,6 +116,7 @@ class Cloud:
         http: Callable[[], Any] | None = None,
         runner: Callable[[Callable[[], None]], None] | None = None,
         ingest: Callable[..., dict] | None = None,
+        upload: Callable[..., dict] | None = None,
         clock: Callable[[], float] = time.time,
     ):
         self.config = config or CloudConfig()
@@ -121,6 +124,7 @@ class Cloud:
         self.http = http or _default_http
         self.runner = runner or _thread_runner
         self.ingest = ingest
+        self.upload = upload
         self.clock = clock
         self._lock = threading.Lock()
         self._db: Any = None

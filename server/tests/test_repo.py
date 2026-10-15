@@ -342,7 +342,8 @@ def test_ingest_then_sync_reextracts_only_changed_passages(graph, tmp_path):
     out = ingest_repo(graph, "acme/app", cache_root=tmp_path, source=FakeSource("h1", pieces(first)),
                       report=lambda **kw: steps.append(kw.get("step")), extract_model="claude-haiku-5-5",
                       extract_client=claude)
-    assert [s for s in steps if s] == ["clone", "docs", "codeowners", "activity", "activity", "people", "write", "extract", "link"]
+    assert [s for s in steps if s] == ["clone", "docs", "wiki", "codeowners", "activity", "activity", "discussions", "releases",
+                                      "people", "write", "extract", "link", "decisions"]
     assert out["counts"]["docs"] == 3 and out["counts"]["pulls"] == 1 and out["counts"]["documents"] > 3
     assert len(claude.prompts) == 3
     assert source_state(graph)["head"] == "h1"

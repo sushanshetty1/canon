@@ -37,6 +37,7 @@ from canon.sources.posthog import clean_mdx, frontmatter, passages_of, split_pas
 from canon.types import Activity, Batch, Doc, Fact
 
 RFC_AUTHORITY = 2
+DECISION_KINDS = ("rfc", "adr")  # PostHog's RFCs, and any repository's decision records
 MAX_PAIRS = 120  # model questions per run at most
 JUDGE_CHARS = 2400
 
@@ -137,17 +138,23 @@ def write_proposals(graph, rfc_rows: list[dict]) -> int:
 
 
 def plan(graph, rfc_rows: list[dict], pulls: list[dict]) -> dict[str, Plan]:
-    docs = {d: (t, u) for d, t, u in _rows(graph, "MATCH (d:Document {kind: 'rfc'}) RETURN d.id, d.title, d.url")}
+    kinds = {"kinds": list(DECISION_KINDS)}
+    docs = {d: (t, u) for d, t, u in _rows(graph, "MATCH (d:Document) WHERE d.kind IN $kinds RETURN d.id, d.title, d.url", kinds)}
     areas = dict(_rows(graph, "MATCH (a:Area) RETURN a.slug, coalesce(a.name, a.slug)"))
     staff = {h for (h,) in _rows(graph, "MATCH (p:Person) RETURN p.handle")}
     passages: dict[str, list[tuple[str, str]]] = {}
-    for d, pid, text in _rows(graph, "MATCH (d:Document {kind: 'rfc'})-[:HAS]->(p:Passage) RETURN d.id, p.id, p.text"):
+    for d, pid, text in _rows(
+        graph, "MATCH (d:Document)-[:HAS]->(p:Passage) WHERE d.kind IN $kinds RETURN d.id, p.id, p.text", kinds
+    ):
         passages.setdefault(d, []).append((pid, text or ""))
     plans: dict[str, Plan] = {}
     for row in rfc_rows:
         rfc = R.from_row(row)
         if rfc.doc_id not in docs:
             continue
+        status = R.status_of(rfc)
+        if rfc.state == "main" and status in ("proposed", "withdrawn"):
+            rfc.decided_at = None  # a record on the branch that says it is still a proposal decided nothing yet
         title, url = docs[rfc.doc_id]
         short = short_title(title)
         # Only an RFC that landed was decided; approving a pull request that then closed decided nothing.
@@ -159,7 +166,7 @@ def plan(graph, rfc_rows: list[dict], pulls: list[dict]) -> dict[str, Plan]:
             rfc=rfc,
             title=short,
             url=url,
-            status=R.status_of(rfc),
+            status=status,
             summary=R.summary_of(rfc.text),
             areas=R.areas_of(short, rfc.text, areas),
             people=people,
@@ -196,7 +203,8 @@ def candidates(plans: dict[str, Plan]) -> tuple[dict[tuple[str, str], str], dict
             earlier, later = _orient(p, plans[ref.target])
             if later.status not in ("accepted", "retired"):
                 continue  # a proposal replaces nothing until it is accepted
-            if ref.replaces and later is p:
+            # "This replaces X" in the later record, or "superseded by Y" in the earlier one: both state it.
+            if ref.replaces and ((later is p) != ref.passive):
                 stated[(earlier.rfc.id, later.rfc.id)] = ref.context
             else:
                 ask.setdefault((earlier.rfc.id, later.rfc.id), f"One links the other: {ref.context}")
@@ -318,6 +326,8 @@ def build(graph, rfc_rows: list[dict], pulls: list[dict], *, model: JsonModel | 
             dates = [plans[b].rfc.decided_at or plans[b].rfc.proposed_at for b, _, _ in p.replaced_by]
             p.replaced_at = min(d for d in dates if d) if any(dates) else None
             p.replaced_by.sort(key=lambda e: plans[e[0]].rfc.decided_at or "")
+        elif p.status == "superseded":
+            p.status = "retired"  # it says it was superseded, but names nothing Canon can find: it no longer holds
 
     _write(graph, plans, judged)
     statuses = [p.status for p in plans.values()]

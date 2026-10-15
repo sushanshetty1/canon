@@ -62,8 +62,9 @@ class Jobs:
         rows = graph.query("MATCH (j:Job) RETURN j ORDER BY j.started DESC LIMIT 1").result_set
         return _view(dict(rows[0][0].properties), self.cloud.clock()) if rows else None
 
-    def start(self, slug: str, kind: str, work: Callable[[Callable[..., None]], dict]) -> dict | None:
-        """Start `work(report)` for the workspace. None when a job is already running there."""
+    def start(self, slug: str, kind: str, work: Callable[[Callable[..., None]], dict], *, step: str = "clone") -> dict | None:
+        """Start `work(report)` for the workspace. None when a job is already running there. `step` is the step the
+        job starts on: reading the repository, or unpacking an upload."""
         with self._lock:
             current = self.latest(slug)
             if slug in self._running or (current and current["status"] == "running"):
@@ -73,11 +74,11 @@ class Jobs:
         now = self.cloud.clock()
         job_id = secrets.token_hex(6)
         graph.query(
-            """CREATE (:Job {id: $id, kind: $kind, status: 'running', step: 'clone', progress: 0.0, counts: '{}',
+            """CREATE (:Job {id: $id, kind: $kind, status: 'running', step: $step, progress: 0.0, counts: '{}',
                              started: $now, updated: $now, started_at: $at})""",
-            {"id": job_id, "kind": kind, "now": now, "at": _iso(now)},
+            {"id": job_id, "kind": kind, "step": step, "now": now, "at": _iso(now)},
         )
-        state = {"step": "clone", "progress": 0.0, "counts": {}, "written": 0.0}
+        state = {"step": step, "progress": 0.0, "counts": {}, "written": 0.0}
 
         def report(*, step: str | None = None, counts: dict | None = None, progress: float | None = None) -> None:
             if step:
@@ -128,6 +129,10 @@ def _calm(e: Exception) -> str:
 
     import httpx
 
+    from canon.sources.uploads import UploadError
+
+    if isinstance(e, UploadError):
+        return str(e)  # written to be shown
     if isinstance(e, subprocess.CalledProcessError):
         return "The repository could not be read from GitHub."
     if isinstance(e, httpx.HTTPStatusError):

@@ -66,6 +66,10 @@ def main(argv: list[str] | None = None) -> int:
     ingest.add_argument("--skip-extract", action="store_true", help="write the connector's data, call no model")
     ingest.add_argument("--dry-run", action="store_true", help="fetch and count, write nothing, call no model")
     ingest.add_argument("--limit-extract", type=int, default=None, help="extract at most this many passages")
+    ingest.add_argument(
+        "--conversations", type=int, default=600,
+        help="of which at most this many come from issues, comment threads and forum threads, chosen by signal",
+    )
     ingest.add_argument("--concurrency", type=int, default=8)
 
     ask = sub.add_parser("ask", help="ask a question and print each claim with its verdict")
@@ -161,20 +165,23 @@ def ingest_posthog(args) -> int:
     from collections import Counter
 
     from canon.config import settings
-    from canon.extract.facts import Entities, Usage, extract, select_passages
+    from canon.extract.facts import Entities, Usage, choose, extract
     from canon.graph.db import connect, ensure_schema, workspace_graph
     from canon.graph.writer import write_batch, write_facts
     from canon.sources.cache import data_dir
     from canon.sources.posthog import load_posthog
+    from canon.types import family
 
     batch = load_posthog(data_dir() / "raw" / "posthog")
     kinds = Counter(d.kind for d in batch.docs)
     entities = Entities.from_batch(batch)
-    worth = select_passages(batch, entities)
-    chosen = worth[: args.limit_extract] if args.limit_extract is not None else worth
+    chosen, later = choose(batch, entities, limit=args.limit_extract, conversations=args.conversations)
     current = sum(f.valid_to is None for f in batch.facts)
+    kind_of = {d.id: d.kind for d in batch.docs}
+    picked = Counter(family(kind_of.get(p.doc_id)) for p in chosen)
     print(f"Documents: {len(batch.docs)} ({', '.join(f'{k} {n}' for k, n in sorted(kinds.items()))})")
-    print(f"Passages: {len(batch.passages)}, worth extracting: {len(worth)}, chosen: {len(chosen)}")
+    print(f"Passages: {len(batch.passages)}, worth extracting: {len(chosen) + len(later)}, chosen: {len(chosen)} "
+          f"({', '.join(f'{k} {n}' for k, n in sorted(picked.items()))})")
     print(f"People: {len(batch.people)}, teams: {len(batch.teams)}, areas: {len(batch.areas)}")
     print(f"Activity: {len(batch.activity)}, ownership facts: {len(batch.facts)} ({current} current)")
     if args.dry_run:
@@ -200,7 +207,10 @@ def ingest_posthog(args) -> int:
         )
         write_facts(graph, facts)
         predicates = Counter(f.predicate for f in facts)
+        doc_of = {p.id: p.doc_id for p in batch.passages}
+        families = Counter(family(kind_of.get(doc_of.get(f.passage_id))) for f in facts)
         print(f"Extracted facts: {len(facts)} ({', '.join(f'{k} {n}' for k, n in sorted(predicates.items()))})")
+        print(f"Facts by source: {', '.join(f'{k} {n}' for k, n in sorted(families.items()))}")
         print(
             f"Model calls: {usage.calls}, cached: {usage.cached}, failed: {usage.failed}; tokens in "
             f"{usage.input_tokens}, out {usage.output_tokens}, cache read {usage.cache_read_tokens}, "

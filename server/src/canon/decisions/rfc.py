@@ -9,6 +9,11 @@ Everything here is plain text work over raw RFC rows and pull request rows. No g
 
 An RFC is accepted when its pull request merged (or it was committed to the main branch directly), proposed while
 its pull request is open, and withdrawn when the pull request closed without merging.
+
+The same reading works for any repository's decision records (`docs/adr/0005-use-postgres.md`, `rfcs/0012-x.md`):
+a row then has its own `doc_id`, the dates of the commits that added and last changed it, and no pull request. An
+ADR says its own status ("## Status: Accepted", "status: superseded" in its frontmatter), and names the record that
+replaced it by a link or by number ("Superseded by [ADR-0007](0007-events.md)").
 """
 
 import re
@@ -32,6 +37,39 @@ NEAR = 80  # a replacement word counts when it is this close to the link
 
 _RFC_FILE = re.compile(r"(?:requests-for-comments/|\./)([\w.%-]+?)\.md", re.I)
 _RFC_PULL = re.compile(r"requests-for-comments-public/pull/(\d+)", re.I)
+# Any Markdown link to another page: `[ADR-0007](0007-events.md)`, `(../adr/0007-events.md#status)`.
+_MD_LINK = re.compile(r"\]\(\s*<?([^)\s>]*?)([\w.%-]+?)\.mdx?(?:#[^)\s>]*)?>?\s*\)", re.I)
+# A record named by number: "ADR-0007", "ADR 7", "RFC #12".
+_NUMBERED = re.compile(r"\b(adr|rfc)[\s#-]*0*(\d{1,4})\b", re.I)
+_NUMBERED_STEM = re.compile(r"^(?:adr|rfc)?[-_]?0*(\d{1,4})[-_]", re.I)
+_DATED_STEM = re.compile(r"^\d{4}-\d{2}-\d{2}")
+# The earlier record says a later one replaced it: "Superseded by ADR-0007", "replaced by [..](..)".
+PASSIVE = re.compile(r"\b(superseded|replaced|obsoleted|deprecated)\s+(by|in favou?r of|with)\b", re.I)
+# A status line or a Status section: "Status: Accepted", "* **Status**: proposed", "## Status\n\nSuperseded by ...".
+_STATUS_LINE = re.compile(r"^\s*(?:[-*>]\s*)?\**status\**\s*:+\**\s*(.+?)\s*$", re.I | re.M)
+_STATUS_HEADING = re.compile(r"^#{1,4}\s*status\s*:?\s*#*\s*\n(?:\s*\n)*\s*(?:[-*>]\s*)?(.+?)\s*$", re.I | re.M)
+_STATUS_WORDS = (
+    (r"supersed|replaced", "superseded"),
+    (r"deprecat|obsolete|retired", "retired"),
+    (r"reject|declin", "rejected"),
+    (r"withdr[ae]wn?|abandon", "withdrawn"),
+    (r"accept|approv|adopt|implement|done|final|active|decided|agreed", "accepted"),
+    (r"propos|draft|review|discuss|open|pending|wip|rfc|under consideration", "proposed"),
+)
+
+
+def stated_status(text: str) -> str | None:
+    """What a record says its own status is, or None when it does not say."""
+    head = text[:4000]
+    for pattern in (_STATUS_HEADING, _STATUS_LINE):
+        m = pattern.search(head)
+        if not m:
+            continue
+        value = _plain(m.group(1)).lower()
+        for words, status in _STATUS_WORDS:
+            if re.search(words, value):
+                return status
+    return None
 
 
 def decision_id(path: str) -> str:
@@ -85,7 +123,7 @@ def from_row(row: dict) -> Rfc:
     return Rfc(
         id=decision_id(row["path"]),
         path=row["path"],
-        doc_id=f"rfc:{row['path']}",
+        doc_id=row.get("doc_id") or f"rfc:{row['path']}",
         text=row.get("text") or "",
         stem=PurePosixPath(row["path"]).stem,
         proposed_at=proposed,
@@ -108,7 +146,9 @@ def status_of(rfc: Rfc) -> str:
         return "retired"
     if _REJECTED.search(head):
         return "rejected"
-    return {"merged": "accepted", "main": "accepted", "open": "proposed", "closed": "withdrawn"}[rfc.state]
+    if rfc.state == "main":  # committed straight to the branch: what it says of itself, else accepted
+        return stated_status(rfc.text) or "accepted"
+    return {"merged": "accepted", "open": "proposed", "closed": "withdrawn"}[rfc.state]
 
 
 def _plain(line: str) -> str:
@@ -156,21 +196,38 @@ class Reference:
     target: str  # a decision id
     context: str  # the sentence that names it
     replaces: bool  # the sentence uses replacement words
+    passive: bool = False  # "superseded by <target>": the target replaced this record, not the other way round
+
+
+def _number(stem: str) -> int | None:
+    if _DATED_STEM.match(stem):
+        return None
+    m = _NUMBERED_STEM.match(stem)
+    return int(m.group(1)) if m else None
 
 
 def references(rfc: Rfc, known: dict[str, "Rfc"]) -> list[Reference]:
-    """The other RFCs this one names, by file name or by the pull request that added them."""
+    """The other records this one names: by file name, by a Markdown link, by number ("ADR-0007"), or by the pull
+    request that added them."""
     by_stem = {r.stem.lower(): r.id for r in known.values()}
     by_pr = {r.pr_number: r.id for r in known.values() if r.pr_number}
+    by_number: dict[int, str] = {}
+    for r in sorted(known.values(), key=lambda r: r.id):
+        n = _number(r.stem)
+        if n is not None:
+            by_number.setdefault(n, r.id)
     found: dict[str, Reference] = {}
     for line in rfc.text.splitlines():
         links = [(m, by_stem.get(m.group(1).replace("%20", " ").lower())) for m in _RFC_FILE.finditer(line)]
+        links += [(m, by_stem.get(m.group(2).replace("%20", " ").lower())) for m in _MD_LINK.finditer(line)]
+        links += [(m, by_number.get(int(m.group(2)))) for m in _NUMBERED.finditer(line)]
         links += [(m, by_pr.get(int(m.group(1)))) for m in _RFC_PULL.finditer(line)]
         for m, target in links:
             if not target or target == rfc.id:
                 continue
             near = line[max(0, m.start() - NEAR) : m.end() + NEAR]
-            ref = Reference(target, _clip(_plain(line), 300), bool(REPLACES.search(near)))
+            before = line[max(0, m.start() - NEAR) : m.start()]
+            ref = Reference(target, _clip(_plain(line), 300), bool(REPLACES.search(near)), bool(PASSIVE.search(before)))
             if target not in found or (ref.replaces and not found[target].replaces):
                 found[target] = ref
     return list(found.values())
@@ -260,7 +317,10 @@ def areas_of(title: str, text: str, areas: dict[str, str]) -> list[str]:
 
 
 def pull_id(row: dict) -> str:
-    """Pull requests in PostHog's main repo keep the connector's id (`pull:123`); others name their repo."""
+    """Pull requests in PostHog's main repo keep the connector's id (`pull:123`); others name their repo. A row that
+    knows its document's id (a repository workspace's own pull requests) keeps it."""
+    if row.get("doc_id"):
+        return row["doc_id"]
     repo = row.get("repo") or "PostHog/posthog"
     return f"pull:{row['number']}" if repo == "PostHog/posthog" else f"pull:{repo}#{row['number']}"
 

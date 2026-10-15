@@ -7,6 +7,7 @@ request. `GITHUB_TOKEN` is used when set and never logged. On a rate limit the c
 """
 
 import os
+import shutil
 import subprocess
 import time
 from dataclasses import dataclass
@@ -25,17 +26,25 @@ def git(repo: Path, *args: str) -> str:
     return out.stdout
 
 
-def clone(url: str, dest: Path, *, sparse: list[str] | None = None) -> Path:
-    """Clone once; a second call finds the clone and does nothing. `sparse` makes it a blob-less sparse clone."""
+def clone(url: str, dest: Path, *, sparse: list[str] | None = None, quiet_fail: bool = False) -> Path:
+    """Clone once; a second call finds the clone and does nothing. `sparse` makes it a blob-less sparse clone.
+
+    git never asks for credentials here (a server has no one to ask). With `quiet_fail`, a repository that does
+    not exist, such as a wiki nobody has written yet, leaves `dest` without a clone instead of raising."""
     if (dest / ".git").exists():
         return dest
     dest.parent.mkdir(parents=True, exist_ok=True)
+    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
     if sparse:
-        subprocess.run(["git", "clone", "-q", "--filter=blob:none", "--no-checkout", url, str(dest)], check=True)
+        subprocess.run(["git", "clone", "-q", "--filter=blob:none", "--no-checkout", url, str(dest)], check=True, env=env)
         git(dest, "sparse-checkout", "set", "--no-cone", *sparse)
         git(dest, "checkout", "-q")
     else:
-        subprocess.run(["git", "clone", "-q", url, str(dest)], check=True)
+        done = subprocess.run(["git", "clone", "-q", url, str(dest)], env=env, capture_output=quiet_fail, timeout=300)
+        if done.returncode != 0:
+            if not quiet_fail:
+                raise subprocess.CalledProcessError(done.returncode, "git clone")
+            shutil.rmtree(dest, ignore_errors=True)
     return dest
 
 

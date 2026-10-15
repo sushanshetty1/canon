@@ -7,6 +7,7 @@ has not seen.
 
 import hashlib
 import re
+from dataclasses import dataclass
 
 from canon.types import Passage
 
@@ -118,6 +119,46 @@ def passages_of(doc_id: str, texts: list[str]) -> list[Passage]:
         pid = f"{doc_id}#{hashlib.sha1(text.encode()).hexdigest()[:10]}"
         seen.setdefault(pid, Passage(pid, doc_id, text))
     return list(seen.values())
+
+
+@dataclass(frozen=True)
+class Turn:
+    """One turn in a conversation: a comment, a chat message, a forum reply."""
+
+    who: str  # how the passage names the speaker: a handle, a display name, or "A user"
+    at: str  # ISO date or time
+    text: str
+    author: str | None = None  # the speaker's person key handle, when the graph keeps them as a person
+    label: str | None = None  # what the turn is, e.g. "Answer"
+
+
+MAX_TURN = 1800
+
+
+def turn_passages(doc_id: str, turns: list[Turn], *, max_chars: int = 900, merge: bool = False) -> list[Passage]:
+    """Each turn as passages that say who said it and when: `"alice, 2026-05-06:\\n..."`.
+
+    With `merge`, consecutive turns by the same speaker on the same day are one run (chat messages come in bursts).
+    A long turn is split, and each piece keeps the header, so a passage read alone still says who said it.
+    """
+    runs: list[Turn] = []
+    for t in turns:
+        text = re.sub(r"\n{3,}", "\n\n", (t.text or "").strip())[:MAX_TURN]
+        if not text:
+            continue
+        last = runs[-1] if runs else None
+        if merge and last and last.who == t.who and day(last.at) == day(t.at) and not t.label and not last.label:
+            runs[-1] = Turn(last.who, last.at, f"{last.text}\n{text}"[: MAX_TURN * 2], last.author)
+        else:
+            runs.append(Turn(t.who, t.at, text, t.author, t.label))
+    out: dict[str, Passage] = {}
+    for t in runs:
+        head = f"{t.who}{f' ({t.label})' if t.label else ''}, {day(t.at)}:"
+        for piece in split_passages(t.text, max_chars=max_chars):
+            text = f"{head}\n{piece}"
+            pid = f"{doc_id}#{hashlib.sha1(text.encode()).hexdigest()[:10]}"
+            out.setdefault(pid, Passage(pid, doc_id, text, t.author, day(t.at) or None))
+    return list(out.values())
 
 
 def fact_id(subject: str, predicate: str, value: str, passage_id: str) -> str:

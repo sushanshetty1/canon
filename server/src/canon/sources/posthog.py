@@ -1,4 +1,5 @@
-"""The PostHog connector: PostHog's public handbook, team pages, ownership map, RFCs, issues, pull requests and forum.
+"""The PostHog connector: PostHog's public handbook, team pages, ownership map, RFCs, issues with their comment
+threads, pull requests, and forum threads with their replies.
 
 It works in two steps. A source fetches raw data by name (`"handbook"`, `"ownership_history"`, `"pulls"`, ...) and
 caches it under `/data/raw/posthog/`; tests pass a `fetch` callable over small recorded fixtures instead. Then
@@ -10,12 +11,16 @@ area's owner list changes, the commit states one fact per owner in the new list 
 list. Co-owners are stated together in one passage. Handbook pages that still name an older owner are what the
 check later finds out of date.
 
+Tickets and chats are read as conversations: the comments under the issues PostHog's people took part in most, and
+the replies under forum threads, each a passage that says who said it and when. PostHog's own people are named by
+their handle; anyone else in a thread is "A community member", and nothing more about them is kept.
+
 Public data only: people keep a name, a role and a GitHub handle. No emails, avatars or locations are kept.
 """
 
 import re
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -27,7 +32,7 @@ from canon.people.attribution import Attributor
 from canon.sources import github as gh
 from canon.sources.cache import Cache
 from canon.sources.ownership import owned_by_facts, owner_windows
-from canon.sources.text import clean_mdx, frontmatter, passages_of, slugify, split_passages
+from canon.sources.text import Turn, clean_mdx, frontmatter, passages_of, slugify, split_passages, turn_passages
 from canon.sources.text import day as _day
 from canon.types import Activity, Area, Batch, Doc, Fact, Passage, Person, Team
 
@@ -36,6 +41,7 @@ __all__ = ["clean_mdx", "frontmatter", "load_posthog", "parse_ownership", "slugi
 SITE_REPO = "PostHog/posthog.com"
 RFC_REPO = "PostHog/requests-for-comments-public"
 MAIN_REPO = "PostHog/posthog"
+MAX_ISSUE_THREADS = 400  # issues whose comment threads are read in full
 OWNERSHIP_PATH = "src/hooks/useFeatureOwnership.tsx"
 STRAPI = "https://better-animal-d658c56969.strapiapp.com/api"
 SITE = "https://posthog.com"
@@ -392,12 +398,38 @@ def load_posthog(
             for c in r.get("comments") or []:
                 act(c["author"], doc.id, "COMMENTED", c["at"])
 
-    # Forum threads: what users ask, as evidence. No people from the forum are kept.
+    def turn(handle: str | None, at: str, body: str) -> Turn:
+        """A comment or a reply. PostHog's own people are named by handle; anyone else stays unnamed."""
+        h = (handle or "").lower()
+        body = re.sub(r"@([\w.-]+)/\d+", r"@\1", body or "")  # forum mentions carry a profile id
+        return Turn(h, at, body, h) if h in staff else Turn("A community member", at, body)
+
+    # Comment threads under issues: who said what, and when, one passage per comment.
+    issues = {str(r["number"]): r for r in fetch("issues") or []}
+    for number, comments in sorted((fetch("issue_threads") or {}).items()):
+        issue = issues.get(number)
+        said = [c for c in comments if c.get("at") and (c.get("body") or "").strip()]
+        if not issue or not said:
+            continue
+        areas = tuple(sorted({own.label_to_area[l] for l in issue.get("labels", []) if l in own.label_to_area}))
+        thread = Doc(f"thread:issue:{number}", "thread", issue["title"], issue["url"], _day(said[-1]["at"]), areas=areas)
+        batch.docs.append(thread)
+        batch.passages += turn_passages(thread.id, [turn(c.get("author"), c["at"], c["body"]) for c in said])
+        for c in said:
+            act(c.get("author"), thread.id, "COMMENTED", c["at"])
+
+    # Forum threads: what users ask and what PostHog's people answer. No one else from the forum is kept.
+    replies = fetch("forum_replies") or {}
     for q in fetch("forum") or []:
         title = q["subject"] + (" (resolved)" if q.get("resolved") else "")
-        doc = Doc(f"forum:{q['id']}", "forum", title, f"{SITE}/questions/{q['permalink']}", _day(q["created_at"]))
+        said = [r for r in replies.get(str(q["id"])) or [] if r.get("at") and (r.get("body") or "").strip()]
+        updated = _day(said[-1]["at"]) if said else _day(q["created_at"])
+        doc = Doc(f"forum:{q['id']}", "forum", title, f"{SITE}/questions/{q['permalink']}", updated)
         batch.docs.append(doc)
-        batch.passages += passages_of(doc.id, [_snippet(q["subject"], q.get("body"))])
+        batch.passages += [replace(p, at=_day(q["created_at"])) for p in passages_of(doc.id, [_snippet(q["subject"], q.get("body"))])]
+        batch.passages += turn_passages(doc.id, [turn(r.get("handle"), r["at"], r["body"]) for r in said])
+        for r in said:
+            act(r.get("handle"), doc.id, "COMMENTED", r["at"])
 
     batch.activity = sorted(set(batch.activity), key=lambda a: (a.doc_id, a.handle, a.rel, a.at))
     return batch
@@ -576,6 +608,69 @@ class LiveSource:
                 page += 1
 
         return self.cache.json("forum", read)
+
+    def _forum_replies(self) -> dict[str, list[dict]]:
+        """The replies under each cached forum thread, by thread id: the reply, when, and the GitHub handle on the
+        replier's profile when there is one (nothing else from the profile is kept)."""
+
+        def read() -> dict[str, list[dict]]:
+            ids = [q["id"] for q in self("forum") or []]
+            out: dict[str, list[dict]] = {}
+            for i in range(0, len(ids), 50):
+                params = [(f"filters[id][$in][{j}]", str(x)) for j, x in enumerate(ids[i : i + 50])]
+                params += [
+                    ("pagination[pageSize]", "50"),
+                    ("fields[0]", "subject"),
+                    ("populate[replies][fields][0]", "body"),
+                    ("populate[replies][fields][1]", "createdAt"),
+                    ("populate[replies][populate][profile][fields][0]", "github"),
+                ]
+                for q in self._strapi("questions", params)["data"]:
+                    rows = []
+                    for r in (_attrs(q).get("replies") or {}).get("data") or []:
+                        a = _attrs(r)
+                        profile = _attrs((a.get("profile") or {}).get("data") or {})
+                        url = (profile.get("github") or "").split("?")[0].strip().rstrip("/")
+                        handle = url.rsplit("/", 1)[-1].lstrip("@").lower() if url else None
+                        rows.append({"handle": handle or None, "at": a.get("createdAt"), "body": (a.get("body") or "")[:1500]})
+                    if rows:
+                        out[str(q["id"])] = rows
+            return out
+
+        return self.cache.json("forum_replies", read)
+
+    def _issue_threads(self) -> dict[str, list[dict]]:
+        """The comments, with their words, under the issues PostHog's own people commented on most: a bounded
+        sample, since most of the 1,500 issues hold only a report. By issue number."""
+
+        def read() -> dict[str, list[dict]]:
+            staff = set(people_and_teams(self("strapi_teams") or [])[0])
+
+            def staff_comments(r: dict) -> int:
+                return sum(1 for c in r.get("comments") or [] if (c.get("author") or "") in staff)
+
+            chosen = sorted((r for r in self("issues") or [] if staff_comments(r)), key=lambda r: (-staff_comments(r), -r["number"]))
+            chosen = chosen[:MAX_ISSUE_THREADS]
+            owner, name = MAIN_REPO.split("/")
+            out: dict[str, list[dict]] = {}
+            for i in range(0, len(chosen), 25):
+                fields = " ".join(
+                    f"i{r['number']}: issue(number: {r['number']}) "
+                    "{ comments(first: 30) { nodes { author { login __typename } bodyText createdAt } } }"
+                    for r in chosen[i : i + 25]
+                )
+                data = self.github.graphql(f'query {{ repository(owner: "{owner}", name: "{name}") {{ {fields} }} }}', {})
+                for key, node in (data.get("repository") or {}).items():
+                    turns = [
+                        {"author": _login(c["author"]), "at": c["createdAt"], "body": (c.get("bodyText") or "")[:1500]}
+                        for c in ((node or {}).get("comments") or {}).get("nodes") or []
+                        if (c.get("bodyText") or "").strip()
+                    ]
+                    if turns:
+                        out[key[1:]] = turns
+            return out
+
+        return self.cache.json("issue_threads", read)
 
     # -- GitHub: RFCs, pull requests, issues --
 

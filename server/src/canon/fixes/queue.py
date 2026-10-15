@@ -23,13 +23,16 @@ import hashlib
 from datetime import UTC, datetime
 
 from canon.graph import read
-from canon.types import entity
+from canon.types import CONVERSATIONS, entity
 
 LIVE = ("open", "approved")  # statuses a person has not finished with
 STATUSES = ("open", "approved", "filed", "dismissed", "resolved")
 
+# Pages only: a ticket or a chat is a record of what someone said on a day, not a page anyone keeps up to date, so
+# an out-of-date line in one is history, not something to fix.
 STALE = """
 MATCH (f:Fact {stale: true})-[:STATED_IN]->(p:Passage)<-[:HAS]-(d:Document)
+WHERE NOT coalesce(d.kind, '') IN $conversations
 RETURN DISTINCT f.id, f.subject, p.id, d.id
 """
 EXISTING = """
@@ -61,7 +64,8 @@ RETURN author, updated, handle, name, at
 ORDER BY at DESC
 """
 
-KIND_WORDS = {"ownership_map": "the ownership map", "team_page": "its team page", "handbook": "the handbook", "rfc": "an RFC"}
+KIND_WORDS = {"ownership_map": "the ownership map", "team_page": "its team page", "handbook": "the handbook", "rfc": "an RFC",
+              "adr": "a decision record"}
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 
@@ -155,7 +159,7 @@ def reroute(graph, fid: str) -> None:
 
 
 def build(graph) -> dict[str, int]:
-    stale = {fid: (subject, pid, doc) for fid, subject, pid, doc in graph.query(STALE).result_set}
+    stale = {fid: (subject, pid, doc) for fid, subject, pid, doc in graph.query(STALE, {"conversations": list(CONVERSATIONS)}).result_set}
     ends = read.chain_ends(graph, list(stale))
 
     fixes: dict[str, dict] = {}
