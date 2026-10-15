@@ -32,6 +32,9 @@ export type Source = {
 
 export type Person = { handle: string; name: string; why: string }
 
+/** A passage that comes close to a question no fact answers: a place to look, not a claim. */
+export type Closest = { title: string; url: string | null; kind: string; date: string | null; text: string }
+
 export type Counts = Record<VerdictName, number>
 
 export type AskEvent =
@@ -39,7 +42,7 @@ export type AskEvent =
   | { type: 'claim'; index: number; text: string; fact_ids: string[] }
   | { type: 'verdict'; index: number; verdict: VerdictName; sources: Source[]; newer: Source[]; conflicting: Source[]; error?: string }
   | { type: 'done'; counts: Counts }
-  | { type: 'empty'; ask: Person[] }
+  | { type: 'empty'; ask: Person[]; passages?: Closest[] }
   | { type: 'error'; message: string }
 
 export type FactDetail = { fact: Source; back: Source[]; forward: Source[]; restated: Source[]; conflicts: Source[] }

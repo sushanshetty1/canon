@@ -8,13 +8,18 @@ Events, in order:
   as its check finishes, so they can arrive out of order
 - `{"type": "done", "counts": {"verified": n, "stale": n, "disputed": n, "unsupported": n}}`
 
-or, after `evidence`, `{"type": "empty", "ask": [{"handle", "name", "why"}]}` when nothing found answers the
-question. Then no answer is drafted, and the people to ask come from ownership in the graph.
+or, after `evidence`, `{"type": "empty", "ask": [{"handle", "name", "why"}], "passages": [...]}` when nothing found
+answers the question. Then no answer is drafted; the people to ask come from ownership in the graph, and the
+closest passages are offered as places to look, never as claims.
+
+Questions about the workspace itself ("what sources are connected") are answered from the graph's structure by
+`canon.answer.inventory`, with the same events.
 """
 
 import asyncio
 from collections.abc import AsyncIterator
 
+from canon.answer import inventory
 from canon.answer.draft import draft
 from canon.answer.retrieve import retrieve
 from canon.llm import JsonModel, answer_model, check_model
@@ -34,6 +39,25 @@ MATCH (p:Person)-[:MEMBER_OF]->(t:Team {slug: $slug})
 OPTIONAL MATCH (p)-[a:AUTHORED|REVIEWED|COMMENTED|DECIDED]->(:Document)
 RETURN p.handle, coalesce(p.name, p.handle), coalesce(t.name, t.slug), count(a) AS n ORDER BY n DESC, p.handle LIMIT 3
 """
+
+
+CLOSEST = """
+CALL db.idx.fulltext.queryNodes('Passage', $q) YIELD node, score
+MATCH (d:Document)-[:HAS]->(node)
+RETURN coalesce(d.title, d.id), d.url, coalesce(d.kind, ''), coalesce(d.updated_at, ''), node.text
+ORDER BY score DESC LIMIT 3
+"""
+
+
+def closest_passages(graph, question: str) -> list[dict]:
+    """When no fact answers, the passages that come closest: places to look, not claims."""
+    from canon.answer.retrieve import search_terms
+
+    terms = search_terms(question)
+    if not terms:
+        return []
+    rows = graph.query(CLOSEST, {"q": "|".join(terms)}).result_set
+    return [{"title": t, "url": u, "kind": k, "date": d[:10] or None, "text": (x or "")[:400]} for t, u, k, d, x in rows]
 
 
 def _team_people(graph, slug: str, why_lead: str, why_member: str) -> list[dict]:
@@ -76,12 +100,24 @@ async def _checked(index: int, graph, claim: Claim, entail: Entail) -> tuple[int
 async def ask(
     graph, question: str, *, model: JsonModel | None = None, entail: Entail | None = None, limit: int = 24
 ) -> AsyncIterator[dict]:
+    if inventory.is_inventory(question):  # about the workspace itself: answered from the graph's structure
+        async for event in inventory.events(graph):
+            yield event
+        return
     evidence = await asyncio.to_thread(retrieve, graph, question, limit=limit)
     yield {"type": "evidence", "facts": len(evidence.facts), "documents": evidence.documents}
 
     claims = await draft(question, evidence, model=model or answer_model()) if evidence.facts else []
+    if not claims and inventory.maybe_inventory(question):
+        async for event in inventory.events(graph, evidence=False):
+            yield event
+        return
     if not claims:
-        yield {"type": "empty", "ask": await asyncio.to_thread(who_to_ask, graph, evidence.entities)}
+        yield {
+            "type": "empty",
+            "ask": await asyncio.to_thread(who_to_ask, graph, evidence.entities),
+            "passages": await asyncio.to_thread(closest_passages, graph, question),
+        }
         return
     for i, claim in enumerate(claims):
         yield {"type": "claim", "index": i, "text": claim.text, "fact_ids": claim.fact_ids}

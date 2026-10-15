@@ -8,7 +8,7 @@ import { ask, isMock, type AskEvent } from './api'
 import { Answer, ease, Removed, Tally } from './Answer'
 import { SourcePanel } from './SourcePanel'
 import { initial, reduce, type AskState } from './state'
-import { plural } from './text'
+import { plural, formatDate, kindLabel } from './text'
 import type { Workspace } from './workspaces'
 
 function useWide() {
@@ -292,7 +292,37 @@ export function Ask({ ws }: { ws: Workspace }) {
                       ))}
                     </ul>
                   ) : (
-                    <p className="mt-4 text-[18px] leading-relaxed text-muted">Nobody in the graph owns this either. Try naming an area or a team.</p>
+                    <p className="mt-4 text-[18px] leading-relaxed text-muted">
+                      {state.closest.length ? 'Nobody in the graph owns this either.' : 'Nobody in the graph owns this either. Try naming an area or a team.'}
+                    </p>
+                  )}
+                  {state.closest.length > 0 && (
+                    <section aria-labelledby="closest" className="mt-10">
+                      <h3 id="closest" className="text-[15px] font-semibold text-ink">
+                        The closest passages
+                      </h3>
+                      <p className="mt-1 text-[14px] text-muted">Places to look. No fact in them answers the question, so Canon does not answer from them.</p>
+                      <ul className="mt-4 divide-y divide-line border-y border-line">
+                        {state.closest.map((c, i) => (
+                          <li key={i} className="py-4">
+                            <p className="text-[13.5px] text-faint">
+                              {kindLabel(c.kind)}
+                              {c.date ? ` · ${formatDate(c.date)}` : ''}
+                            </p>
+                            <p className="mt-0.5 text-[16px] font-semibold text-ink">
+                              {c.url ? (
+                                <a href={c.url} target="_blank" rel="noreferrer" className="hover:text-cobalt">
+                                  {c.title}
+                                </a>
+                              ) : (
+                                c.title
+                              )}
+                            </p>
+                            <p className="mt-1.5 line-clamp-3 text-[15px] leading-relaxed text-muted">{c.text}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
                   )}
                 </motion.div>
               )}

@@ -98,7 +98,7 @@ def test_no_evidence_returns_no_answer(graph):
     # Nothing in the graph matches: no draft is written, and no one is suggested.
     model = StubModel([{"text": "Made up.", "fact_ids": []}])
     events = _events(graph, "What is the parental leave policy?", model)
-    assert events == [{"type": "evidence", "facts": 0, "documents": 0}, {"type": "empty", "ask": []}]
+    assert events == [{"type": "evidence", "facts": 0, "documents": 0}, {"type": "empty", "ask": [], "passages": []}]
     assert model.prompts == []
     # The question names an area, but the facts found do not answer it: ask the lead of the team that owns it.
     events = _events(graph, "How long are notebooks kept after deletion?", StubModel([]))
@@ -148,3 +148,23 @@ def test_topic_matches_other_word_forms_in_any_order(graph):
 
     write_facts(graph, [Fact("t1", "topic:ticket-escalation", "process", "x", "Escalate to support.", "2026-01-01", "p", 1)])
     assert match_entities(graph, "How do I escalate a support ticket?") == ["topic:ticket-escalation"]
+
+
+def test_workspace_questions_answer_from_the_inventory(graph):
+    from canon.answer.inventory import is_inventory, maybe_inventory
+    from canon.demo_seed import seed
+
+    seed(graph)
+    assert is_inventory("What sources are connected?") and not is_inventory("Who owns notebooks?")
+    assert maybe_inventory("What docs are there?") and not is_inventory("Which docs mention billing?")
+    events = asyncio.run(_collect(ask(graph, "What sources are connected?")))
+    kinds = [e["type"] for e in events]
+    assert kinds[0] == "evidence" and kinds[-1] == "done" and "claim" in kinds
+    first = next(e for e in events if e["type"] == "claim")
+    assert first["text"].startswith("Canon reads ")
+    verdicts = [e for e in events if e["type"] == "verdict"]
+    assert all(v["verdict"] == "verified" for v in verdicts) and verdicts[0]["sources"]
+
+
+async def _collect(stream):
+    return [e async for e in stream]

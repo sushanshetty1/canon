@@ -127,7 +127,7 @@ function Body({ ws, sentence }: { ws: string; sentence: Sentence }) {
   return (
     <div className="space-y-8">
       {sources}
-      {focus && sentence.verdict !== 'unsupported' && (
+      {focus && sentence.verdict !== 'unsupported' && focus.predicate !== 'document' && (
         <section aria-labelledby="fact-history">
           <h3 id="fact-history" className="text-[15px] font-semibold text-ink">
             Fact history

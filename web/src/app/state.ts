@@ -1,6 +1,6 @@
 // What the Ask screen knows about one question, built up from the event stream.
 
-import type { AskEvent, Counts, Person, Source, VerdictName } from './api'
+import type { AskEvent, Closest, Counts, Person, Source, VerdictName } from './api'
 
 export type Sentence = {
   index: number
@@ -21,13 +21,14 @@ export type AskState = {
   evidence: { facts: number; documents: number } | null
   sentences: Sentence[]
   people: Person[]
+  closest: Closest[]
   counts: Counts | null
   error: string | null
 }
 
 export type Action = { type: 'start'; question: string } | { type: 'event'; event: AskEvent } | { type: 'fail'; message: string } | { type: 'reset' }
 
-export const initial: AskState = { phase: 'idle', question: '', evidence: null, sentences: [], people: [], counts: null, error: null }
+export const initial: AskState = { phase: 'idle', question: '', evidence: null, sentences: [], people: [], closest: [], counts: null, error: null }
 
 function tally(sentences: Sentence[]): Counts {
   const counts: Counts = { verified: 0, stale: 0, disputed: 0, unsupported: 0 }
@@ -64,7 +65,7 @@ export function reduce(state: AskState, action: Action): AskState {
         case 'done':
           return { ...state, phase: 'done', counts: e.counts ?? tally(state.sentences) }
         case 'empty':
-          return { ...state, phase: 'empty', people: e.ask ?? [] }
+          return { ...state, phase: 'empty', people: e.ask ?? [], closest: e.passages ?? [] }
         case 'error':
           return { ...state, phase: 'error', error: e.message }
       }
