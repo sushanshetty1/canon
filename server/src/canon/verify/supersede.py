@@ -207,8 +207,12 @@ def link(graph) -> dict[str, int]:
         [{"id": fid, "stale": fid in plan.stale or None} for fid, s in state.items() if s["stale"] != (fid in plan.stale)],
     )
 
+    from canon.sources.connector import KIND_GROUPS
+
     stale_pages = graph.query(
-        "MATCH (f:Fact {stale: true})-[:STATED_IN]->(:Passage)<-[:HAS]-(d:Document) RETURN count(DISTINCT d)"
+        "MATCH (f:Fact {stale: true})-[:STATED_IN]->(:Passage)<-[:HAS]-(d:Document) WHERE d.kind IN $pages "
+        "RETURN count(DISTINCT d)",
+        {"pages": list(KIND_GROUPS["docs"])},
     ).result_set[0][0]
     kinds = [t for t, _, _ in plan.edges]
     return {

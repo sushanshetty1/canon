@@ -23,6 +23,7 @@ from canon.api import connections_routes
 from canon.api import decisions_routes
 from canon.api import sources_routes
 from canon.api.fixes_routes import router as fixes_router
+from canon.sources.connector import KIND_GROUPS
 from canon.api.limits import Limits, client_address, replay
 from canon.api.people_routes import router as people_router
 from canon.config import settings
@@ -81,14 +82,17 @@ def fact_detail(graph, fact_id: str) -> dict | None:
 
 
 def stats(graph) -> dict:
-    one = lambda q: graph.query(q).result_set[0][0]  # noqa: E731
+    one = lambda q, params=None: graph.query(q, params).result_set[0][0]  # noqa: E731
     labels = graph.query("MATCH (n) RETURN coalesce(labels(n)[0], 'none'), count(n)").result_set
     return {
         "labels": dict(labels),
         "current_facts": one("MATCH (f:Fact) WHERE f.valid_to IS NULL AND NOT (f)-[:SUPERSEDED_BY]->() RETURN count(f)"),
         "stale_facts": one("MATCH (f:Fact {stale: true}) RETURN count(f)"),
+        # Pages only: a ticket or a chat that said something since replaced is a record, not a page to fix.
         "stale_pages": one(
-            "MATCH (f:Fact {stale: true})-[:STATED_IN]->(:Passage)<-[:HAS]-(d:Document) RETURN count(DISTINCT d)"
+            "MATCH (f:Fact {stale: true})-[:STATED_IN]->(:Passage)<-[:HAS]-(d:Document) WHERE d.kind IN $pages "
+            "RETURN count(DISTINCT d)",
+            {"pages": list(KIND_GROUPS["docs"])},
         ),
         "disputes": one("MATCH (:Fact)-[r:CONTRADICTS]->(:Fact) RETURN count(r)"),
     }
