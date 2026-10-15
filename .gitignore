@@ -10,3 +10,4 @@ dist/
 .claude/worktrees/
 .pytest_cache/
 *.log
+/snapshots/

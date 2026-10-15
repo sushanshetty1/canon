@@ -1,0 +1,34 @@
+# Behind a Traefik that already owns ports 80 and 443 (for example Dokploy's).
+# The web container publishes no ports; Traefik routes DOMAIN to it and terminates TLS.
+#
+#   docker compose -f docker-compose.prod.yml -f docker-compose.traefik.yml up -d --build
+#
+# .env next to this file: DOMAIN=canon.example.com, and optionally TRAEFIK_NETWORK and TRAEFIK_CERT_RESOLVER.
+# See docs/deploy.md.
+
+services:
+  web:
+    ports: !reset []
+    environment:
+      # Caddy serves plain HTTP inside the network; Traefik holds the certificate.
+      DOMAIN: ":80"
+    networks:
+      - default
+      - traefik
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: ${TRAEFIK_NETWORK:-dokploy-network}
+      traefik.http.routers.canon.rule: Host(`${DOMAIN:?set DOMAIN in .env}`)
+      traefik.http.routers.canon.entrypoints: websecure
+      traefik.http.routers.canon.tls.certresolver: ${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      traefik.http.routers.canon.service: canon
+      traefik.http.routers.canon-http.rule: Host(`${DOMAIN:?set DOMAIN in .env}`)
+      traefik.http.routers.canon-http.entrypoints: web
+      traefik.http.routers.canon-http.middlewares: redirect-to-https@file
+      traefik.http.routers.canon-http.service: canon
+      traefik.http.services.canon.loadbalancer.server.port: "80"
+
+networks:
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK:-dokploy-network}

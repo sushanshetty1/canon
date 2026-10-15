@@ -1,0 +1,23 @@
+# DOMAIN unset: plain HTTP on :80. DOMAIN=canon.example.com: automatic HTTPS on 80 and 443.
+{$DOMAIN::80} {
+	encode zstd gzip
+
+	# The API, including the answer stream (server-sent events): flush every write at once. /auth/* is sign-in.
+	@api path /api/* /auth/*
+	handle @api {
+		reverse_proxy api:8790 {
+			flush_interval -1
+		}
+	}
+
+	# The single-page app: unknown paths such as /app fall back to index.html.
+	handle {
+		root * /srv
+		@hashed path /assets/*
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		@unhashed not path /assets/*
+		header @unhashed Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}
