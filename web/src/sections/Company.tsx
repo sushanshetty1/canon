@@ -359,7 +359,7 @@ export function Company() {
 
         <div className="mt-12 flex flex-col gap-3 border-t border-night-line pt-6 text-[14px] text-[#7d828e] sm:flex-row sm:justify-between">
           <p>Three teams opened up: their people as dots, the areas they own as squares. One dot for every {PER_DOT} issues or forum threads.</p>
-          <p>Public data only. People appear by the GitHub handles and roles PostHog already publishes.</p>
+          <p>Public data only. Canon names people by their public GitHub handles; quoted passages appear as PostHog published them.</p>
         </div>
       </Container>
     </Slab>

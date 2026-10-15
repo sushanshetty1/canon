@@ -102,7 +102,7 @@ Rule 6 of the hackathon allows public data only, so the demo runs on a company t
 | [Issues and pull requests](https://github.com/PostHog/posthog) | Who worked on what, who reviewed it, what shipped | MIT |
 | [Community forum](https://posthog.com/questions) | What people actually ask | Public pages |
 
-People appear only by the GitHub handles and roles PostHog already publishes.
+Canon names people by the public GitHub handles PostHog already publishes. Quoted passages appear exactly as PostHog published them, with a link to the original.
 
 ## How we will measure it
 
