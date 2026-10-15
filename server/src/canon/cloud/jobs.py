@@ -31,7 +31,6 @@ def _view(props: dict, now: float) -> dict:
     if status == "running" and now - float(props.get("updated", 0)) > STALE_SECONDS:
         status, error = "failed", "The server stopped before this finished. Start it again."
     from canon.ingest import STEPS
-    from canon.sources.sync import SYNC_STEPS
 
     step = props.get("step")
     return {
@@ -39,7 +38,7 @@ def _view(props: dict, now: float) -> dict:
         "kind": props.get("kind"),
         "status": status,
         "step": step,
-        "step_label": STEPS.get(step or "") or SYNC_STEPS.get(step or "", "Starting"),
+        "step_label": STEPS.get(step or "", "Starting"),
         "connection": props.get("connection"),
         "progress": float(props.get("progress") or 0),
         "counts": json.loads(props.get("counts") or "{}"),
@@ -134,7 +133,9 @@ def _calm(e: Exception) -> str:
 
     import httpx
 
-    public = getattr(e, "public_message", None)  # a connector's own message, written to be shown (sources.client)
+    # A connector's or an upload's own message, written to be shown (`sources.client.SourceError`,
+    # `sources.archive.UploadError`).
+    public = getattr(e, "public_message", None)
     if isinstance(public, str) and public:
         return public
     if isinstance(e, subprocess.CalledProcessError):

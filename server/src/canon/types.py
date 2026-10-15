@@ -3,9 +3,14 @@
 from dataclasses import dataclass, field
 from typing import Literal
 
+# Document kinds, grouped as `canon.sources.connector.KIND_GROUPS` groups them (docs, tickets, chats, decisions,
+# structure).
 Kind = Literal[
-    "handbook", "doc", "team_page", "ownership_map", "rfc", "issue", "pull", "forum",
-    "notion_page", "confluence_page", "upload", "slack_thread", "linear_issue", "jira_issue",
+    "handbook", "team_page", "doc", "wiki", "notion_page", "confluence_page", "upload",
+    "issue", "pull", "linear_issue", "jira_issue",
+    "forum", "discussion", "comment_thread", "slack_thread",
+    "rfc", "adr", "release",
+    "ownership_map", "roster",
 ]
 Verdict = Literal["verified", "stale", "disputed", "unsupported"]
 ActivityRel = Literal["AUTHORED", "REVIEWED", "COMMENTED", "DECIDED"]
@@ -28,6 +33,10 @@ class Passage:
     id: str  # f"{doc_id}#{index}"
     doc_id: str
     text: str
+    # A turn in a conversation (a comment, a chat message, a forum reply) says who said it and when. The author is
+    # a person's handle (a GitHub handle, or `name:<slug>` for someone known only by name), or None.
+    author: str | None = None
+    at: str | None = None  # ISO date the words were written; a fact stated here starts to hold then
 
 
 @dataclass(frozen=True)

@@ -48,17 +48,19 @@ def test_slack_reads_threads_and_days_from_channels_the_bot_is_in(api):
     assert thread.updated_at == "2026-10-14"
     # Loose messages are grouped by channel and day; the join message is not knowledge.
     assert "slack:t0kestrel:c0eng:2026-10-14" in docs and "slack:t0kestrel:c0eng:2026-10-13" in docs
-    texts = [p.text for p in b.passages if p.doc_id == thread.id]
-    joined = "\n".join(texts)
-    assert joined.startswith("Thread in #eng\nAna Ruiz: Decision: Billing moves to the Payments team from November. @Ben Okafor owns")
+    turns = [p for p in b.passages if p.doc_id == thread.id]
+    joined = "\n".join(p.text for p in turns)
+    # Each run is a conversation turn: who said it and when, with its author kept for the graph.
+    assert turns[0].text.startswith("Ana Ruiz, 2026-10-14:\nDecision: Billing moves to the Payments team from November. @Ben Okafor owns")
+    assert turns[0].author == email_key("ana@kestrel.example") and turns[0].at == "2026-10-14"
     assert "select * from invoices" not in joined  # code is dropped
     day = "\n".join(p.text for p in b.passages if p.doc_id.endswith(":2026-10-14"))
     # Ana's reminder and Ben's reply are separate runs; mentions and links read as words.
-    assert "Ana Ruiz: Reminder: the deploy freeze" in day and "Ben Okafor: Thanks @Ana Ruiz" in day
+    assert "Ana Ruiz, 2026-10-14:\nReminder: the deploy freeze" in day and "Ben Okafor, 2026-10-14:\nThanks @Ana Ruiz" in day
     early = "\n".join(p.text for p in b.passages if p.doc_id.endswith(":2026-10-13"))
     assert "See the on-call page." in early and "has joined" not in early
     # A bot's message is read, but a bot is not a person.
-    assert any("ci-bot: Deploy 412" in p.text for p in b.passages)
+    assert any(p.text.startswith("ci-bot, 2026-10-12:\nDeploy 412") and p.author is None for p in b.passages)
     # Channels the bot is not in, and archived ones, are not read.
     assert not any(":c0random:" in d or ":c0old:" in d for d in docs)
 
@@ -183,7 +185,7 @@ def test_linear_reads_teams_projects_issues_and_history(api):
     issue = docs["linear:pay-12"]
     assert issue.kind == "linear_issue" and issue.areas == ("billing-migration",) and issue.updated_at == "2026-10-14"
     text = "\n".join(p.text for p in b.passages if p.doc_id == issue.id)
-    assert "Ben Okafor on 2026-10-02: Ben handed this over to Cal" in text
+    assert "Ben Okafor, 2026-10-02:\nBen handed this over to Cal" in text
     assert "On 2026-09-25 Ben Okafor moved PAY-12 from Todo to In Progress." in text
     # Reassignment is history: Ben's window closes the day Cal's opens.
     windows = sorted((f.value, f.valid_from, f.valid_to) for f in b.facts if f.subject == "topic:pay-12")
@@ -229,7 +231,7 @@ def test_jira_reads_projects_and_issues_with_comments(api):
     assert issue.areas == ("operations",) and issue.updated_at == "2026-10-11"
     text = "\n".join(p.text for p in b.passages if p.doc_id == issue.id)
     assert "Status: Done." in text and "two-week rotation from October" in text and "pagerduty" not in text
-    assert "Eli Moss on 2026-10-01: Agreed. @Ana Ruiz will update the schedule." in text
+    assert "Eli Moss, 2026-10-01:\nAgreed. @Ana Ruiz will update the schedule." in text
     lead = next(f for f in b.facts if f.predicate == "owned_by")
     assert (lead.subject, lead.value, lead.authority) == ("area:operations", "person:jira:712020:aa11", 2)
     names = {p.handle: p.name for p in b.people}

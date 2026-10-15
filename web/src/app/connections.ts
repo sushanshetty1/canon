@@ -11,7 +11,7 @@ export type Connection = {
   label: string
   config: Record<string, unknown>
   info: Record<string, string>
-  status: 'new' | 'syncing' | 'ok' | 'failed'
+  status: 'new' | 'reading' | 'done' | 'failed' // as canon.ingest.ingest_connector keeps it
   created_at: string | null
   created_by: string | null
   last_synced_at: string | null

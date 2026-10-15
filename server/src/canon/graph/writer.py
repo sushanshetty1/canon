@@ -2,11 +2,12 @@
 
 Every write merges on an indexed key, so writing the same batch twice changes nothing. When a document comes back
 with different passages, the passages that are gone are kept for history: they move from `HAS` to `HAD` and get
-`removed_at`, so facts that cite them can still show where they came from.
+`removed_at`, so facts that cite them can still show where they came from. A passage that is a turn in a
+conversation keeps its author and date, and `(:Person)-[:SAID {at}]->(:Passage)` says who said it.
 """
 
 from dataclasses import asdict
-from datetime import date
+from datetime import UTC, date, datetime
 
 from canon.types import ENTITY_KEYS, Batch, Fact, entity
 
@@ -37,12 +38,14 @@ def write_batch(graph, batch: Batch) -> dict[str, int]:
         )
     _run(graph, "UNWIND $rows AS r MERGE (a:Area {slug: r.slug}) SET a.name = r.name", [asdict(a) for a in batch.areas])
 
+    # `read_at` is when Canon last read the document, so the app can say when each source was last read.
+    read_at = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     _run(
         graph,
         """UNWIND $rows AS r MERGE (d:Document {id: r.id})
            SET d.kind = r.kind, d.title = r.title, d.url = r.url, d.updated_at = r.updated_at, d.author = r.author,
-               d.decided_at = r.decided_at""",
-        [asdict(d) for d in batch.docs],
+               d.decided_at = r.decided_at, d.read_at = r.read_at""",
+        [{**asdict(d), "read_at": read_at} for d in batch.docs],
     )
     # A document about an area (a pull request labelled `feature/notebooks`) links to it. Links the document no
     # longer has (its labels or attribution changed) are removed.
@@ -70,8 +73,15 @@ def write_batch(graph, batch: Batch) -> dict[str, int]:
     _run(
         graph,
         """UNWIND $rows AS r MATCH (d:Document {id: r.doc_id}) MERGE (p:Passage {id: r.id})
-           SET p.text = r.text, p.removed_at = NULL MERGE (d)-[:HAS]->(p)""",
+           SET p.text = r.text, p.removed_at = NULL, p.author = r.author, p.at = r.at MERGE (d)-[:HAS]->(p)""",
         [asdict(p) for p in batch.passages],
+    )
+    # Who said what, and when: each turn of a conversation links to the person who wrote it.
+    _run(
+        graph,
+        """UNWIND $rows AS r MATCH (p:Passage {id: r.id}) MERGE (x:Person {handle: r.author})
+           MERGE (x)-[e:SAID]->(p) SET e.at = r.at""",
+        [{"id": p.id, "author": p.author, "at": p.at} for p in batch.passages if p.author],
     )
     for rel in ("AUTHORED", "REVIEWED", "COMMENTED", "DECIDED"):
         _run(

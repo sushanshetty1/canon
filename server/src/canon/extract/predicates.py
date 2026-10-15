@@ -3,7 +3,7 @@
 Supersession compares facts that share a subject and a predicate, so both must be stable: the predicate comes from
 this short list and nothing else, and a topic named in different words on different pages should land on one key.
 Authority says which source wins when two disagree: the ownership map outranks a team page, which outranks the
-handbook, which outranks an issue or a forum thread.
+handbook, which outranks a ticket or a chat: an issue, a comment thread, a discussion, a forum or Slack thread.
 """
 
 import re
@@ -36,18 +36,25 @@ SHAPES: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
 AUTHORITY: dict[Kind, int] = {
     "ownership_map": 3,
     "team_page": 2,
+    "roster": 2,
     "rfc": 2,
+    "adr": 2,  # a decision record in a repository, like an RFC
     "handbook": 1,
     "doc": 1,  # a Markdown page in a repository
-    "pull": 1,
-    "issue": 0,
-    "forum": 0,
-    "notion_page": 1,  # connected docs rank with the handbook
+    "wiki": 1,
+    "release": 1,
+    "notion_page": 1,
     "confluence_page": 1,
-    "upload": 1,
-    "slack_thread": 0,  # chats and tickets rank with issues and the forum
+    "upload": 1,  # a page someone uploaded
+    "pull": 1,
+    # Tickets and chats: what someone said in a conversation ranks below any page.
+    "issue": 0,
     "linear_issue": 0,
     "jira_issue": 0,
+    "forum": 0,
+    "discussion": 0,
+    "comment_thread": 0,
+    "slack_thread": 0,
 }
 
 STOPWORDS = frozenset(

@@ -3,8 +3,8 @@
 - **Teams** become `(:Team)`, with their members.
 - **Projects** become areas, each with a short `team_page` document (its description, lead, status and teams). The
   project lead owns the area: an `owned_by` fact, authority 2, stated by that document.
-- **Issues** become `linear_issue` documents: the description, then each comment (`Name on 2026-10-01: ...`), then
-  the issue's history. An issue is about its project's area. The creator and assignee authored it, commenters
+- **Issues** become `linear_issue` documents: the description, the issue's history, and each comment as a
+  conversation turn that says who wrote it and when (`Ben Okafor, 2026-10-02:`). An issue is about its project's area. The creator and assignee authored it, commenters
   commented on it.
 - **History** is a dated record of what changed: every state change and reassignment is a line of its own
   (`On 2026-10-02 Ana moved ENG-12 from Todo to In Progress`). Who the issue was assigned to, and when, also becomes
@@ -24,7 +24,7 @@ from canon.sources.client import Client, SourceError, capped, retry_after
 from canon.sources.connector import Report
 from canon.sources.identity import People, SourceResult
 from canon.sources.ownership import owner_windows
-from canon.sources.text import day, fact_id, passages_of, slugify, split_passages
+from canon.sources.text import Turn, day, fact_id, passages_of, slugify, split_passages, turn_passages
 from canon.types import Activity, Area, Batch, Doc, Fact, Team
 
 API = "https://api.linear.app/graphql"
@@ -222,12 +222,13 @@ class LinearConnector:
             head.append(f"Project: {project['name']}.")
         texts = [" ".join(head), *split_passages(issue.get("description") or "")]
         commenters = []
+        turns = []
         for c in (issue.get("comments") or {}).get("nodes") or []:
             who = self.user(c.get("user"))
             name = (c.get("user") or {}).get("name") or "Someone"
             body = (c.get("body") or "").strip()
             if body:
-                texts += [f"{name} on {day(c.get('createdAt'))}: {piece}" for piece in split_passages(body)]
+                turns.append(Turn(name, c.get("createdAt") or "", body, who))
             if who:
                 commenters.append((who, day(c.get("createdAt"))))
         # History: one line per change, oldest first. Each reassignment is its own passage, so the fact that
@@ -246,7 +247,7 @@ class LinearConnector:
                         else f"On {when} {ident} was unassigned.")
                 texts.append(line)
                 assigned.append((when, line, self.user(to) if to else None))
-        passages = passages_of(doc_id, texts)
+        passages = list({p.id: p for p in passages_of(doc_id, texts) + turn_passages(doc_id, turns)}.values())
         updated = day(issue.get("updatedAt"))
         batch.docs.append(Doc(doc_id, "linear_issue", title, issue.get("url") or "", updated,  # type: ignore[arg-type]
                               author=creator, areas=(area,) if area else ()))

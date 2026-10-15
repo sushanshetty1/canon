@@ -7,7 +7,7 @@
 - `secret` is the credential sealed with `canon.cloud.crypto` (for Jira and Confluence, the account email and the
   API token together). It is opened only to build a connector, and never logged or returned.
 - `info` is what the credential check learned (the Slack team's name), `counts` and `notes` what the last sync read.
-- `status` is `new`, `syncing`, `ok` or `failed`; `error` says what went wrong, in words a person can act on.
+- `status` is `new`, then as the shared pipeline keeps it: `reading`, `done` or `failed`; `error` says what went wrong, in words a person can act on.
 
 `start_sync` runs one connection's sync as a workspace job (`canon.cloud.jobs`). `Scheduler` re-syncs every
 connection every `CANON_SYNC_MINUTES` (default 60; 0 turns it off), so knowledge stays current without anyone
@@ -148,7 +148,8 @@ class Connections:
         for key in ("config", "info", "counts"):
             out[key] = json.loads(props.get(key) or "{}")
         out["notes"] = json.loads(props.get("notes") or "[]")
-        out["config"] = {k: v for k, v in out["config"].items() if k != "email"}
+        # The pipeline adds what the connection holds to its config, for the Sources screen; here they are `counts`.
+        out["config"] = {k: v for k, v in out["config"].items() if k not in ("email", "documents", "passages", "facts", "people")}
         return out
 
     def raw(self, conn_id: str) -> dict | None:
@@ -242,7 +243,7 @@ def _models(cloud) -> dict:
 def start_sync(cloud, slug: str, conn_id: str, *, connector=None) -> dict | None:
     """Start a sync of one connection as the workspace's job. None when a job is already running there.
     `connector` is given for uploads (the files to read); otherwise it is built from the stored credential."""
-    from canon.sources.sync import run_connector
+    from canon.ingest import ingest_connector
 
     graph = cloud.graph(slug)
     store = Connections(graph)
@@ -254,8 +255,9 @@ def start_sync(cloud, slug: str, conn_id: str, *, connector=None) -> dict | None
         raise SourceError("Upload the files again to read them.")
 
     def work(report) -> dict:
+        # The shared pipeline (`canon.ingest.ingest_connector`) keeps the connection's status, cursor, counts and
+        # notes; this opens the credential and builds the connector.
         report(step="connect", progress=0.01)
-        store.update(conn_id, status="syncing", error=None, last_tried_at=_now())
         made = connector
         try:
             if made is None:
@@ -264,21 +266,20 @@ def start_sync(cloud, slug: str, conn_id: str, *, connector=None) -> dict | None
                     raise SourceError("The saved credential can no longer be opened. Remove this connection and add it again.")
                 made = build(kind, json.loads(props.get("config") or "{}"), secret, http=cloud.http,
                              sleep=getattr(cloud, "sleep", time.sleep))
-            out = run_connector(graph, made, cursor=props.get("cursor"), connection_id=conn_id, report=report, **_models(cloud))
+            return ingest_connector(graph, made, connection_id=conn_id, cursor=props.get("cursor"), report=report,
+                                    **_models(cloud))
         except Exception as e:
-            public = e if isinstance(e, SourceError) else None
-            if public is None:
-                log.exception("canon: a %s sync in %s failed", kind, slug)
-                public = SourceError(f"Something went wrong while reading {KINDS.get(kind, kind)}. Try again.")
-            store.update(conn_id, status="failed", error=public.public_message)
+            if getattr(e, "public_message", None):
+                store.update(conn_id, status="failed", error=e.public_message, last_tried_at=_now())  # type: ignore[attr-defined]
+                raise
+            log.exception("canon: a %s sync in %s failed", kind, slug)
+            public = SourceError(f"Something went wrong while reading {KINDS.get(kind, kind)}. Try again.")
+            store.update(conn_id, status="failed", error=public.public_message, last_tried_at=_now())
             raise public from None
         finally:
             client = getattr(made, "client", None)
             if client is not None:
                 client.close()
-        store.update(conn_id, status="ok", error=None, cursor=out["cursor"], last_synced_at=_now(),
-                     counts=out.get("connection") or {}, notes=out.get("notes") or [])
-        return out
 
     return cloud.jobs().start(slug, "sync", work, connection=conn_id, step="connect")
 

@@ -2,7 +2,7 @@
 
 Connectors write who leads and who belongs to a team as graph edges (`LEADS`, `MEMBER_OF`), straight from structured
 records such as PostHog's published team list. Ask answers from facts with a source, so this turns each team's
-roster into one document with one passage, and its leads and members into facts stated in it (authority 2, like a
+roster into one document with one passage, and its leads and members into facts stated in it (kind `roster`, authority 2, like a
 team page). People are named by their public GitHub handle only; people without one are left out of the text.
 
 Run after a connector has written its batch. Idempotent.
@@ -34,7 +34,7 @@ def roster_batch(graph, *, team_url: str, as_of: str | None = None) -> Batch:
         leads, members = _public(leads), _public(members)
         if not leads and not members:
             continue
-        doc = Doc(f"roster:{slug}", "team_page", f"{name} team roster", team_url.format(slug=slug), as_of)
+        doc = Doc(f"roster:{slug}", "roster", f"{name} team roster", team_url.format(slug=slug), as_of)
         lines = []
         if leads:
             lines.append(f"{name} is led by {', '.join(leads)}.")

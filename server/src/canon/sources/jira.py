@@ -23,7 +23,7 @@ from canon.sources.client import Client, SourceError, capped
 from canon.sources.connector import Report
 from canon.sources.identity import People, SourceResult
 from canon.sources.richtext import adf_to_text
-from canon.sources.text import day, fact_id, passages_of, slugify, split_passages
+from canon.sources.text import Turn, day, fact_id, passages_of, slugify, split_passages, turn_passages
 from canon.types import Activity, Area, Batch, Doc, Fact
 
 FIELDS = "summary,description,status,assignee,reporter,created,updated,project,comment,issuetype"
@@ -176,15 +176,16 @@ class JiraConnector:
             head.append(f"Reported by {f['reporter']['displayName']}.")
         texts = [" ".join(head), *split_passages(adf_to_text(f.get("description")))]
         comments = ((f.get("comment") or {}).get("comments") or [])[-self.max_comments :]
+        turns = []
         for c in comments:
             who = self.user(c.get("author"))
             name = (c.get("author") or {}).get("displayName") or "Someone"
             body = adf_to_text(c.get("body"))
             if body:
-                texts += [f"{name} on {day(c.get('created'))}: {piece}" for piece in split_passages(body)]
+                turns.append(Turn(name, c.get("created") or "", body, who))
             if who:
                 batch.activity.append(Activity(who, doc_id, "COMMENTED", day(c.get("created"))))
-        passages = passages_of(doc_id, texts)
+        passages = list({p.id: p for p in passages_of(doc_id, texts) + turn_passages(doc_id, turns)}.values())
         updated = day(f.get("updated"))
         batch.docs.append(Doc(doc_id, "jira_issue", title, f"{self.site}/browse/{key}", updated,  # type: ignore[arg-type]
                               author=reporter, areas=(area,) if area else ()))

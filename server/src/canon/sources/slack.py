@@ -7,8 +7,8 @@ What it reads:
 - **Threads.** A message with replies and its replies (`conversations.replies`) become one `slack_thread` document.
 - **The rest of a channel's day.** Top-level messages without replies are grouped by channel and day into one
   `slack_thread` document, so a quick exchange is read in context.
-- **Passages** are message runs: consecutive messages by one person within ten minutes are one run, `Name: text`,
-  and runs are packed into passages of about 900 characters.
+- **Passages** are conversation turns: consecutive messages by one person on one day are one run, headed by who
+  said it and when (`Ana Ruiz, 2026-10-14:`), and the passage keeps its author, as every chat source does.
 - **People** by display name and Slack id. When the app may read emails (`users:read.email`) the person is matched
   across sources by a hash of their email; the email is never stored.
 - **Activity.** A thread's starter authored it, people who replied commented on it.
@@ -28,15 +28,13 @@ from datetime import UTC, datetime
 from canon.sources.client import Client, SourceError, capped, status_error
 from canon.sources.connector import Report
 from canon.sources.identity import People, SourceResult
-from canon.sources.text import passages_of, split_passages
+from canon.sources.text import Turn, turn_passages
 from canon.types import Activity, Batch, Doc
 
 API = "https://slack.com/api"
 REQUIRED_SCOPES = ("channels:history", "channels:read", "users:read")
 SKIP_SUBTYPES = {"channel_join", "channel_leave", "channel_topic", "channel_purpose", "channel_name", "channel_archive",
                  "channel_unarchive", "group_join", "group_leave", "pinned_item", "unpinned_item", "bot_add", "bot_remove"}
-RUN_GAP = 600  # seconds: messages by one person closer than this are one run
-PASSAGE_CHARS = 900
 
 _AUTH = {"invalid_auth", "not_authed", "token_revoked", "account_inactive", "token_expired", "no_permission"}
 
@@ -191,32 +189,18 @@ class SlackConnector:
         bot = m.get("username") or (m.get("bot_profile") or {}).get("name") or "A bot"
         return None, bot
 
-    def _passages(self, doc_id: str, header: str, messages: list[dict]) -> list:
-        runs: list[tuple[str, float, list[str]]] = []  # (author, last ts, lines)
+    def _passages(self, doc_id: str, messages: list[dict]) -> list:
+        """Message runs as conversation turns (`canon.sources.text.turn_passages`): each passage says who said it and
+        when, and keeps its author, so the graph knows who said what."""
+        turns = []
         for m in messages:
             text = self.clean(m.get("text") or "")
             if not text:
                 continue
-            _, name = self._author(m)
-            t = _ts(m.get("ts"))
-            if runs and runs[-1][0] == name and t - runs[-1][1] <= RUN_GAP:
-                runs[-1] = (name, t, [*runs[-1][2], text])
-            else:
-                runs.append((name, t, [text]))
-        texts: list[str] = []
-        chunk = ""
-        for name, _, lines in runs:
-            run = f"{name}: " + "\n".join(lines)
-            pieces = [run] if len(run) <= PASSAGE_CHARS else split_passages(run, max_chars=PASSAGE_CHARS)
-            for piece in pieces:
-                if chunk and len(chunk) + len(piece) + 1 > PASSAGE_CHARS:
-                    texts.append(f"{header}\n{chunk}")
-                    chunk = piece
-                else:
-                    chunk = f"{chunk}\n{piece}" if chunk else piece
-        if chunk:
-            texts.append(f"{header}\n{chunk}")
-        return passages_of(doc_id, texts)
+            handle, name = self._author(m)
+            when = datetime.fromtimestamp(_ts(m.get("ts")), UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+            turns.append(Turn(name, when, text, handle))
+        return turn_passages(doc_id, turns, merge=True)
 
     def _link(self, channel: str, ts: str | None = None) -> str:
         base = self.base_url or "https://slack.com/"
@@ -318,7 +302,7 @@ class SlackConnector:
         doc_id = f"slack:{self.team_id.lower() or 'team'}:{cid.lower()}:{parent['ts']}"
         first = self.clean(parent.get("text") or "").splitlines()[0] if self.clean(parent.get("text") or "") else "a thread"
         title = f"#{cname}: {first[:80]}"
-        passages = self._passages(doc_id, f"Thread in #{cname}", msgs)
+        passages = self._passages(doc_id, msgs)
         if not passages:
             return
         starter, _ = self._author(parent)
@@ -334,7 +318,7 @@ class SlackConnector:
 
     def _day_doc(self, batch: Batch, cid: str, cname: str, day: str, msgs: list[dict]) -> None:
         doc_id = f"slack:{self.team_id.lower() or 'team'}:{cid.lower()}:{day}"
-        passages = self._passages(doc_id, f"#{cname} on {day}", msgs)
+        passages = self._passages(doc_id, msgs)
         if not passages:
             return
         first_author, _ = self._author(msgs[0])

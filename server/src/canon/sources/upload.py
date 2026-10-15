@@ -4,35 +4,27 @@ Each file is an `upload` document dated by its modified time (the browser's `las
 zip), titled by its first heading or its name. Re-uploading a file of the same name replaces its passages, so the
 facts the old version stated are closed rather than lost.
 
-Safety, since the bytes come from anyone with a workspace:
-
-- at most `MAX_FILES` files and `MAX_TOTAL` bytes an upload, `MAX_FILE` bytes a file;
-- a zip is read in memory, never extracted to disk, so its paths cannot escape anywhere. Nested archives are
-  skipped. Each entry's declared size, its compression ratio and the archive's total unpacked size are bounded,
-  and entries are read through a capped stream, so a zip bomb stops at the cap whatever its headers claim;
-- PDFs are read to `MAX_PDF_PAGES` pages; text is cut at `MAX_CHARS` characters a file.
+Safety, since the bytes come from anyone with a workspace: every upload shares one set of limits and one zip reader
+(`canon.sources.archive`), so a file here is held to what an export is. Zips are read in memory, never unpacked to
+disk; a zip bomb, an encrypted zip or an oversized file stops the upload with a message saying why. Files Canon does
+not read are skipped with a note. PDFs are read to `MAX_PDF_PAGES` pages; text is cut at `MAX_CHARS` characters a
+file.
 """
 
 import io
 import re
-import zipfile
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import PurePosixPath
 
-from canon.sources.client import SourceError
+from canon.sources.archive import MAX_FILE, MAX_UPLOAD, UploadError, read_zip
 from canon.sources.connector import Report
 from canon.sources.identity import SourceResult
 from canon.sources.richtext import html_title, html_to_text
 from canon.sources.text import clean_mdx, frontmatter, passages_of, slugify, split_passages
 from canon.types import Batch, Doc
 
-MAX_FILES = 200
-MAX_FILE = 10 * 1024 * 1024
-MAX_TOTAL = 30 * 1024 * 1024
-MAX_ZIP_ENTRIES = 500
-MAX_UNZIPPED = 60 * 1024 * 1024
-MAX_RATIO = 100
+MAX_FILES = 200  # files in one upload, counting those inside a zip
 MAX_PDF_PAGES = 300
 MAX_CHARS = 400_000
 TYPES = (".md", ".markdown", ".mdx", ".txt", ".html", ".htm", ".pdf", ".docx")
@@ -51,25 +43,19 @@ def safe_name(name: str) -> str:
     return "/".join(parts)[-200:] or "file"
 
 
-def _iso(ts: float | None) -> str | None:
-    if not ts:
-        return None
-    return datetime.fromtimestamp(ts, UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
 def expand(files: list[File], notes: list[str]) -> list[File]:
-    """Zips opened into their files, everything checked against the limits."""
+    """Zips opened into their files, everything checked against the shared limits."""
     if len(files) > MAX_FILES:
-        raise SourceError(f"Upload at most {MAX_FILES} files at a time.")
-    if sum(len(f.data) for f in files) > MAX_TOTAL:
-        raise SourceError(f"An upload can be at most {MAX_TOTAL // (1024 * 1024)} MB.")
+        raise UploadError(f"Upload at most {MAX_FILES} files at a time.")
+    if sum(len(f.data) for f in files) > MAX_UPLOAD:
+        raise UploadError(f"An upload can be at most {MAX_UPLOAD // (1024 * 1024)} MB.")
     out: list[File] = []
     for f in files:
         name = safe_name(f.name)
-        if len(f.data) > MAX_FILE and not name.lower().endswith(".zip"):
+        if name.lower().endswith(".zip"):
+            out += _unzip(name, f.data)
+        elif len(f.data) > MAX_FILE:
             notes.append(f"{name} is larger than {MAX_FILE // (1024 * 1024)} MB and was skipped.")
-        elif name.lower().endswith(".zip"):
-            out += _unzip(name, f.data, notes)
         elif name.lower().endswith(TYPES):
             out.append(File(name, f.data, f.modified))
         else:
@@ -80,52 +66,16 @@ def expand(files: list[File], notes: list[str]) -> list[File]:
     return out
 
 
-def _unzip(name: str, data: bytes, notes: list[str]) -> list[File]:
-    try:
-        archive = zipfile.ZipFile(io.BytesIO(data))
-    except (zipfile.BadZipFile, ValueError):
-        notes.append(f"{name} is not a zip archive Canon can open.")
-        return []
-    out: list[File] = []
-    total = 0
-    with archive:
-        entries = [e for e in archive.infolist() if not e.is_dir()]
-        if len(entries) > MAX_ZIP_ENTRIES:
-            notes.append(f"{name} has {len(entries)} files; the first {MAX_ZIP_ENTRIES} were read.")
-            entries = entries[:MAX_ZIP_ENTRIES]
-        for e in entries:
-            inner = safe_name(e.filename)
-            if inner.split("/")[0] == "__MACOSX" or PurePosixPath(inner).name.startswith("."):
-                continue
-            if not inner.lower().endswith(TYPES):
-                continue  # nested archives too
-            if e.flag_bits & 0x1:
-                notes.append(f"{name}: {inner} is encrypted and was skipped.")
-                continue
-            if e.file_size > MAX_FILE or (e.compress_size and e.file_size / e.compress_size > MAX_RATIO):
-                notes.append(f"{name}: {inner} unpacks too large and was skipped.")
-                continue
-            if total + e.file_size > MAX_UNZIPPED:
-                notes.append(f"{name} unpacks to more than {MAX_UNZIPPED // (1024 * 1024)} MB; the rest was skipped.")
-                break
-            try:
-                with archive.open(e) as stream:
-                    body = stream.read(MAX_FILE + 1)  # never more than the cap, whatever the header said
-            except (zipfile.BadZipFile, RuntimeError, NotImplementedError, OSError):
-                notes.append(f"{name}: {inner} could not be read.")
-                continue
-            if len(body) > MAX_FILE:
-                notes.append(f"{name}: {inner} unpacks too large and was skipped.")
-                continue
-            total += len(body)
-            try:
-                modified = datetime(*e.date_time, tzinfo=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-            except ValueError:
-                modified = None
-            stem = name.removesuffix(".zip")
-            # `handbook.zip` holding `handbook/deploys.md` is `handbook/deploys.md`, not `handbook/handbook/...`.
-            path = inner if inner.startswith(PurePosixPath(stem).name + "/") else f"{stem}/{inner}"
-            out.append(File(path, body, modified))
+def _unzip(name: str, data: bytes) -> list[File]:
+    dates: dict[str, str] = {}
+    found = read_zip(data, TYPES, dates=dates)
+    stem = name.removesuffix(".zip")
+    out = []
+    for inner, body in found.items():
+        path = safe_name(inner)
+        # `handbook.zip` holding `handbook/deploys.md` is `handbook/deploys.md`, not `handbook/handbook/...`.
+        path = path if path.startswith(PurePosixPath(stem).name + "/") else f"{stem}/{path}"
+        out.append(File(path, body, dates.get(inner)))
     return out
 
 

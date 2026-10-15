@@ -442,7 +442,7 @@ const PersonPanel = forwardRef<HTMLDivElement, { ws: string; data: AreaPeople; p
             <p className="mt-5 rounded-[12px] bg-proof-soft px-3.5 py-2.5 text-[14px] leading-snug text-[#a3271c]">
               {data.area.bus_factor === 1
                 ? `${data.area.name} rests on ${person.name.split(' ')[0]} alone.`
-                : `One of the ${data.area.bus_factor} people ${data.area.name} depends on.`}
+                : `${data.area.name} hinges on ${person.name.split(' ')[0]}: they are on its minimum cut.`}
             </p>
           )}
         </div>
@@ -620,7 +620,7 @@ export function WhoKnows({ ws }: { ws: Workspace }) {
                   {area.owners.length ? <>Owned by {area.owners.map((o) => o.name).join(' and ')}. </> : null}
                   {area.bus_factor > 0 ? (
                     <>
-                      {area.bus_factor === 1 ? 'One person' : `${area.bus_factor} people`} could answer for it today.{' '}
+                      {area.bus_factor === 1 ? 'One person' : `${area.bus_factor} people`} {area.bus_factor === 1 ? 'holds' : 'hold'} it through work of their own.{' '}
                       <a
                         href={ROUTES.busFactor}
                         onClick={(e) => {
@@ -645,7 +645,7 @@ export function WhoKnows({ ws }: { ws: Workspace }) {
                   <motion.div key={data.area.slug} initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
                     <Radial data={data} selected={shown} onSelect={select} />
                     <p className="mt-2 text-center text-[13.5px] text-faint">
-                      Closer and heavier means more evidence. Filled means {data.area.name} depends on them.
+                      Closer and heavier means more evidence. Filled means {data.area.name} hinges on them.
                     </p>
                     <div className="mt-10">
                       <div className="mb-3 flex items-baseline justify-between gap-4">

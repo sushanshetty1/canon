@@ -29,6 +29,7 @@ import {
   type ConnectionJob,
   type SourceKind,
 } from './connections'
+import { navigate, ROUTES } from './router'
 import { plural } from './text'
 import { fromServer, type Workspace } from './workspaces'
 
@@ -75,7 +76,7 @@ const ATLASSIAN_TOKEN: ReactNode[] = [
   </>,
 ]
 
-const SOURCES: Source[] = [
+export const SOURCES: Source[] = [
   {
     kind: 'slack',
     name: 'Slack',
@@ -198,7 +199,7 @@ function useSearch(): URLSearchParams {
 }
 
 function setSearch(query: string) {
-  window.history.replaceState(null, '', `/app/connect${query}`)
+  window.history.replaceState(null, '', `${ROUTES.connect}${query}`)
   window.dispatchEvent(new PopStateEvent('popstate'))
 }
 
@@ -208,7 +209,7 @@ function NameWorkspace({ me, own, onMade }: { me: Me | null; own: Workspace[]; o
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const signIn = signInUrl(me, '/app/connect?new=1')
+  const signIn = signInUrl(me, `${ROUTES.connect}?new=1`)
 
   if (!me?.user) {
     return (
@@ -413,7 +414,7 @@ function TokenForm({ source, ws, onStarted }: { source: Source; ws: string; onSt
 }
 
 const ACCEPT = '.md,.markdown,.mdx,.txt,.html,.htm,.pdf,.docx,.zip'
-const MAX_BYTES = 30 * 1024 * 1024
+const MAX_BYTES = 50 * 1024 * 1024 // the limit every upload shares (server: canon.sources.archive)
 
 function size(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -442,7 +443,7 @@ function FileDrop({ ws, onStarted }: { ws: string; onStarted: (job: ConnectionJo
   const send = () => {
     if (!files.length || busy) return
     if (total > MAX_BYTES) {
-      setError('An upload can be at most 30 MB. Send fewer files at a time.')
+      setError('An upload can be at most 50 MB. Send fewer files at a time.')
       return
     }
     setBusy(true)
@@ -477,7 +478,7 @@ function FileDrop({ ws, onStarted }: { ws: string; onStarted: (job: ConnectionJo
       >
         <UploadSimple size={26} className={over ? 'text-cobalt' : 'text-ink'} />
         <span className="mt-3 text-[16.5px] font-semibold text-ink">Drop files here, or choose them</span>
-        <span className="mt-1 text-[14px] text-muted">Markdown, text, HTML, PDF and Word, or a zip of them. Up to 30 MB at a time.</span>
+        <span className="mt-1 text-[14px] text-muted">Markdown, text, HTML, PDF and Word, or a zip of them. Up to 50 MB at a time.</span>
         <input ref={input} type="file" multiple accept={ACCEPT} className="sr-only" onChange={(e) => add(e.target.files)} />
       </label>
       {files.length > 0 && (
@@ -699,7 +700,7 @@ export function Connect({
     if (target && target.slug !== ws.slug) onWorkspace(target)
   }, [target, ws.slug, onWorkspace])
 
-  const [selected, setSelected] = useState<SourceKind>('slack')
+  const [selected, setSelected] = useState<SourceKind>(() => (SOURCES.some((s) => s.kind === search.get('source')) ? (search.get('source') as SourceKind) : 'slack'))
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [attempt, setAttempt] = useState(0)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -791,7 +792,17 @@ export function Connect({
       <section className="slab bg-paper px-6 pt-8 pb-8 sm:px-10 sm:pt-12 sm:pb-10 lg:px-12">
         {target && (
           <p className="text-[15px] text-muted">
-            Sources for <span className="font-semibold text-ink">{target.label}</span>
+            <a
+              href={ROUTES.sources}
+              onClick={(e) => {
+                e.preventDefault()
+                navigate(ROUTES.sources)
+              }}
+              className="hover:text-ink"
+            >
+              Sources
+            </a>{' '}
+            for <span className="font-semibold text-ink">{target.label}</span>
           </p>
         )}
         <h1 className={`display text-[38px] text-ink sm:text-[54px] ${target ? 'mt-3' : ''}`}>{target ? 'Connect a source' : 'A workspace from your tools'}</h1>

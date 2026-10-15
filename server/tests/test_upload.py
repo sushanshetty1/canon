@@ -5,8 +5,8 @@ import zipfile
 
 import pytest
 
-from canon.sources.client import SourceError
-from canon.sources.upload import MAX_FILE, File, UploadConnector, expand, safe_name
+from canon.sources.archive import MAX_FILE, UploadError
+from canon.sources.upload import File, UploadConnector, expand, safe_name
 
 
 def quiet(**_):
@@ -87,12 +87,10 @@ def test_each_file_type_becomes_an_upload_document():
 
 
 def test_zip_is_opened_safely():
-    bomb = b"\0" * (MAX_FILE - 10)  # compresses about a thousand to one
-    inner = zipped({"x.md": b"# Nested\n"})
+    inner = zipped({"x.md": b"# Nested\n\nA page inside a zip inside the zip."})
     archive = zipped({
         "docs/../../etc/passwd.md": b"# Escape\n\nThis path tries to leave the upload.",
         "docs/runbook.md": b"# Runbook\n\nRestart the worker first.",
-        "docs/bomb.txt": bomb,
         "docs/inner.zip": inner,
         "__MACOSX/docs/._runbook.md": b"junk",
         "docs/image.png": b"\x89PNG",
@@ -100,21 +98,25 @@ def test_zip_is_opened_safely():
     notes: list[str] = []
     files = expand([File("export.zip", archive)], notes)
     names = sorted(f.name for f in files)
-    assert names == ["export/docs/etc/passwd.md", "export/docs/runbook.md"]  # `..` is dropped, never followed
-    assert any("bomb.txt unpacks too large" in n for n in notes)
-    assert files[0].modified == "2026-09-03T10:00:00Z"
+    # A path that tries to leave is never followed; a zip inside is read once, within the same limits.
+    assert names == ["export/docs/inner.zip/x.md", "export/docs/runbook.md"]
+    assert {f.modified for f in files} == {"2026-09-03T10:00:00Z"}
+    # A zip bomb stops the upload, with the shared reader's message.
+    bomb = zipped({"docs/bomb.txt": b"\0" * (MAX_FILE - 10)})
+    with pytest.raises(UploadError, match="far more than its size"):
+        expand([File("bomb.zip", bomb)], [])
     result = read([File("export.zip", archive)])
     assert {d.updated_at for d in result.batch.docs} == {"2026-09-03"}
 
 
 def test_limits_are_enforced():
-    with pytest.raises(SourceError, match="at most 200 files"):
+    with pytest.raises(UploadError, match="at most 200 files"):
         expand([File(f"{i}.txt", b"x") for i in range(201)], [])
-    with pytest.raises(SourceError, match="at most 30 MB"):
-        expand([File("a.txt", b"x" * (16 * 1024 * 1024)), File("b.txt", b"x" * (16 * 1024 * 1024))], [])
+    with pytest.raises(UploadError, match="at most 50 MB"):
+        expand([File("a.txt", b"x" * (26 * 1024 * 1024)), File("b.txt", b"x" * (26 * 1024 * 1024))], [])
     notes: list[str] = []
     assert expand([File("big.txt", b"x" * (MAX_FILE + 1)), File("tool.exe", b"MZ")], notes) == []
-    assert any("larger than 10 MB" in n for n in notes) and any("tool.exe is not a file Canon reads" in n for n in notes)
+    assert any("larger than 20 MB" in n for n in notes) and any("tool.exe is not a file Canon reads" in n for n in notes)
     assert safe_name("C:\\Users\\..\\..\\x.md") == "C:/Users/x.md" and safe_name("/etc/../x.md") == "etc/x.md"
 
 

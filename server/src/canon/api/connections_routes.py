@@ -8,15 +8,13 @@
 - `POST /api/w/{ws}/connections/{id}/sync` syncs one connection now, as the workspace's job.
 - `DELETE /api/w/{ws}/connections/{id}?documents=keep|delete` removes a connection. Its documents stay, marked
   removed (their facts are closed, not lost), or are deleted with their passages and facts.
-- `POST /api/w/{ws}/files` (multipart, `files` and optional `modified`, a JSON list of millisecond times) reads
-  uploaded files into the workspace.
+- Uploads (files and exports) are in `sources_routes`.
 - `POST /api/workspaces/blank {name}` makes an empty workspace to connect sources to, for a company without a
   repository to start from.
 
 Every write needs a member of the workspace (`require_member`); public workspaces cannot be connected to anything.
 """
 
-import json
 import logging
 import secrets
 import time
@@ -33,7 +31,6 @@ from canon.sources.connections import (
     API_KINDS,
     KINDS,
     MAX_CONNECTIONS,
-    UPLOAD_ID,
     Connections,
     check,
     clean_config,
@@ -143,55 +140,6 @@ def delete_connection(request: Request, ws: str, conn_id: str, documents: str = 
     count = remove_documents(graph, conn_id, delete=documents == "delete")
     store.delete(conn_id)
     return {"removed": conn_id, "documents": count, "kept": documents == "keep"}
-
-
-# ----- uploads ---------------------------------------------------------------------------------------------------
-
-
-@router.post("/api/w/{ws}/files")
-async def upload_files(request: Request, ws: str):
-    from canon.sources.upload import MAX_FILES, MAX_TOTAL, File, UploadConnector
-
-    cloud = cloud_of(request)
-    user = require_member(request, ws)
-    length = request.headers.get("content-length")
-    if not length or not length.isdigit():
-        raise HTTPException(411, "Send the upload with its length.")
-    if int(length) > MAX_TOTAL + 1024 * 1024:
-        raise HTTPException(413, f"An upload can be at most {MAX_TOTAL // (1024 * 1024)} MB.")
-    try:
-        form = await request.form(max_files=MAX_FILES, max_fields=10)
-    except Exception:
-        raise HTTPException(422, f"Send at most {MAX_FILES} files as a form upload.") from None
-    uploads = [f for f in form.getlist("files") if hasattr(f, "read")]
-    if not uploads:
-        raise HTTPException(422, "Choose at least one file.")
-    try:
-        modified = json.loads(str(form.get("modified") or "[]"))
-    except ValueError:
-        modified = []
-    files: list[File] = []
-    total = 0
-    for i, f in enumerate(uploads):
-        data = await f.read(MAX_TOTAL + 1)  # type: ignore[union-attr]
-        total += len(data)
-        if total > MAX_TOTAL:
-            raise HTTPException(413, f"An upload can be at most {MAX_TOTAL // (1024 * 1024)} MB.")
-        stamp = modified[i] if i < len(modified) and isinstance(modified[i], int | float) else None
-        when = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(stamp / 1000)) if stamp and stamp > 0 else None
-        files.append(File(getattr(f, "filename", None) or f"file-{i + 1}", data, when))
-    await form.close()
-
-    store = _store(cloud, ws)
-    if store.get(UPLOAD_ID) is None:
-        store.create("upload", "Files", {}, None, {}, user.login, conn_id=UPLOAD_ID)
-    try:
-        job = start_sync(cloud, ws, UPLOAD_ID, connector=UploadConnector(files))
-    except SourceError as e:
-        raise _failed(e) from None
-    if job is None:
-        raise HTTPException(409, "A sync is running in this workspace. Upload again when it finishes.")
-    return JSONResponse(status_code=202, content={"job": job, "connection": store.get(UPLOAD_ID)})
 
 
 # ----- a workspace with no repository ----------------------------------------------------------------------------

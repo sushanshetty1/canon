@@ -51,6 +51,14 @@ const glyphs: Record<string, ReactNode> = {
       <rect x="9" y="32" width="16" height="2.5" rx="1.25" fill={STROKE} />
     </>
   ),
+  discussions: (
+    <>
+      <path d="M3 6 a4 4 0 0 1 4 -4 H25 a4 4 0 0 1 4 4 V18 a4 4 0 0 1 -4 4 H11 L6 27 V22 a4 4 0 0 1 -3 -4 Z" fill={FILL} stroke={STROKE} strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M11 24 a4 4 0 0 1 4 -4 H33 a4 4 0 0 1 4 4 V36 a4 4 0 0 1 -3 4 V45 L29 40 H15 a4 4 0 0 1 -4 -4 Z" fill="var(--paper)" stroke="var(--ink)" strokeWidth="1.5" strokeLinejoin="round" />
+      <rect x="16" y="27" width="15" height="2.5" rx="1.25" fill={STROKE} />
+      <rect x="16" y="33" width="10" height="2.5" rx="1.25" fill={STROKE} />
+    </>
+  ),
   contributors: (
     <>
       <rect x="4" y="2" width="32" height="44" rx="4" fill={FILL} stroke={STROKE} strokeWidth="1.5" />
@@ -60,17 +68,18 @@ const glyphs: Record<string, ReactNode> = {
   ),
 }
 
-type SourceKey = 'docs' | 'codeowners' | 'pulls' | 'issues' | 'contributors'
+type SourceKey = 'docs' | 'codeowners' | 'pulls' | 'issues' | 'discussions' | 'contributors'
 
 const SOURCES: { key: SourceKey; name: string; unit: [string, string]; step: string }[] = [
   { key: 'docs', name: 'Docs', unit: ['page', 'pages'], step: 'docs' },
   { key: 'codeowners', name: 'CODEOWNERS', unit: ['version', 'versions'], step: 'codeowners' },
   { key: 'pulls', name: 'Pull requests', unit: ['merged', 'merged'], step: 'activity' },
   { key: 'issues', name: 'Issues', unit: ['issue', 'issues'], step: 'activity' },
+  { key: 'discussions', name: 'Discussions', unit: ['thread', 'threads'], step: 'discussions' },
   { key: 'contributors', name: 'Contributors', unit: ['person', 'people'], step: 'people' },
 ]
 
-const ORDER = ['clone', 'docs', 'codeowners', 'activity', 'people', 'write', 'extract', 'link', 'judge']
+const ORDER = ['clone', 'docs', 'wiki', 'codeowners', 'activity', 'discussions', 'releases', 'people', 'write', 'extract', 'link', 'decisions', 'judge']
 
 type Kind = 'page' | 'fact' | 'person' | 'area' | 'team' | 'old'
 type Slot = { x: number; y: number; kind: Kind; rank: number; link: number }
@@ -88,31 +97,31 @@ type Layout = {
 }
 
 const desktop: Layout = {
-  viewBox: [1000, 430],
+  viewBox: [1000, 514],
   row: (i) => ({ x: 0, y: 14 + i * 84 }),
   glyph: 1,
   nameSize: 16,
   route: (i) => {
     const y = 14 + i * 84 + 24
-    return `M 214 ${y} C 380 ${y}, 420 215, 540 215`
+    return `M 214 ${y} C 380 ${y}, 420 257, 540 257`
   },
-  hub: { x: 540, y: 215 },
+  hub: { x: 540, y: 257 },
   fan: { facing: 0, spread: 1.38, inner: 46, outer: 440, sx: 1, sy: 0.5 },
   k: 1,
 }
 
 const RAIL = (i: number) => 336 - i * 16
 const phone: Layout = {
-  viewBox: [360, 650],
+  viewBox: [360, 700],
   row: (i) => ({ x: 0, y: 4 + i * 50 }),
   glyph: 0.74,
   nameSize: 15,
   route: (i) => {
     const y = 4 + i * 50 + 18
     const x = RAIL(i)
-    return `M 196 ${y} H ${x - 10} Q ${x} ${y} ${x} ${y + 10} V 270 C ${x} 300, 180 290, 180 318`
+    return `M 196 ${y} H ${x - 10} Q ${x} ${y} ${x} ${y + 10} V 320 C ${x} 350, 180 340, 180 368`
   },
-  hub: { x: 180, y: 318 },
+  hub: { x: 180, y: 368 },
   fan: { facing: Math.PI / 2, spread: 1.32, inner: 40, outer: 318, sx: 0.56, sy: 1 },
   k: 0.78,
 }
@@ -158,7 +167,7 @@ function shown(counts: Record<string, number>): Record<Kind, number> {
   const c = (k: string) => counts[k] ?? 0
   const cap: Record<Kind, number> = { page: 36, fact: 36, person: 18, area: 9, team: 9, old: 0 }
   const scale = (n: number, full: number, kind: Kind) => (n <= 0 ? 0 : Math.max(1, Math.min(cap[kind], Math.round(cap[kind] * Math.sqrt(Math.min(n, full) / full)))))
-  const pages = Math.max(c('documents'), c('docs') + c('codeowners') + c('pulls') + c('issues'))
+  const pages = Math.max(c('documents'), c('docs') + c('wiki') + c('codeowners') + c('pulls') + c('issues') + c('discussions') + c('releases'))
   return {
     page: scale(pages, 400, 'page'),
     fact: scale(Math.max(c('facts'), c('codeowners') ? c('codeowners') * 2 : 0), 600, 'fact'),
@@ -310,7 +319,7 @@ function Drawing({ layout, job, repo, className }: { layout: Layout; job: Job | 
         const n = counts[s.key]
         const own = ORDER.indexOf(s.step)
         // A sync reads only what changed in docs, issues and pull requests; CODEOWNERS and people are read whole.
-        const changes = job?.kind === 'sync' && (s.key === 'docs' || s.key === 'pulls' || s.key === 'issues')
+        const changes = job?.kind === 'sync' && (s.key === 'docs' || s.key === 'pulls' || s.key === 'issues' || s.key === 'discussions')
         const label =
           n === undefined
             ? stepAt >= own && running

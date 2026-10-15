@@ -22,6 +22,7 @@ export const ROUTES = {
   fixQueue: '/app/fixes',
   decisions: '/app/decisions',
   catchUp: '/app/catch-up',
+  sources: '/app/sources',
   newWorkspace: '/app/new',
   connect: '/app/connect',
 } as const

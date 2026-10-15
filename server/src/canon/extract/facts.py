@@ -7,10 +7,18 @@ facts as `{subject, predicate, value, text}` through a structured output. Nothin
 - area, team and person keys must be ones the graph already knows; unknown keys drop the fact;
 - topic keys are normalised and merged, so the same topic from different pages lands on one key.
 
-Each fact starts to hold on its document's date (an RFC's on the day it was accepted) and carries its source's
-authority. Extraction is the expensive step, so it runs only on passages likely to carry facts (handbook, team pages
-and RFCs that name a team, an area, a person or a process), and every model answer is cached on disk by the
-passage text: a second run over unchanged pages costs nothing.
+Each fact starts to hold on its document's date (an RFC's on the day it was accepted, a comment or chat message on
+the day it was written) and carries its source's authority. Extraction is the expensive step, so it runs only on
+passages likely to carry facts, and every model answer is cached on disk by the passage text and model: a second run
+over unchanged pages costs nothing.
+
+- **Pages** (handbook, docs, wiki, team pages, decision records): passages that name a team, an area, a person or a
+  process.
+- **Conversations** (tickets and chats: issues, pull requests, comment threads, discussions, forum and Slack
+  threads): most of what people say there is a question or a bug report, so only passages with a signal are sent: a
+  decision ("we decided", "going forward", "deprecated", "moved to"), an ownership statement, or a process or policy
+  word, ranked higher when someone the graph knows said it. They come within a per-run budget, so a busy chat
+  never crowds out the pages.
 """
 
 import asyncio
@@ -25,11 +33,13 @@ from pathlib import Path
 import anthropic
 
 from canon.extract.predicates import AUTHORITY, PREDICATES, SHAPES, merge_topics, normalise_topic
+from canon.sources.connector import KIND_GROUPS
 from canon.types import Batch, Doc, Fact, Passage
 
-# Connected sources are read for facts too: their docs, chats and tickets are where a company writes things down.
-EXTRACT_KINDS = ("handbook", "doc", "team_page", "rfc", "notion_page", "confluence_page", "upload", "slack_thread",
-                 "linear_issue", "jira_issue")
+# Pages someone keeps up to date, and conversations: what someone said on a day (tickets and chats).
+CONVERSATIONS = KIND_GROUPS["tickets"] + KIND_GROUPS["chats"]
+PAGE_KINDS = tuple(k for g in ("docs", "decisions", "structure") for k in KIND_GROUPS[g] if k != "ownership_map")
+EXTRACT_KINDS = PAGE_KINDS + CONVERSATIONS
 MAX_PHRASE = 160
 
 
@@ -46,7 +56,12 @@ class Entities:
         return cls(
             areas={a.slug: a.name for a in batch.areas},
             teams={t.slug: t.name for t in batch.teams},
-            people={p.handle: p.name for p in batch.people if not p.handle.startswith("name:")},
+            # People known only by name count when they speak in the batch (a Slack member), not otherwise.
+            people={
+                p.handle: p.name
+                for p in batch.people
+                if not p.handle.startswith("name:") or p.handle in {x.author for x in batch.passages if x.author}
+            },
         )
 
     def known(self, prefix: str, key: str) -> bool:
@@ -118,21 +133,86 @@ class Mentions:
         return 5 * (owns and (team or area)) + 2 * team + area + person + process
 
 
-def select_passages(batch: Batch, entities: Entities, *, limit: int | None = None) -> list[Passage]:
-    """The passages worth extracting, most promising first: ownership statements, then process and policy."""
+# What people say in a conversation that is worth a model call: a decision or a change, who owns something now, or
+# a rule. Questions, bug reports and thanks have none of these.
+_DECIDED = re.compile(
+    r"\b(we('ve| have)? (decided|agreed|chosen|settled)|decided (to|that|on|against|not)|the decision|going forward|"
+    r"from now on|moving forward|deprecat\w*|moved (it |this |them |everything )?(to|into|over)|moving (it |this )?to|"
+    r"migrat(e|ed|ing) (to|from|away)|switch(ed|ing)? (over )?to|replaced (it |this )?(with|by)|in favou?r of|"
+    r"no longer|sunset\w*|end of life|we('ll| will) (now|stop|start|no longer|move|only|use)|is now (owned|handled|"
+    r"maintained|run|managed)|now owns?|took over|taking over|handed (it |this )?over)\b",
+    re.I,
+)
+_RULE = re.compile(
+    r"\b(policy|policies|must|is required|are required|not allowed|always|never|the process|our process|on[- ]call|"
+    r"escalat\w*|approval|approved by|sign[- ]off|rotation)\b",
+    re.I,
+)
+MIN_TALK = 60  # characters of what was said, after the speaker line
+
+
+def _said(text: str) -> str:
+    """A conversation passage without its speaker line (`"alice, 2026-05-06:"`), which names a person every time."""
+    first, sep, rest = text.partition("\n")
+    return rest if sep and re.search(r", \d{4}-\d{2}-\d{2}:$", first) else text
+
+
+def conversation_score(mentions: "Mentions", passage: Passage, known: Mapping[str, str]) -> int:
+    """0 means not worth a model call. A decision or a change in what is done counts most; an ownership statement
+    about a known team or area next; a rule only when it is about one. Words from someone the graph knows (staff,
+    a contributor, a Slack member) rank higher than a stranger's."""
+    text = _said(passage.text)
+    if len(text) < MIN_TALK:
+        return 0
+    decided = {m.group(0).lower() for m in _DECIDED.finditer(text)}
+    team = bool(mentions.teams and mentions.teams.search(text)) or bool(re.search(r"\bteam\b", text, re.I))
+    area = bool(mentions.areas and mentions.areas.search(text))
+    owns = bool(_OWNERSHIP.search(text)) and (team or area)
+    rule = bool(_RULE.search(text)) and (team or area)
+    if not (decided or owns or rule):
+        return 0
+    known_speaker = bool(passage.author) and (passage.author in known or passage.author.startswith("name:"))
+    return 4 * bool(decided) + min(len(decided), 3) + 4 * owns + 2 * rule + (team or area) + 2 * known_speaker
+
+
+def ranked(batch: Batch, entities: Entities) -> tuple[list[Passage], list[Passage]]:
+    """Pages and conversations worth extracting, each most promising first."""
     kinds = {d.id: d.kind for d in batch.docs}
     mentions = Mentions(entities)
-    scored = []
+    pages, talk = [], []
     for i, p in enumerate(batch.passages):
         kind = kinds.get(p.doc_id)
-        if kind not in EXTRACT_KINDS:
-            continue
-        s = mentions.score(p.text, kind)
-        if s > 0:
-            scored.append((-s, i, p))
-    scored.sort(key=lambda row: row[:2])
-    chosen = [p for _, _, p in scored]
+        if kind in PAGE_KINDS:
+            s = mentions.score(p.text, kind)
+            if s > 0:
+                pages.append((-s, i, p))
+        elif kind in CONVERSATIONS:
+            s = conversation_score(mentions, p, entities.people)
+            if s > 0:
+                talk.append((-s, i, p))
+    pages.sort(key=lambda row: row[:2])
+    talk.sort(key=lambda row: row[:2])
+    return [p for *_, p in pages], [p for *_, p in talk]
+
+
+def select_passages(batch: Batch, entities: Entities, *, limit: int | None = None) -> list[Passage]:
+    """The passages worth extracting, most promising first: pages (ownership statements, then process and policy),
+    then conversations with a signal."""
+    pages, talk = ranked(batch, entities)
+    chosen = pages + talk
     return chosen[:limit] if limit is not None else chosen
+
+
+def choose(
+    batch: Batch, entities: Entities, *, limit: int | None = None, conversations: int | None = None
+) -> tuple[list[Passage], list[Passage]]:
+    """This run's passages and the ones left for a later run. At most `conversations` come from tickets and chats;
+    they are kept out of `limit`'s reach, so pages never use up the conversations' share and the other way round."""
+    pages, talk = ranked(batch, entities)
+    talk_now = talk if conversations is None else talk[:conversations]
+    room = None if limit is None else max(0, limit - len(talk_now))
+    pages_now = pages if room is None else pages[:room]
+    return pages_now + talk_now, pages[len(pages_now) :] + talk[len(talk_now) :]
 
 
 # ----- the model -------------------------------------------------------------------------------------------------
@@ -165,12 +245,18 @@ def system_prompt(entities: Entities) -> str:
     areas = "\n".join(f"- area:{k} ({v})" for k, v in sorted(entities.areas.items()))
     teams = "\n".join(f"- team:{k} ({v})" for k, v in sorted(entities.teams.items()))
     people = "\n".join(f"- person:{k} ({v})" for k, v in sorted(entities.people.items()))
-    return f"""You extract facts about how a company works from one passage of its documentation.
+    return f"""You extract facts about how a company works from one passage of what it has written down: a page of its
+documentation, or a turn in one of its conversations (an issue, a comment thread, a discussion, a forum or chat thread).
 
 Return only facts the passage states directly about the company: who owns which product area, who is on or leads
 which team, what was decided, how something is done, the rules people follow, which tools a team uses, and who to
 contact about something. Skip opinions, advice to customers, examples, hypotheticals and general product
 descriptions. Most passages hold zero to three facts; return an empty list when there are none.
+
+A conversation turn starts with who said it and when. From a conversation, return only what the speaker states as
+settled for the company or its team: a decision made, a change made ("we moved X to Y", "X is deprecated"), who owns
+something, or how something is done. Skip questions, bug reports, requests, guesses, plans still under discussion,
+and anything about one customer's own setup.
 
 Each fact is a subject, a predicate, a value and a one-sentence text that restates the fact in plain words, as the
 passage says it.
@@ -297,6 +383,19 @@ def _fact_id(subject: str, predicate: str, value: str, passage_id: str) -> str:
     return hashlib.sha1(f"{subject}|{predicate}|{value}|{passage_id}".encode()).hexdigest()[:16]
 
 
+KIND_WORDS = {
+    "adr": "decision record",
+    "pull": "pull request",
+    "comment_thread": "comment thread",
+    "discussion": "discussion",
+    "forum": "forum thread",
+    "slack_thread": "Slack thread",
+    "wiki": "wiki page",
+    "notion_page": "Notion page",
+    "confluence_page": "Confluence page",
+}
+
+
 def to_facts(rows: list[tuple[Passage, Doc, dict]]) -> list[Fact]:
     """Validated rows to Facts: topics merged across pages, dated by the document, ranked by its kind."""
     topics = [k for _, _, r in rows for k in (r["subject"], r["value"]) if k.startswith("topic:")]
@@ -312,7 +411,7 @@ def to_facts(rows: list[tuple[Passage, Doc, dict]]) -> list[Fact]:
             predicate=r["predicate"],
             value=value,
             text=r["text"],
-            valid_from=(doc.decided_at if doc.kind == "rfc" and doc.decided_at else doc.updated_at),
+            valid_from=passage.at or (doc.decided_at if doc.kind in ("rfc", "adr") and doc.decided_at else doc.updated_at),
             passage_id=passage.id,
             authority=AUTHORITY[doc.kind],
         )
@@ -351,7 +450,8 @@ async def extract(
             usage.cached += 1
         else:
             api = client or _client()
-            user = f"Document: {doc.title}\nKind: {doc.kind.replace('_', ' ')}\n\nPassage:\n{passage.text}"
+            kind = KIND_WORDS.get(doc.kind, doc.kind.replace("_", " "))
+            user = f"Document: {doc.title}\nKind: {kind}\n\nPassage:\n{passage.text}"
             async with semaphore:
                 if usage.stopped:
                     usage.skipped += 1

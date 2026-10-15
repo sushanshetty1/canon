@@ -1,6 +1,7 @@
 // A typed client for the Canon API, and the reader for the Ask event stream.
 // With `?mock=1` in the URL, Ask plays a recorded stream from `mock.ts` instead of calling the model.
 
+import type { Job } from './account'
 import { mockAsk, mockFact, mockStats } from './mock'
 
 export type VerdictName = 'verified' | 'stale' | 'disputed' | 'unsupported'
@@ -149,13 +150,25 @@ export type AreaSummary = {
   slug: string
   name: string
   owners: Owner[]
+  /** The maximum flow: people who each hold the area through evidence of their own. */
   bus_factor: number
+  /** People above the bar for knowing it. */
   knowers: number
+  /** Documents in the flow network. */
+  evidence_docs: number
   evidence: number
+  /** Everyone in the flow network: how many documents they hold, and the one the flow routed to them. */
+  network: FlowPerson[]
+  /** The minimum cut: people, and documents several people know the area only through. */
   depends_on: Knower[]
+  hinges_on: (DocRef & { people: string[] })[]
   people: Knower[]
   others: number
 }
+
+export type DocRef = { id: string; title: string | null; url: string | null; kind: string | null }
+
+export type FlowPerson = { handle: string; name: string; docs: number; via: DocRef | null; cut: boolean }
 
 export type Act = { rel: 'decided' | 'authored' | 'reviewed' | 'commented'; at: string | null }
 
@@ -319,4 +332,75 @@ export async function brief(ws: string, since: string, onEvent: (e: AskEvent) =>
   }
   if (!res.ok || !res.body) throw await failure(res)
   return readEvents(res.body, onEvent)
+}
+
+// --- Sources ---------------------------------------------------------------------------------------
+
+export type SourceKey = 'docs' | 'tickets' | 'chats' | 'decisions' | 'code_owners' | 'people'
+
+export type SourceKind = {
+  kind: string
+  documents: number
+  passages: number
+  facts: number
+  current_facts: number
+  speakers: number
+  last_read: string | null
+  newest: string | null
+}
+
+/** One kind of source as `GET /api/w/{ws}/sources` counts it (see `server/src/canon/sources/summary.py`). */
+export type SourceFamily = {
+  key: SourceKey
+  documents: number
+  passages: number
+  facts: number
+  current_facts: number
+  last_read: string | null
+  newest: string | null
+  kinds: SourceKind[]
+  decisions?: number
+  statuses?: Record<string, number>
+  areas?: number
+  people?: number
+  teams?: number
+  speakers?: number
+}
+
+/** A place the workspace reads from: its GitHub repository, an uploaded export, a connected tool. */
+export type Connection = {
+  id: string
+  kind: string
+  label: string
+  status: string | null
+  last_synced_at: string | null
+  error: string | null
+  config: Record<string, string | number | boolean>
+}
+
+export type SourcesView = {
+  families: SourceFamily[]
+  connections: Connection[]
+  repo: { repo: string; synced_at: string | null } | null
+  totals: { documents: number; facts: number }
+  can_upload: boolean
+}
+
+export const sources = (ws: string, signal?: AbortSignal) => getJson<SourcesView>(`${inWs(ws)}/sources`, signal)
+
+export type UploadKind = 'slack' | 'pages'
+
+/** Send an export (a zip) to be read into the workspace. Resolves with the job that reads it. */
+export async function uploadExport(ws: string, kind: UploadKind, file: File): Promise<{ job: Job }> {
+  const body = new FormData()
+  body.set('kind', kind)
+  body.set('file', file)
+  let res: Response
+  try {
+    res = await fetch(`${inWs(ws)}/uploads`, { method: 'POST', body, headers: { accept: 'application/json' } })
+  } catch {
+    throw new Error('Canon could not be reached. Try again in a moment.')
+  }
+  if (!res.ok) throw await failure(res)
+  return (await res.json()) as { job: Job }
 }

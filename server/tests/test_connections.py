@@ -49,6 +49,13 @@ def test_a_blank_workspace_belongs_to_its_maker(setup):
     cloud, _ = setup
     c = client(cloud)
     slug = workspace(c)
+    # Nothing read yet: Sources still opens for its owner, with nothing in it and a way to add some.
+    view = c.get(f"/api/w/{slug}/sources").json()
+    assert view["totals"]["documents"] == 0 and view["connections"] == [] and view["can_upload"] is True
+    c.post(f"/api/w/{slug}/connections", json={"kind": "notion", "secret": "ntn_good"})
+    (listed,) = c.get(f"/api/w/{slug}/sources").json()["connections"]
+    assert listed["kind"] == "notion" and listed["label"] == "Notion · Kestrel" and listed["status"] == "done"
+    assert listed["config"]["documents"] == 3 and "secret" not in json.dumps(listed)
     own = c.get("/api/workspaces").json()["own"]
     assert [(w["slug"], w["repo"], w["role"]) for w in own] == [(slug, None, "owner")]
     assert client(cloud, None).post("/api/workspaces/blank", json={"name": "Nope"}).status_code == 401
@@ -79,7 +86,7 @@ def test_a_connection_syncs_into_the_graph_and_never_shows_its_secret(setup, db)
     assert res.status_code == 201, res.text
     conn = res.json()["connection"]
     assert conn["label"] == "Slack · Kestrel" and conn["config"] == {"max_channels": 5}
-    assert conn["status"] == "ok" and conn["counts"]["documents"] == 4 and conn["last_synced_at"]
+    assert conn["status"] == "done" and conn["counts"]["documents"] == 4 and conn["last_synced_at"]
     assert any("groups:read" in n for n in conn["notes"])
     listing = c.get(f"/api/w/{slug}/connections").json()
     assert "xoxb-good" not in json.dumps(listing) and "secret" not in listing["connections"][0]
@@ -132,7 +139,7 @@ def test_atlassian_email_is_sealed_with_the_token(setup):
     })
     assert res.status_code == 201, res.text
     conn = res.json()["connection"]
-    assert conn["config"] == {"site": "https://kestrel.atlassian.net"} and conn["status"] == "ok"
+    assert conn["config"] == {"site": "https://kestrel.atlassian.net"} and conn["status"] == "done"
     assert "ana@kestrel.example" not in json.dumps(c.get(f"/api/w/{slug}/connections").json())
     sealed = Connections(cloud.graph(slug)).raw(conn["id"])["secret"]
     assert json.loads(crypto.unseal(sealed, SECRET)) == {"email": "ana@kestrel.example", "token": "atl-good"}
@@ -198,18 +205,21 @@ def test_uploaded_files_are_read_into_the_workspace(setup):
     assert c.post(f"/api/w/{slug}/files", data={"modified": "[]"}).status_code == 422
 
 
-def test_run_connector_writes_dated_ticket_history_and_keeps_first_dates(graph):
+def test_the_shared_pipeline_writes_dated_ticket_history_and_keeps_first_dates(graph):
     from dataclasses import replace
 
+    from canon.ingest import ingest_connector
     from canon.sources.linear import LinearConnector
-    from canon.sources.sync import run_connector
 
     api = Recorded()
     steps: list[str] = []
-    out = run_connector(graph, LinearConnector("lin_api_good", http=api.client), connection_id="c1",
-                        report=lambda step=None, **_: step and steps.append(step))
-    assert list(dict.fromkeys(steps)) == ["read_linear", "write", "link"]
-    assert out["cursor"] == "2026-10-14T11:00:00.000Z" and out["connection"]["documents"] == 3
+    out = ingest_connector(graph, LinearConnector("lin_api_good", http=api.client), connection_id="c1",
+                           report=lambda step=None, **_: step and steps.append(step))
+    assert list(dict.fromkeys(steps)) == ["read", "read_linear", "write", "link"]
+    assert out["cursor"] == "2026-10-14T11:00:00.000Z" and out["totals"]["documents"] == 3
+    # Comments are turns: who said them is in the graph.
+    said = graph.query("MATCH (p:Person)-[:SAID]->(:Passage)<-[:HAS]-(:Document {id: 'linear:pay-12'}) RETURN p.name").result_set
+    assert said == [["Ben Okafor"]]
     rows = graph.query(
         """MATCH (f:Fact {subject: 'topic:pay-12'})-[:VALUE]->(p:Person)
            RETURN p.name, f.valid_from, f.valid_to ORDER BY f.valid_from"""
@@ -227,7 +237,7 @@ def test_run_connector_writes_dated_ticket_history_and_keeps_first_dates(graph):
             result.batch.facts = [replace(f, valid_from="2026-10-20") for f in result.batch.facts]
             return result
 
-    run_connector(graph, Later(), connection_id="c1")
+    ingest_connector(graph, Later(), connection_id="c1")
     lead = graph.query("MATCH (f:Fact {predicate: 'owned_by'}) RETURN f.valid_from").result_set
     assert lead == [["2026-09-01"]]
 

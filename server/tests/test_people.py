@@ -168,14 +168,94 @@ def test_bus_factor_counts_who_could_still_answer(graph):
     result = bus_factor.compute(graph)
     rows = dict(graph.query("MATCH (a:Area) RETURN a.slug, a.bus_factor").result_set)
     # alice 8 and bob 4 know replay; dave (1) and erin (2) are below the bar. Carol's membership alone is not enough.
+    # Alice wrote two pull requests and Bob reviewed one of them, so each holds replay through a document of their own.
     assert rows == {"replay": 2, "flags": 0}
     deps = graph.query("MATCH (:Area {slug: 'replay'})-[:DEPENDS_ON]->(p) RETURN p.handle ORDER BY p.handle").result_set
     assert deps == [["alice"], ["bob"]]
     assert result["with_knowers"] == 1
-    # Running again replaces the network and the cut rather than adding to them.
+    # Running again replaces the cut rather than adding to it, and no flow network is left behind.
     bus_factor.compute(graph)
     assert graph.query("MATCH ()-[d:DEPENDS_ON]->() RETURN count(d)").result_set[0][0] == 2
-    assert graph.query("MATCH ()-[f:FLOW]->() RETURN count(f)").result_set[0][0] == 4
+    assert graph.query("MATCH ()-[f:FLOW]->() RETURN count(f)").result_set[0][0] == 0
+
+
+def evidence_world(graph, acts: list[tuple[str, str, str]]) -> list[str]:
+    """Replay and the pull requests about it; `acts` are (handle, doc, relation). Returns everyone, as knowers."""
+    ensure_schema(graph)
+    people = sorted({h for h, _, _ in acts})
+    write_batch(
+        graph,
+        Batch(
+            docs=[_doc(d) for d in sorted({d for _, d, _ in acts})],
+            people=[Person(h, h.title()) for h in people],
+            areas=[Area("replay", "Replay")],
+            activity=[Activity(h, d, rel, TODAY) for h, d, rel in acts],
+        ),
+    )
+    graph.query("MERGE (:Sink {id: 'knowledge'})")
+    return people
+
+
+def test_three_reviewers_of_one_pull_request_count_once(graph):
+    acts = [("r1", "pull:1", "REVIEWED"), ("r2", "pull:1", "REVIEWED"), ("r3", "pull:1", "REVIEWED")]
+    flow = bus_factor.area_flow(graph, "replay", evidence_world(graph, acts))
+    assert flow.knowers == 3 and flow.bus == 1
+    # The area hinges on the one document, not on any of the three.
+    assert flow.cut_docs == ["pull:1"] and flow.cut_people == []
+    assert graph.query("MATCH ()-[f:FLOW]->() RETURN count(f)").result_set[0][0] == 0
+
+
+def test_the_worked_example(graph):
+    # Alice wrote #1 and #2; Bob and Carol only reviewed #1 (see the module docstring).
+    acts = [
+        ("alice", "pull:1", "AUTHORED"),
+        ("alice", "pull:2", "AUTHORED"),
+        ("bob", "pull:1", "REVIEWED"),
+        ("carol", "pull:1", "REVIEWED"),
+    ]
+    flow = bus_factor.area_flow(graph, "replay", evidence_world(graph, acts))
+    assert flow.bus == 2 < len(flow.people) == 3
+    assert flow.cut_docs == ["pull:1"] and flow.cut_people == ["alice"]
+    assert flow.people["alice"] == {"docs": 2, "via": "pull:2"} and flow.people["bob"]["docs"] == 1
+
+
+def test_evidence_of_their_own_raises_the_flow(graph):
+    acts = [
+        ("alice", "pull:1", "AUTHORED"),
+        ("alice", "pull:2", "AUTHORED"),
+        ("bob", "pull:1", "REVIEWED"),
+        ("carol", "pull:1", "REVIEWED"),
+        ("bob", "pull:3", "AUTHORED"),
+    ]
+    flow = bus_factor.area_flow(graph, "replay", evidence_world(graph, acts))
+    assert flow.bus == 3 and flow.cut_people == ["alice", "bob", "carol"] and flow.cut_docs == []
+
+
+def test_comments_are_not_evidence_of_knowing(graph):
+    acts = [("alice", "pull:1", "AUTHORED"), ("dave", "pull:1", "COMMENTED"), ("dave", "pull:2", "COMMENTED")]
+    flow = bus_factor.area_flow(graph, "replay", evidence_world(graph, acts))
+    assert flow.bus == 1 and set(flow.people) == {"alice"}
+
+
+def test_one_author_with_many_documents_is_the_cut(graph):
+    acts = [("alice", f"pull:{i}", "AUTHORED") for i in range(5)] + [("bob", "pull:0", "REVIEWED")]
+    flow = bus_factor.area_flow(graph, "replay", evidence_world(graph, acts))
+    assert flow.bus == 2 and flow.cut_people == ["alice", "bob"] and flow.docs == 5
+
+
+def test_the_org_view_carries_the_network_and_the_cut(graph):
+    acts = [("r1", "pull:1", "REVIEWED"), ("r2", "pull:1", "REVIEWED"), ("a", "pull:2", "AUTHORED")]
+    evidence_world(graph, acts)
+    graph.query(
+        """UNWIND ['r1', 'r2', 'a'] AS h MATCH (p:Person {handle: h}), (a:Area {slug: 'replay'})
+           CREATE (p)-[:KNOWS {score: 3.0, evidence: '{}'}]->(a)"""
+    )
+    bus_factor.compute(graph)
+    replay = bus_factor.org_view(graph)[0]
+    assert replay["bus_factor"] == 2 and replay["knowers"] == 3 and replay["evidence_docs"] == 2
+    assert [h["id"] for h in replay["hinges_on"]] == ["pull:1"] and replay["hinges_on"][0]["people"] == ["r1", "r2"]
+    assert [p["handle"] for p in replay["depends_on"]] == ["a"]
+    assert {n["handle"]: n["via"]["id"] if n["via"] else None for n in replay["network"]}["a"] == "pull:2"
 
 
 def test_one_person_holding_an_area_is_a_bus_factor_of_one(graph):

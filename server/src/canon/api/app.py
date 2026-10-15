@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field
 from canon.api import changes_routes
 from canon.api import connections_routes
 from canon.api import decisions_routes
+from canon.api import sources_routes
 from canon.api.fixes_routes import router as fixes_router
 from canon.api.limits import Limits, client_address, replay
 from canon.api.people_routes import router as people_router
@@ -102,13 +103,14 @@ def create_app(
 
     Every route with `{ws}` in its path, here or in an included router, passes `workspace_access` first: public
     workspaces are open to anyone, private ones to their members only."""
-    from canon.api import accounts_routes
+    from canon.api import accounts_routes, members_routes
     from canon.cloud import Cloud
     from canon.cloud.access import workspace_access
 
     app = FastAPI(title="Canon", docs_url=None, redoc_url=None, dependencies=[Depends(workspace_access)], lifespan=_lifespan)
     app.state.cloud = cloud or Cloud.from_env()
     app.include_router(accounts_routes.router)
+    app.include_router(members_routes.router)
     limits = limits or Limits()
     graph_for = graph_for or _default_graph
 
@@ -181,6 +183,7 @@ def create_app(
     app.include_router(decisions_routes.router)
     app.include_router(changes_routes.router)
     app.include_router(connections_routes.router)
+    app.include_router(sources_routes.router)
     return app
 
 
