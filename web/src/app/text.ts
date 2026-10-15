@@ -27,6 +27,12 @@ const KINDS: Record<string, string> = {
   pull: 'Pull request',
   issue: 'Issue',
   forum: 'Forum',
+  notion_page: 'Notion page',
+  confluence_page: 'Confluence page',
+  upload: 'Uploaded file',
+  slack_thread: 'Slack thread',
+  linear_issue: 'Linear issue',
+  jira_issue: 'Jira issue',
 }
 
 export const kindLabel = (kind: string | null | undefined) => (kind ? (KINDS[kind] ?? kind.replace(/_/g, ' ')) : 'Document')

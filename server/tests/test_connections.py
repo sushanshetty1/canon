@@ -193,7 +193,7 @@ def test_uploaded_files_are_read_into_the_workspace(setup):
     files = c.get(f"/api/w/{slug}/connections").json()["connections"][0]
     assert files["id"] == "files" and files["kind"] == "upload" and files["counts"]["documents"] == 2
     rows = dict(cloud.graph(slug).query("MATCH (d:Document {kind: 'upload'}) RETURN d.id, d.updated_at").result_set)
-    assert rows == {"upload:deploys-md": "2026-09-21", "upload:wiki-wiki-oncall-md": rows["upload:wiki-wiki-oncall-md"]}
+    assert set(rows) == {"upload:deploys-md", "upload:wiki-oncall-md"} and rows["upload:deploys-md"] == "2026-09-21"
     assert c.post(f"/api/w/{slug}/connections/files/sync").status_code == 409
     assert c.post(f"/api/w/{slug}/files", data={"modified": "[]"}).status_code == 422
 

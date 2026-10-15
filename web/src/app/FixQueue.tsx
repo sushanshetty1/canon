@@ -167,7 +167,8 @@ function Evidence({ fix }: { fix: Fix }) {
   )
 }
 
-const handleLink = (handle: string) => !handle.startsWith('name:')
+// A GitHub handle has no colon; people from other sources (`slack:...`, `id:...`) and named-only people do.
+const handleLink = (handle: string) => !handle.includes(':')
 
 function Owner({ fix }: { fix: Fix }) {
   const teams = fix.routed.filter((r) => r.kind === 'team')
@@ -485,7 +486,7 @@ function PageSheet({ ws, fixes, filter, dryRun, onDone }: { ws: string; fixes: F
           <p className="text-[13.5px] text-muted">
             {kindLabel(page.kind)}
             {page.updated_at && <> · edited {formatDate(page.updated_at)}</>}
-            {page.author && !page.author.startsWith('name:') && <> by {page.author}</>}
+            {page.author && !page.author.includes(':') && <> by {page.author}</>}
           </p>
           <h2 className="display mt-2 text-[30px] text-balance text-ink sm:text-[40px]">{page.title}</h2>
           <p className="mt-2 text-[15px] text-muted">

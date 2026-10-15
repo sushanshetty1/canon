@@ -122,7 +122,10 @@ def _unzip(name: str, data: bytes, notes: list[str]) -> list[File]:
                 modified = datetime(*e.date_time, tzinfo=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
             except ValueError:
                 modified = None
-            out.append(File(f"{name.removesuffix('.zip')}/{inner}", body, modified))
+            stem = name.removesuffix(".zip")
+            # `handbook.zip` holding `handbook/deploys.md` is `handbook/deploys.md`, not `handbook/handbook/...`.
+            path = inner if inner.startswith(PurePosixPath(stem).name + "/") else f"{stem}/{inner}"
+            out.append(File(path, body, modified))
     return out
 
 

@@ -1,6 +1,6 @@
 // The Canon app: a slim rail on the page, and the screen on a sheet of paper beside it.
 
-import { ArrowsClockwise, Bus, CaretUpDown, Check, ClockCounterClockwise, GithubLogo, Plus, Question, Signpost, UsersThree, Wrench, type Icon } from '@phosphor-icons/react'
+import { ArrowsClockwise, Bus, CaretUpDown, Check, ClockCounterClockwise, GithubLogo, Plugs, Plus, Question, Signpost, UsersThree, Wrench, type Icon } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Wordmark } from '../ui'
@@ -9,6 +9,7 @@ import { isMock, stats as getStats, type Stats } from './api'
 import { Ask } from './Ask'
 import { BusFactor } from './BusFactor'
 import { CatchUp } from './CatchUp'
+import { Connect } from './Connect'
 import { Decisions } from './Decisions'
 import { FixQueue } from './FixQueue'
 import { NewWorkspace } from './NewWorkspace'
@@ -134,6 +135,19 @@ function WorkspaceSwitcher({
               </>
             )}
             <div className="mt-1.5 border-t border-line pt-1.5">
+              {!creating && lists.own.some((w) => w.slug === ws.slug) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false)
+                    navigate(`/app/connect?ws=${encodeURIComponent(ws.slug)}`)
+                  }}
+                  className="flex h-10 w-full items-center gap-2.5 rounded-[11px] px-3 text-left text-[14.5px] font-semibold text-ink hover:bg-paper-2 focus-visible:bg-paper-2 focus-visible:outline-none"
+                >
+                  <Plugs size={15} weight="bold" />
+                  Connect a source
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -230,12 +244,31 @@ function Sync({ ws, onSynced }: { ws: Workspace; onSynced: () => void }) {
       ) : (
         <div className="space-y-1.5">
           <p className={job?.status === 'failed' ? 'text-proof' : 'text-faint'}>
-            {job?.status === 'failed' ? 'The last sync stopped' : job?.finished_at ? `Read from GitHub ${ago(job.finished_at)}` : ''}
+            {job?.status === 'failed'
+              ? 'The last sync stopped'
+              : job?.finished_at
+                ? `${(job as { connection?: string | null }).connection ? 'Synced' : 'Read from GitHub'} ${ago(job.finished_at)}`
+                : ''}
           </p>
-          <button type="button" onClick={start} className="inline-flex items-center gap-1.5 font-semibold text-cobalt hover:text-cobalt-deep">
-            <ArrowsClockwise size={13} weight="bold" />
-            Sync now
-          </button>
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+            {ws.repo && (
+              <button type="button" onClick={start} className="inline-flex items-center gap-1.5 font-semibold text-cobalt hover:text-cobalt-deep">
+                <ArrowsClockwise size={13} weight="bold" />
+                Sync now
+              </button>
+            )}
+            <a
+              href={`/app/connect?ws=${encodeURIComponent(ws.slug)}`}
+              onClick={(e) => {
+                e.preventDefault()
+                navigate(`/app/connect?ws=${encodeURIComponent(ws.slug)}`)
+              }}
+              className="inline-flex items-center gap-1.5 font-semibold text-cobalt hover:text-cobalt-deep"
+            >
+              <Plugs size={13} weight="bold" />
+              Sources
+            </a>
+          </div>
         </div>
       )}
       {error && <p className="mt-2 text-proof">{error}</p>}
@@ -393,10 +426,15 @@ export default function CanonApp() {
     if (listed && listed !== ws) setWs(listed)
   }, [lists, me, ws])
 
-  const change = (w: Workspace) => {
+  const pickOnly = useCallback((w: Workspace) => {
     saveWorkspace(w)
     setWs(w)
+  }, [])
+  const change = (w: Workspace) => {
+    pickOnly(w)
     if (creating) navigate('/app')
+    // On Connect, another workspace of your own opens its sources; any other workspace opens Ask.
+    if (screen === 'connect') navigate(lists.own.some((o) => o.slug === w.slug) ? `/app/connect?ws=${encodeURIComponent(w.slug)}` : '/app')
   }
   const synced = useCallback(() => setVersion((v) => v + 1), [])
 
@@ -429,6 +467,7 @@ export default function CanonApp() {
           {screen === 'decisions' && <Decisions key={ws.slug} ws={ws} />}
           {screen === 'catchUp' && <CatchUp key={ws.slug} ws={ws} />}
           {screen === 'fixQueue' && <FixQueue key={ws.slug} ws={ws} />}
+          {screen === 'connect' && <Connect ws={ws} own={lists.own} me={me} onWorkspace={pickOnly} onCreated={reload} onSynced={synced} />}
         </div>
       </div>
     </div>
