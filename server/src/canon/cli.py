@@ -72,6 +72,11 @@ def main(argv: list[str] | None = None) -> int:
     ask.add_argument("question")
     ask.add_argument("--workspace", default="posthog")
 
+    decisions = sub.add_parser("decisions", help="build decisions from the cached RFCs and pull requests")
+    decisions.add_argument("workspace")
+    decisions.add_argument("--no-model", action="store_true", help="find replacements by reference only, call no model")
+    decisions.add_argument("--offline", action="store_true", help="use only cached pull requests, search GitHub for none")
+
     seed = sub.add_parser("seed", help="load the small Kestrel demo company into a workspace")
     seed.add_argument("workspace")
     seed.add_argument("--reset", action="store_true", help="delete the workspace graph first")
@@ -101,6 +106,15 @@ def main(argv: list[str] | None = None) -> int:
             workspace_graph(db, args.workspace).delete()
         counts = seed_graph(workspace_graph(db, args.workspace))
         print(f"Seeded workspace {args.workspace}: " + ", ".join(f"{k} {v}" for k, v in counts.items()))
+        return 0
+    if args.command == "decisions":
+        from canon.graph.db import connect, workspace_graph, workspace_graph_name
+
+        db = connect()
+        if workspace_graph_name(args.workspace) not in db.list_graphs():
+            print(f"No workspace {args.workspace}.")
+            return 1
+        print(build_decisions(workspace_graph(db, args.workspace), model=not args.no_model, offline=args.offline))
         return 0
     if args.command == "ask":
         import asyncio
@@ -190,4 +204,36 @@ def ingest_posthog(args) -> int:
     if not args.skip_extract:
         # Which current process and policy statements conflict is a question of meaning: a model reads each topic.
         print("Judged:", ", ".join(f"{k} {v}" for k, v in asyncio.run(judge(graph, check_model())).items()))
+    print(build_decisions(graph, model=not args.skip_extract, offline=False))
     return 0
+
+
+def build_decisions(graph, *, model: bool, offline: bool) -> str:
+    """Decisions from the cached RFCs, the cached pull requests and the pull requests that link an RFC. Replacement
+    candidates go to the check model unless `model` is off."""
+    import json
+
+    from canon.config import settings
+    from canon.decisions.build import build, linked_pulls, rfc_proposals
+    from canon.llm import check_model
+    from canon.sources.cache import data_dir
+
+    root = data_dir() / "raw" / "posthog"
+    read = lambda name: json.loads((root / f"{name}.json").read_text()) if (root / f"{name}.json").exists() else []  # noqa: E731
+    rfcs = read("rfcs")
+    if not rfcs:
+        return "Decisions: no cached RFCs."
+    pulls = read("pulls")
+    if offline:
+        rfcs += read("rfc_proposals")
+        pulls += read("rfc_pulls")
+    else:
+        # GitHub, once: RFC pull requests that never merged, and pull requests elsewhere that link an RFC.
+        try:
+            rfcs += rfc_proposals(root, {r["path"] for r in rfcs})
+            pulls += linked_pulls(root, rfcs)
+        except Exception as e:  # no network or no token: what is cached still counts
+            print(f"Could not read RFC proposals or linking pull requests from GitHub ({type(e).__name__}).")
+    judge = check_model() if model and settings().anthropic_api_key else None
+    counts = build(graph, rfcs, pulls, model=judge)
+    return "Decisions: " + ", ".join(f"{k} {v}" for k, v in counts.items())
