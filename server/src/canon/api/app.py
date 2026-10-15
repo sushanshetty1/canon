@@ -17,6 +17,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from canon.api.fixes_routes import router as fixes_router
+from canon.api.people_routes import router as people_router
 from canon.config import settings
 from canon.graph import read
 from canon.graph.db import connect, workspace_graph_name
@@ -102,8 +103,10 @@ def create_app(*, graph_for: Callable | None = None, ask_fn: Callable | None = N
             raise HTTPException(404, "No such workspace.")
         return graph
 
-    app.state.workspace = workspace  # route modules reuse the workspace check
+    # Route modules reach the workspace check through the app.
+    app.state.workspace = workspace
     app.include_router(fixes_router)
+    app.include_router(people_router)
 
     @app.get("/api/health")
     def health() -> dict:

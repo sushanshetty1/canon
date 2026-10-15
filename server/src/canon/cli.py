@@ -76,6 +76,8 @@ def main(argv: list[str] | None = None) -> int:
     fixes.add_argument("workspace")
     fixes.add_argument("--no-draft", action="store_true", help="build and route only, call no model")
     fixes.add_argument("--retry", action="store_true", help="draft again the fixes whose last draft was rejected")
+    people = sub.add_parser("people", help="recompute who knows each area and its bus factor")
+    people.add_argument("workspace")
 
     seed = sub.add_parser("seed", help="load the small Kestrel demo company into a workspace")
     seed.add_argument("workspace")
@@ -115,6 +117,8 @@ def main(argv: list[str] | None = None) -> int:
         counts = seed_graph(workspace_graph(db, args.workspace))
         print(f"Seeded workspace {args.workspace}: " + ", ".join(f"{k} {v}" for k, v in counts.items()))
         return 0
+    if args.command == "people":
+        return people_command(args.workspace)
     if args.command == "ask":
         import asyncio
 
@@ -203,6 +207,7 @@ def ingest_posthog(args) -> int:
     if not args.skip_extract:
         # Which current process and policy statements conflict is a question of meaning: a model reads each topic.
         print("Judged:", ", ".join(f"{k} {v}" for k, v in asyncio.run(judge(graph, check_model())).items()))
+    _print_people(graph)
     # The pages that now say something out of date become the fix queue.
     run_fixes(graph, draft=not args.skip_extract, show=False)
     return 0
@@ -240,4 +245,33 @@ def run_fixes(graph, *, draft: bool = True, retry: bool = False, show: bool = Tr
         for fix in list_fixes(graph, ("open", "approved")):
             print()
             print(render_fix(fix))
+    return 0
+
+
+def _print_people(graph) -> None:
+    from canon.people import recompute
+
+    result = recompute(graph)
+    print("Expertise:", ", ".join(f"{k} {v}" for k, v in result["expertise"].items()))
+    print("Bus factor:", ", ".join(f"{k} {v}" for k, v in result["bus_factor"].items()))
+
+
+def people_command(workspace: str) -> int:
+    """Recompute expertise and bus factor for a workspace, then print the riskiest areas."""
+    from canon.graph.db import connect, workspace_graph, workspace_graph_name
+    from canon.people.bus_factor import org_view
+
+    db = connect()
+    if workspace_graph_name(workspace) not in db.list_graphs():
+        print(f"No workspace {workspace}.")
+        return 1
+    graph = workspace_graph(db, workspace)
+    _print_people(graph)
+    risky = [a for a in org_view(graph) if a["bus_factor"]][:10]
+    if risky:
+        print("\nRiskiest areas:")
+        for a in risky:
+            owners = ", ".join(t["name"] for t in a["owners"]) or "no owner"
+            people = ", ".join(p["handle"] for p in a["depends_on"])
+            print(f"  {a['bus_factor']}  {a['name']} ({owners}): {people}")
     return 0

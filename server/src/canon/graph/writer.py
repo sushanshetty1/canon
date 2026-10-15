@@ -44,7 +44,14 @@ def write_batch(graph, batch: Batch) -> dict[str, int]:
                d.decided_at = r.decided_at""",
         [asdict(d) for d in batch.docs],
     )
-    # A document about an area (a pull request labelled `feature/notebooks`) links to it.
+    # A document about an area (a pull request labelled `feature/notebooks`) links to it. Links the document no
+    # longer has (its labels or attribution changed) are removed.
+    _run(
+        graph,
+        """UNWIND $rows AS r MATCH (d:Document {id: r.doc})-[x:ABOUT]->(a:Area) WHERE NOT a.slug IN r.areas
+           DELETE x""",
+        [{"doc": d.id, "areas": list(d.areas)} for d in batch.docs],
+    )
     _run(
         graph,
         "UNWIND $rows AS r MATCH (d:Document {id: r.doc}) MERGE (a:Area {slug: r.area}) MERGE (d)-[:ABOUT]->(a)",
