@@ -81,9 +81,12 @@ body {
 }
 
 /* A slab: one rounded sheet of paper (or night) on the page. Sections stack as slabs. */
-.slab {
-  border-radius: 28px;
-  overflow: hidden;
+/* In the components layer, so a utility such as overflow-y-auto can still override it. */
+@layer components {
+  .slab {
+    border-radius: 28px;
+    overflow: hidden;
+  }
 }
 
 /* Ruled-paper texture: faint baselines, the way a proof sheet is lined. */
