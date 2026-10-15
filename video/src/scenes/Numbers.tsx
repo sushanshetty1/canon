@@ -48,7 +48,7 @@ export function Numbers() {
     <PaperSlab>
       <div style={{ position: 'absolute', left: 80, top: 62, opacity: head, transform: `translateY(${(1 - head) * 12}px)` }}>
         <div style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 54, letterSpacing: '-0.04em' }}>56 PostHog questions, known answers.</div>
-        <div style={{ marginTop: 10, fontFamily: SANS, fontSize: 21, color: C.muted }}>The same model answers for every system, Claude Haiku 5.5. Claude Sonnet 5.5 grades.</div>
+        <div style={{ marginTop: 10, fontFamily: SANS, fontSize: 21, color: C.muted }}>Every system answers with the same model, Claude Haiku 5.5, and Claude Sonnet 5.5 grades them.</div>
       </div>
 
       {/* Column heads */}

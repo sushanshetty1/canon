@@ -30,7 +30,7 @@ export function Problem() {
     w: lerp(PIN_RECT.w, HANDBOOK.w, g),
     h: lerp(PIN_RECT.h, HANDBOOK.h, g),
   }
-  const red = 1 - ramp(s, 0.25, 0.45)
+  const red = 1 - ramp(s, 0.4, 0.4)
   const content = ramp(s, 0.55, 0.5)
 
   const mapIn = pop(s, c(1) - 0.2, fps)
@@ -73,7 +73,7 @@ export function Problem() {
             fontSize: 16,
             color: C.paper,
             whiteSpace: 'nowrap',
-            opacity: 1 - ramp(s, 0.05, 0.25),
+            opacity: 1 - ramp(s, 0.22, 0.25),
           }}
         >
           Handbook still says PostHog AI

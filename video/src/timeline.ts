@@ -27,7 +27,7 @@ export const SCENES: SceneDef[] = [
   { id: 'whoknows', into: { kind: 'card', old: 'Org chart', next: 'Evidence.' }, delay: 0.6, extra: 0.4 },
   { id: 'busfactor', into: { kind: 'sweep' }, extra: 1.8 },
   { id: 'decisions', into: { kind: 'lift' }, extra: 0.8 },
-  { id: 'connect', into: { kind: 'card', old: 'Demo', next: 'Your company.' }, delay: 0.6, extra: 1.6 },
+  { id: 'connect', into: { kind: 'card', old: 'Demo', next: 'Your company.' }, delay: 0.6, extra: 2.0 },
   { id: 'numbers', into: { kind: 'card', old: 'Claimed', next: 'Measured.' }, delay: 0.6, extra: 0.6 },
   { id: 'close', into: { kind: 'lift' }, extra: 2.4 },
 ]

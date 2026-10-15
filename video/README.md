@@ -72,7 +72,11 @@ Remotion is free for individuals and for companies of up to three people, which 
 need a company licence (see [remotion.dev/license](https://www.remotion.dev/license)). The fonts (Funnel Display,
 Funnel Sans, JetBrains Mono) are under the SIL Open Font License. There is no music.
 
-## Progress notes
+## Notes
 
-- All takes are recorded; ElevenLabs voice for all 13 scenes is cached in `voice/cache`.
-- Composition renders; stills reviewed per scene. Remaining: final render and review.
+- The voice is ElevenLabs (Eric, `eleven_v4`), cached for all 13 scenes in `voice/cache`.
+- A full render takes about ten minutes on an M-series Mac at `--concurrency=8`.
+- The disputed answer is "How often are growth reviews held?": at recording time "How do I escalate a support
+  ticket?" answered with five verified sentences and no dispute.
+- No Ask answer showed an out-of-date verdict at recording time (the model avoids stating replaced facts as current);
+  the video shows out-of-date lines in the fix queue and the removed sentence in Ask instead.

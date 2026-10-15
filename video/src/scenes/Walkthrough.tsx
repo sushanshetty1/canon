@@ -77,6 +77,7 @@ export function Ask() {
       ]}
       shots={[
         { at: 0, rect: FULL },
+        { at: CONTENT_AT + 1.4, rect: { x: 470, y: 190, w: 940, h: 300 }, stiffness: 30 },
         { at: c(1) - 0.1, rect: { x: 420, y: 140, w: 860, h: 470 } },
         { at: c(2) + 1.0, rect: { x: 360, y: 16, w: 1225, h: 870 } },
         { at: c(3) + 0.9, rect: history, pad: 26 },
