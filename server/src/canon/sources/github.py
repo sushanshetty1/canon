@@ -16,6 +16,12 @@ from pathlib import Path
 import httpx
 
 API = "https://api.github.com"
+# Seconds a request may wait out a rate limit. Long batch fetches (the PostHog cache) can raise it.
+MAX_WAIT = float(os.environ.get("CANON_GITHUB_MAX_WAIT", "120"))
+
+
+class RateLimited(RuntimeError):
+    pass
 
 
 # ----- git over a local clone -------------------------------------------------------------------------------------
@@ -155,7 +161,10 @@ class GitHub:
                 time.sleep(2 * (attempt + 1))
                 continue
             if r.status_code in (403, 429) and ("rate limit" in r.text.lower() or r.headers.get("retry-after")):
-                time.sleep(self._wait(r))
+                wait = self._wait(r)
+                if wait > MAX_WAIT:  # a sync should fail and say why, not hang until the limit resets
+                    raise RateLimited(f"GitHub's rate limit resets in {round(wait / 60)} minutes. Try again then.")
+                time.sleep(wait)
                 continue
             if r.status_code in (502, 503, 504):
                 time.sleep(3 * (attempt + 1))
