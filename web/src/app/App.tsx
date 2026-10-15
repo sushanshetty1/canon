@@ -1,14 +1,16 @@
 // The Canon app: a slim rail on the page, and the screen on a sheet of paper beside it.
 
-import { Bus, CaretUpDown, Check, ClockCounterClockwise, Question, Signpost, UsersThree, Wrench, type Icon } from '@phosphor-icons/react'
+import { ArrowsClockwise, Bus, CaretUpDown, Check, ClockCounterClockwise, GithubLogo, Plus, Question, Signpost, UsersThree, Wrench, type Icon } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Wordmark } from '../ui'
+import { ago, listWorkspaces, signInUrl, signOut, syncWorkspace, useJob, useMe, type Me } from './account'
 import { isMock, stats as getStats, type Stats } from './api'
 import { Ask } from './Ask'
-import { navigate } from './router'
+import { NewWorkspace } from './NewWorkspace'
+import { navigate, usePath } from './router'
 import { plural } from './text'
-import { saveWorkspace, savedWorkspace, WORKSPACES, type Workspace } from './workspaces'
+import { fromServer, saveWorkspace, savedWorkspace, WORKSPACES, type Workspace } from './workspaces'
 import './app.css'
 
 const NAV: { label: string; icon: Icon; soon?: boolean }[] = [
@@ -20,9 +22,56 @@ const NAV: { label: string; icon: Icon; soon?: boolean }[] = [
   { label: 'Fix queue', icon: Wrench, soon: true },
 ]
 
-function WorkspaceSwitcher({ ws, onChange, compact = false }: { ws: Workspace; onChange: (w: Workspace) => void; compact?: boolean }) {
+type Lists = { public: Workspace[]; own: Workspace[] }
+
+function useWorkspaces(signedIn: string | null) {
+  const [lists, setLists] = useState<Lists>({ public: WORKSPACES, own: [] })
+  const load = useCallback((signal?: AbortSignal) => {
+    listWorkspaces(signal).then(
+      (r) => setLists({ public: r.public.map(fromServer), own: r.own.map(fromServer) }),
+      () => undefined, // the static public list stands in
+    )
+  }, [])
+  useEffect(() => {
+    const ctrl = new AbortController()
+    load(ctrl.signal)
+    return () => ctrl.abort()
+  }, [load, signedIn])
+  return { lists, reload: () => load() }
+}
+
+function MenuItem({ w, current, onPick }: { w: Workspace; current: boolean; onPick: () => void }) {
+  return (
+    <li role="option" aria-selected={current}>
+      <button
+        type="button"
+        onClick={onPick}
+        className="flex h-10 w-full items-center justify-between gap-3 rounded-[11px] px-3 text-left text-[14.5px] font-medium text-ink hover:bg-paper-2 focus-visible:bg-paper-2 focus-visible:outline-none"
+      >
+        <span className="truncate">{w.label}</span>
+        {current && <Check size={14} weight="bold" className="shrink-0 text-cobalt" />}
+      </button>
+    </li>
+  )
+}
+
+function WorkspaceSwitcher({
+  ws,
+  lists,
+  me,
+  onChange,
+  compact = false,
+}: {
+  ws: Workspace
+  lists: Lists
+  me: Me | null
+  onChange: (w: Workspace) => void
+  compact?: boolean
+}) {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
+  const path = usePath()
+  const creating = path === '/app/new'
 
   useEffect(() => {
     if (!open) return
@@ -36,46 +85,68 @@ function WorkspaceSwitcher({ ws, onChange, compact = false }: { ws: Workspace; o
     }
   }, [open])
 
+  const pick = (w: Workspace) => {
+    setOpen(false)
+    onChange(w)
+  }
+
   return (
     <div ref={root} className="relative">
       <button
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={`Workspace: ${ws.label}`}
+        aria-label={`Workspace: ${creating ? 'new workspace' : ws.label}`}
         onClick={() => setOpen((o) => !o)}
-        className={`flex items-center justify-between gap-2 rounded-[14px] bg-paper text-left text-[14.5px] font-semibold tracking-[-0.01em] text-ink transition-shadow hover:shadow-[inset_0_0_0_1.5px_var(--line-strong)] focus-visible:outline-2 focus-visible:outline-cobalt ${compact ? 'h-10 px-3.5' : 'h-12 w-full px-4'}`}
+        className={`flex items-center justify-between gap-2 rounded-[14px] bg-paper text-left text-[14.5px] font-semibold tracking-[-0.01em] text-ink transition-shadow hover:shadow-[inset_0_0_0_1.5px_var(--line-strong)] focus-visible:outline-2 focus-visible:outline-cobalt ${compact ? 'h-10 max-w-[200px] px-3.5' : 'h-12 w-full px-4'}`}
       >
-        <span className="truncate">{ws.label}</span>
+        <span className="truncate">{creating ? 'New workspace' : ws.label}</span>
         <CaretUpDown size={15} weight="bold" className="shrink-0 text-faint" />
       </button>
       <AnimatePresence>
         {open && (
-          <motion.ul
-            role="listbox"
-            aria-label="Workspaces"
-            className={`absolute top-full z-30 mt-2 min-w-[220px] rounded-[16px] bg-paper p-1.5 shadow-[0_18px_50px_-18px_rgb(13_14_18/0.35),0_0_0_1px_var(--line)] ${compact ? 'right-0' : 'left-0 w-full'}`}
+          <motion.div
+            className={`absolute top-full z-30 mt-2 w-[260px] rounded-[16px] bg-paper p-1.5 shadow-[0_18px_50px_-18px_rgb(13_14_18/0.35),0_0_0_1px_var(--line)] ${compact ? 'right-0' : 'left-0'}`}
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.16 }}
           >
-            {WORKSPACES.map((w) => (
-              <li key={w.slug} role="option" aria-selected={w.slug === ws.slug}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false)
-                    onChange(w)
-                  }}
-                  className="flex h-10 w-full items-center justify-between rounded-[11px] px-3 text-left text-[14.5px] font-medium text-ink hover:bg-paper-2 focus-visible:bg-paper-2 focus-visible:outline-none"
-                >
-                  {w.label}
-                  {w.slug === ws.slug && <Check size={14} weight="bold" className="text-cobalt" />}
-                </button>
-              </li>
-            ))}
-          </motion.ul>
+            <p className="px-3 pt-2 pb-1 text-[12.5px] text-faint">Public</p>
+            <ul role="listbox" aria-label="Public workspaces">
+              {lists.public.map((w) => (
+                <MenuItem key={w.slug} w={w} current={!creating && w.slug === ws.slug} onPick={() => pick(w)} />
+              ))}
+            </ul>
+            {lists.own.length > 0 && (
+              <>
+                <p className="px-3 pt-3 pb-1 text-[12.5px] text-faint">Yours</p>
+                <ul role="listbox" aria-label="Your workspaces">
+                  {lists.own.map((w) => (
+                    <MenuItem key={w.slug} w={w} current={!creating && w.slug === ws.slug} onPick={() => pick(w)} />
+                  ))}
+                </ul>
+              </>
+            )}
+            <div className="mt-1.5 border-t border-line pt-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false)
+                  navigate('/app/new')
+                }}
+                className="flex h-10 w-full items-center gap-2.5 rounded-[11px] px-3 text-left text-[14.5px] font-semibold text-cobalt hover:bg-paper-2 focus-visible:bg-paper-2 focus-visible:outline-none"
+              >
+                <Plus size={15} weight="bold" />
+                New workspace from GitHub
+              </button>
+            </div>
+            {compact && (
+              <div className="mt-1.5 border-t border-line px-3 pt-3 pb-2">
+                <Account me={me} />
+              </div>
+            )}
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
@@ -83,18 +154,19 @@ function WorkspaceSwitcher({ ws, onChange, compact = false }: { ws: Workspace; o
 }
 
 /** What is in the workspace's graph, in the colours of the marks. */
-function GraphStats({ ws }: { ws: Workspace }) {
-  const [state, setState] = useState<{ slug: string; stats: Stats | null } | null>(null)
+function GraphStats({ ws, version }: { ws: Workspace; version: number }) {
+  const [state, setState] = useState<{ key: string; stats: Stats | null } | null>(null)
+  const key = `${ws.slug}:${version}`
   useEffect(() => {
     const ctrl = new AbortController()
     getStats(ws.slug, ctrl.signal).then(
-      (stats) => setState({ slug: ws.slug, stats }),
-      (e: Error) => e.name !== 'AbortError' && setState({ slug: ws.slug, stats: null }),
+      (stats) => setState({ key, stats }),
+      (e: Error) => e.name !== 'AbortError' && setState({ key, stats: null }),
     )
     return () => ctrl.abort()
-  }, [ws.slug])
+  }, [ws.slug, key])
 
-  if (!state || state.slug !== ws.slug) return <div className="h-[104px]" aria-hidden="true" />
+  if (!state || state.key.split(':')[0] !== ws.slug) return <div className="h-[104px]" aria-hidden="true" />
   const s = state.stats
   if (!s) return <p className="px-3 text-[13px] leading-relaxed text-faint">{ws.name} is not in the graph yet.</p>
   const rows = [
@@ -119,14 +191,115 @@ function GraphStats({ ws }: { ws: Workspace }) {
   )
 }
 
-function Rail({ ws, onWorkspace }: { ws: Workspace; onWorkspace: (w: Workspace) => void }) {
+/** For a workspace of your own: when it last read its repository, and a way to read what changed since. */
+function Sync({ ws, onSynced }: { ws: Workspace; onSynced: () => void }) {
+  const { job, kick, setJob } = useJob(ws.slug)
+  const [error, setError] = useState<string | null>(null)
+  const running = job?.status === 'running'
+  const wasRunning = useRef(false)
+  useEffect(() => {
+    if (wasRunning.current && job?.status === 'done') onSynced()
+    wasRunning.current = running
+  }, [job?.status, running, onSynced])
+
+  const start = () => {
+    setError(null)
+    syncWorkspace(ws.slug).then(
+      ({ job }) => {
+        setJob(job)
+        kick()
+      },
+      (e: Error) => setError(e.message),
+    )
+  }
+
   return (
-    <aside className="sticky top-3 hidden h-[calc(100dvh-24px)] w-[228px] shrink-0 flex-col min-[900px]:flex">
+    <div className="px-3 text-[13px]">
+      {running ? (
+        <div>
+          <p className="text-ink">{job.kind === 'create' ? 'Reading' : 'Syncing'}: {job.step_label.toLowerCase()}</p>
+          <div className="relative mt-2 h-[3px] overflow-hidden rounded-full bg-line" aria-hidden="true">
+            <motion.div className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-ink" initial={false} animate={{ scaleX: Math.max(0.04, job.progress) }} />
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          <p className={job?.status === 'failed' ? 'text-proof' : 'text-faint'}>
+            {job?.status === 'failed' ? 'The last sync stopped' : job?.finished_at ? `Read from GitHub ${ago(job.finished_at)}` : ''}
+          </p>
+          <button type="button" onClick={start} className="inline-flex items-center gap-1.5 font-semibold text-cobalt hover:text-cobalt-deep">
+            <ArrowsClockwise size={13} weight="bold" />
+            Sync now
+          </button>
+        </div>
+      )}
+      {error && <p className="mt-2 text-proof">{error}</p>}
+    </div>
+  )
+}
+
+/** Who is signed in, or a way to sign in. */
+function Account({ me }: { me: Me | null }) {
+  const [failed] = useState(() => new URLSearchParams(window.location.search).get('signin') === 'failed')
+  if (!me) return <div className="h-10" aria-hidden="true" />
+  if (me.user) {
+    const out = () => signOut().finally(() => window.location.assign('/app'))
+    return (
+      <div className="flex items-center gap-3">
+        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-cobalt text-[13px] font-semibold text-paper uppercase" aria-hidden="true">
+          {me.user.login.slice(0, 1)}
+        </span>
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="truncate text-[14px] font-semibold text-ink">{me.user.login}</p>
+          <p className="text-[12.5px] text-faint">{me.user.dev ? 'Dev sign-in' : 'GitHub'}</p>
+        </div>
+        <button type="button" onClick={out} className="text-[13px] text-muted transition-colors hover:text-ink">
+          Sign out
+        </button>
+      </div>
+    )
+  }
+  const url = signInUrl(me)
+  if (!url) return null
+  return (
+    <div>
+      {failed && <p className="mb-2 text-[13px] text-proof">Sign-in did not finish. Try again.</p>}
+      <a
+        href={url}
+        className="flex h-10 items-center justify-center gap-2 rounded-full bg-ink px-4 text-[14px] font-semibold text-paper transition-colors hover:bg-[#23252d]"
+      >
+        <GithubLogo size={16} weight="bold" />
+        {me.signin ? 'Sign in with GitHub' : 'Dev sign-in'}
+      </a>
+    </div>
+  )
+}
+
+function Rail({
+  ws,
+  lists,
+  me,
+  creating,
+  version,
+  onWorkspace,
+  onSynced,
+}: {
+  ws: Workspace
+  lists: Lists
+  me: Me | null
+  creating: boolean
+  version: number
+  onWorkspace: (w: Workspace) => void
+  onSynced: () => void
+}) {
+  const own = !creating && lists.own.some((w) => w.slug === ws.slug)
+  return (
+    <aside className="sticky top-3 z-20 hidden h-[calc(100dvh-24px)] w-[228px] shrink-0 flex-col min-[900px]:flex">
       <a href="/" className="flex h-12 items-center px-3 text-ink" aria-label="Canon home">
         <Wordmark />
       </a>
       <div className="mt-5">
-        <WorkspaceSwitcher ws={ws} onChange={onWorkspace} />
+        <WorkspaceSwitcher ws={ws} lists={lists} me={me} onChange={onWorkspace} />
       </div>
       <nav aria-label="Canon" className="mt-6">
         <ul className="space-y-0.5">
@@ -141,14 +314,14 @@ function Rail({ ws, onWorkspace }: { ws: Workspace; onWorkspace: (w: Workspace) 
               ) : (
                 <a
                   href="/app"
-                  aria-current="page"
+                  aria-current={creating ? undefined : 'page'}
                   onClick={(e) => {
                     e.preventDefault()
                     navigate('/app')
                   }}
-                  className="flex h-10 items-center gap-3 rounded-[12px] bg-paper px-3 text-[14.5px] font-semibold text-ink"
+                  className={`flex h-10 items-center gap-3 rounded-[12px] px-3 text-[14.5px] ${creating ? 'text-muted hover:text-ink' : 'bg-paper font-semibold text-ink'}`}
                 >
-                  <Glyph size={17} weight="bold" className="shrink-0 text-cobalt" />
+                  <Glyph size={17} weight="bold" className={`shrink-0 ${creating ? '' : 'text-cobalt'}`} />
                   {label}
                 </a>
               )}
@@ -157,12 +330,16 @@ function Rail({ ws, onWorkspace }: { ws: Workspace; onWorkspace: (w: Workspace) 
         </ul>
       </nav>
       <div className="mt-auto space-y-6 pb-2">
-        <GraphStats ws={ws} />
-        <div className="space-y-1.5 px-3 text-[13px]">
-          {isMock() && <p className="text-faint">Playing a recorded answer</p>}
-          <a href="/" className="text-muted transition-colors hover:text-ink">
-            Back to the site
-          </a>
+        {!creating && <GraphStats ws={ws} version={version} />}
+        {own && <Sync ws={ws} onSynced={onSynced} />}
+        <div className="space-y-4 px-3">
+          <Account me={me} />
+          <div className="space-y-1.5 text-[13px]">
+            {isMock() && <p className="text-faint">Playing a recorded answer</p>}
+            <a href="/" className="text-muted transition-colors hover:text-ink">
+              Back to the site
+            </a>
+          </div>
         </div>
       </div>
     </aside>
@@ -170,24 +347,51 @@ function Rail({ ws, onWorkspace }: { ws: Workspace; onWorkspace: (w: Workspace) 
 }
 
 export default function CanonApp() {
+  const path = usePath()
+  const creating = path === '/app/new'
+  const { me } = useMe()
+  const { lists, reload } = useWorkspaces(me?.user?.login ?? null)
   const [ws, setWs] = useState(savedWorkspace)
+  const [version, setVersion] = useState(0)
+
+  // A saved workspace that is no longer listed (signed out, or deleted) falls back to the first public one.
+  useEffect(() => {
+    if (!me || !ws.own) return
+    const listed = lists.own.find((w) => w.slug === ws.slug)
+    if (listed && listed !== ws) setWs(listed)
+  }, [lists, me, ws])
+
   const change = (w: Workspace) => {
     saveWorkspace(w)
     setWs(w)
+    if (creating) navigate('/app')
   }
+  const synced = useCallback(() => setVersion((v) => v + 1), [])
 
   return (
     <div className="flex min-h-[100dvh] gap-3 bg-page p-2 sm:p-3">
-      <Rail ws={ws} onWorkspace={change} />
+      <Rail ws={ws} lists={lists} me={me} creating={creating} version={version} onWorkspace={change} onSynced={synced} />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <header className="flex h-12 items-center justify-between px-2 min-[900px]:hidden">
           <a href="/" className="text-ink" aria-label="Canon home">
             <Wordmark />
           </a>
-          <WorkspaceSwitcher ws={ws} onChange={change} compact />
+          <WorkspaceSwitcher ws={ws} lists={lists} me={me} onChange={change} compact />
         </header>
         <div className="flex min-w-0 flex-1">
-          <Ask key={ws.slug} ws={ws} />
+          {creating ? (
+            <NewWorkspace
+              me={me}
+              own={lists.own}
+              onCreated={reload}
+              onOpen={(w) => {
+                reload()
+                change(w)
+              }}
+            />
+          ) : (
+            <Ask key={ws.slug} ws={ws} />
+          )}
         </div>
       </div>
     </div>
