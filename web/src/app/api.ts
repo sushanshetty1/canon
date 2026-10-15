@@ -134,6 +134,53 @@ export async function fact(ws: string, id: string, signal?: AbortSignal): Promis
   }
 }
 
+// --- Who knows and bus factor ----------------------------------------------------------------------
+
+export type Evidence = { decided: number; authored: number; reviewed: number; commented: number; member: boolean }
+
+export type Knower = { handle: string; name: string; score: number; evidence: Evidence; depends: boolean }
+
+export type Owner = { slug: string; name: string }
+
+export type AreaSummary = {
+  slug: string
+  name: string
+  owners: Owner[]
+  bus_factor: number
+  knowers: number
+  evidence: number
+  depends_on: Knower[]
+  people: Knower[]
+  others: number
+}
+
+export type Act = { rel: 'decided' | 'authored' | 'reviewed' | 'commented'; at: string | null }
+
+export type EvidenceDoc = { id: string; title: string | null; url: string | null; kind: string | null; date: string | null; acts: Act[] }
+
+export type AreaPerson = Knower & { role: string | null; teams: string[]; docs: EvidenceDoc[] }
+
+export type AreaPeople = {
+  area: { slug: string; name: string; owners: Owner[]; bus_factor: number; knowers: number }
+  people: AreaPerson[]
+  total: number
+}
+
+export type PersonAreas = {
+  person: { handle: string; name: string; role: string | null; teams: string[] }
+  areas: { slug: string; name: string; score: number; evidence: Evidence; depends: boolean; bus_factor: number }[]
+}
+
+const inWs = (ws: string) => `/api/w/${encodeURIComponent(ws)}`
+
+export const areas = (ws: string, signal?: AbortSignal) => getJson<{ areas: AreaSummary[]; computed: boolean }>(`${inWs(ws)}/areas`, signal)
+
+export const areaPeople = (ws: string, slug: string, signal?: AbortSignal) =>
+  getJson<AreaPeople>(`${inWs(ws)}/areas/${encodeURIComponent(slug)}/people`, signal)
+
+export const personAreas = (ws: string, handle: string, signal?: AbortSignal) =>
+  getJson<PersonAreas>(`${inWs(ws)}/people/${encodeURIComponent(handle)}`, signal)
+
 export async function stats(ws: string, signal?: AbortSignal): Promise<Stats> {
   try {
     return await getJson<Stats>(`/api/w/${encodeURIComponent(ws)}/stats`, signal)

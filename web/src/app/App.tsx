@@ -6,15 +6,17 @@ import { useEffect, useRef, useState } from 'react'
 import { Wordmark } from '../ui'
 import { isMock, stats as getStats, type Stats } from './api'
 import { Ask } from './Ask'
-import { navigate } from './router'
+import { BusFactor } from './BusFactor'
+import { navigate, ROUTES, screenOf, usePath, type Screen } from './router'
 import { plural } from './text'
+import { WhoKnows } from './WhoKnows'
 import { saveWorkspace, savedWorkspace, WORKSPACES, type Workspace } from './workspaces'
 import './app.css'
 
-const NAV: { label: string; icon: Icon; soon?: boolean }[] = [
-  { label: 'Ask', icon: Question },
-  { label: 'Who knows', icon: UsersThree, soon: true },
-  { label: 'Bus factor', icon: Bus, soon: true },
+const NAV: { label: string; icon: Icon; screen?: Screen; soon?: boolean }[] = [
+  { label: 'Ask', icon: Question, screen: 'ask' },
+  { label: 'Who knows', icon: UsersThree, screen: 'whoKnows' },
+  { label: 'Bus factor', icon: Bus, screen: 'busFactor' },
   { label: 'Decisions', icon: Signpost, soon: true },
   { label: 'Catch me up', icon: ClockCounterClockwise, soon: true },
   { label: 'Fix queue', icon: Wrench, soon: true },
@@ -119,7 +121,7 @@ function GraphStats({ ws }: { ws: Workspace }) {
   )
 }
 
-function Rail({ ws, onWorkspace }: { ws: Workspace; onWorkspace: (w: Workspace) => void }) {
+function Rail({ ws, screen, onWorkspace }: { ws: Workspace; screen: Screen; onWorkspace: (w: Workspace) => void }) {
   return (
     <aside className="sticky top-3 hidden h-[calc(100dvh-24px)] w-[228px] shrink-0 flex-col min-[900px]:flex">
       <a href="/" className="flex h-12 items-center px-3 text-ink" aria-label="Canon home">
@@ -130,9 +132,9 @@ function Rail({ ws, onWorkspace }: { ws: Workspace; onWorkspace: (w: Workspace) 
       </div>
       <nav aria-label="Canon" className="mt-6">
         <ul className="space-y-0.5">
-          {NAV.map(({ label, icon: Glyph, soon }) => (
+          {NAV.map(({ label, icon: Glyph, screen: to, soon }) => (
             <li key={label}>
-              {soon ? (
+              {soon || !to ? (
                 <span aria-disabled="true" className="flex h-10 cursor-default items-center gap-3 px-3 text-[14.5px] text-faint">
                   <Glyph size={17} className="shrink-0" />
                   <span className="flex-1">{label}</span>
@@ -140,15 +142,15 @@ function Rail({ ws, onWorkspace }: { ws: Workspace; onWorkspace: (w: Workspace) 
                 </span>
               ) : (
                 <a
-                  href="/app"
-                  aria-current="page"
+                  href={ROUTES[to]}
+                  aria-current={to === screen ? 'page' : undefined}
                   onClick={(e) => {
                     e.preventDefault()
-                    navigate('/app')
+                    navigate(ROUTES[to])
                   }}
-                  className="flex h-10 items-center gap-3 rounded-[12px] bg-paper px-3 text-[14.5px] font-semibold text-ink"
+                  className={`flex h-10 items-center gap-3 rounded-[12px] px-3 text-[14.5px] transition-colors ${to === screen ? 'bg-paper font-semibold text-ink' : 'text-muted hover:bg-paper/60 hover:text-ink'}`}
                 >
-                  <Glyph size={17} weight="bold" className="shrink-0 text-cobalt" />
+                  <Glyph size={17} weight={to === screen ? 'bold' : 'regular'} className={`shrink-0 ${to === screen ? 'text-cobalt' : ''}`} />
                   {label}
                 </a>
               )}
@@ -169,7 +171,33 @@ function Rail({ ws, onWorkspace }: { ws: Workspace; onWorkspace: (w: Workspace) 
   )
 }
 
+/** The screens on a narrow window, where the rail is hidden. */
+function MobileNav({ screen }: { screen: Screen }) {
+  return (
+    <nav aria-label="Canon" className="-mt-1 px-1 min-[900px]:hidden">
+      <ul className="flex gap-1 overflow-x-auto">
+        {NAV.filter((n) => n.screen && !n.soon).map(({ label, screen: to }) => (
+          <li key={label} className="shrink-0">
+            <a
+              href={ROUTES[to!]}
+              aria-current={to === screen ? 'page' : undefined}
+              onClick={(e) => {
+                e.preventDefault()
+                navigate(ROUTES[to!])
+              }}
+              className={`inline-flex h-9 items-center rounded-full px-3.5 text-[14px] transition-colors ${to === screen ? 'bg-paper font-semibold text-ink' : 'text-muted hover:text-ink'}`}
+            >
+              {label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
 export default function CanonApp() {
+  const screen = screenOf(usePath())
   const [ws, setWs] = useState(savedWorkspace)
   const change = (w: Workspace) => {
     saveWorkspace(w)
@@ -178,7 +206,7 @@ export default function CanonApp() {
 
   return (
     <div className="flex min-h-[100dvh] gap-3 bg-page p-2 sm:p-3">
-      <Rail ws={ws} onWorkspace={change} />
+      <Rail ws={ws} screen={screen} onWorkspace={change} />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <header className="flex h-12 items-center justify-between px-2 min-[900px]:hidden">
           <a href="/" className="text-ink" aria-label="Canon home">
@@ -186,8 +214,11 @@ export default function CanonApp() {
           </a>
           <WorkspaceSwitcher ws={ws} onChange={change} compact />
         </header>
+        <MobileNav screen={screen} />
         <div className="flex min-w-0 flex-1">
-          <Ask key={ws.slug} ws={ws} />
+          {screen === 'ask' && <Ask key={ws.slug} ws={ws} />}
+          {screen === 'whoKnows' && <WhoKnows key={ws.slug} ws={ws} />}
+          {screen === 'busFactor' && <BusFactor key={ws.slug} ws={ws} />}
         </div>
       </div>
     </div>

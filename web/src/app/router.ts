@@ -14,9 +14,25 @@ export function usePath(): string {
 
 export const isAppPath = (path: string) => path === '/app' || path.startsWith('/app/')
 
-/** Go to a path in the app, keeping the query (so `?mock=1` survives). */
+/** The app's screens by path. Anything else under /app opens Ask. */
+export const ROUTES = {
+  ask: '/app',
+  whoKnows: '/app/who-knows',
+  busFactor: '/app/bus-factor',
+} as const
+
+export type Screen = keyof typeof ROUTES
+
+export const screenOf = (path: string): Screen =>
+  (Object.keys(ROUTES) as Screen[]).find((s) => ROUTES[s] === path.replace(/\/+$/, '')) ?? 'ask'
+
+/** Go to a path in the app (it may carry its own query), keeping `?mock=1` when it is on. */
 export function navigate(to: string) {
-  if (to === window.location.pathname) return
-  window.history.pushState(null, '', to + window.location.search)
+  const url = new URL(to, window.location.origin)
+  const mock = new URLSearchParams(window.location.search).get('mock')
+  if (mock && !url.searchParams.has('mock')) url.searchParams.set('mock', mock)
+  const next = url.pathname + url.search
+  if (next === window.location.pathname + window.location.search) return
+  window.history.pushState(null, '', next)
   window.dispatchEvent(new PopStateEvent('popstate'))
 }
