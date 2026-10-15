@@ -75,12 +75,6 @@ function Stamp({ run, reduce }: { run: boolean; reduce: boolean }) {
   )
 }
 
-const colophon = [
-  ['Built for', 'The FalkorDB Hackathon 2026, Track 03'],
-  ['Licence', 'Open source under Apache-2.0'],
-  ['Set in', 'Funnel Display and Funnel Sans, code in JetBrains Mono'],
-]
-
 const columns: [string, [string, string][]][] = [
   [
     'On this page',
@@ -110,14 +104,7 @@ function Colophon() {
               <DrawnMark run={run} reduce={reduce} />
               <span className="pb-0.5 font-display text-[40px] leading-none font-semibold tracking-[-0.04em] sm:text-[52px]">Canon</span>
             </div>
-            <dl className="mt-10 max-w-[30rem] divide-y divide-line border-y border-line">
-              {colophon.map(([term, text]) => (
-                <div key={term} className="grid grid-cols-[96px_minmax(0,1fr)] gap-4 py-3 text-[14.5px] sm:grid-cols-[110px_minmax(0,1fr)]">
-                  <dt className="text-faint">{term}</dt>
-                  <dd className="text-ink">{text}</dd>
-                </div>
-              ))}
-            </dl>
+            <p className="mt-8 text-[14.5px] text-muted">Built for the FalkorDB Hackathon 2026, Track 03.</p>
           </div>
 
           <nav aria-label="Footer" className="grid grid-cols-2 gap-8 self-start lg:pt-4">
