@@ -232,7 +232,7 @@ export function Removed({ sentences, selected, onSelect }: { sentences: Sentence
         onClick={() => setOpen((o) => !o)}
         className="group rounded-md text-left text-[15px] text-muted transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cobalt"
       >
-        {plural(removed.length, 'sentence')} removed: {failed ? 'the check could not run' : 'nothing in the graph backs it'}
+        {plural(removed.length, 'sentence')} removed: {failed ? 'the check could not run' : `nothing in the graph backs ${removed.length === 1 ? 'it' : 'them'}`}
         <CaretDown size={13} weight="bold" className={`ml-1.5 inline-block align-[-0.1em] transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
       </button>
       <AnimatePresence initial={false}>
