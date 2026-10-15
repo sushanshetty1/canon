@@ -101,13 +101,14 @@ def create_app(
 
     Every route with `{ws}` in its path, here or in an included router, passes `workspace_access` first: public
     workspaces are open to anyone, private ones to their members only."""
-    from canon.api import accounts_routes
+    from canon.api import accounts_routes, members_routes
     from canon.cloud import Cloud
     from canon.cloud.access import workspace_access
 
     app = FastAPI(title="Canon", docs_url=None, redoc_url=None, dependencies=[Depends(workspace_access)])
     app.state.cloud = cloud or Cloud.from_env()
     app.include_router(accounts_routes.router)
+    app.include_router(members_routes.router)
     limits = limits or Limits()
     graph_for = graph_for or _default_graph
 

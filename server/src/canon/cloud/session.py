@@ -11,6 +11,7 @@ cross-site POST.
 
     user = current_user(request)   # None when signed out
     user.login, user.token         # token is None for a development sign-in
+    user.reads_private             # whether the token was granted `repo read:org`
 """
 
 import hashlib
@@ -33,6 +34,14 @@ class User:
     name: str
     token: str | None = field(default=None, repr=False)  # the decrypted GitHub token; never logged
     dev: bool = False
+    scopes: str = ""  # what GitHub granted the token, space separated
+
+    @property
+    def reads_private(self) -> bool:
+        """Whether the token can read private and organisation repositories."""
+        from canon.cloud.accounts import reads_private
+
+        return bool(self.token) and reads_private(self.scopes)
 
 
 def _mac(secret: str, user_id: str, expiry: int) -> str:
@@ -95,6 +104,7 @@ def current_user(request: Request) -> User | None:
                 name=row["name"] or row["login"],
                 token=unseal(row["token"], cloud.config.secret),
                 dev=bool(row["dev"]),
+                scopes=row.get("scopes") or "",
             )
     request.state.canon_user = user
     return user

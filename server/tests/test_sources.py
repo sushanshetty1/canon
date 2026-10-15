@@ -21,7 +21,7 @@ from canon.sources.text import Turn, turn_passages
 from canon.sources.uploads import UploadError, parse, parse_pages, parse_slack, read_zip
 from canon.types import Batch, Doc, Fact, Passage
 from exports import confluence_zip, notion_zip, slack_zip
-from test_cloud import REPO, SLUG, accounts_graph, made, make, sign_in, tc  # noqa: F401
+from cloud_kit import REPO, SLUG, make, sign_in, tc
 
 ENTITIES = Entities(areas={"billing": "Billing"}, teams={"payments": "Payments", "platform": "Platform"}, people={"maya": "Maya"})
 
