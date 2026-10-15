@@ -4,7 +4,8 @@
 - `GET /api/w/{ws}/facts/{id}` gives a fact with its source, what it replaced, what replaced it, and its disputes.
 - `GET /api/w/{ws}/stats` counts nodes per label, and the stale facts, stale pages and disputes.
 
-A workspace is a graph with documents in it; anything else is a 404.
+A workspace is a graph with documents in it; anything else is a 404. Who may open which workspace is decided
+before any of these run (`canon.cloud.access`); sign-in and workspaces themselves are in `accounts_routes`.
 """
 
 import json
@@ -12,7 +13,7 @@ import logging
 from collections.abc import Callable
 from functools import cache
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -88,10 +89,22 @@ def stats(graph) -> dict:
     }
 
 
-def create_app(*, graph_for: Callable | None = None, ask_fn: Callable | None = None, limits: Limits | None = None) -> FastAPI:
-    """`graph_for(slug)` returns a workspace graph or None; `ask_fn(graph, question)` yields Ask events. Both
-    default to the real ones and are injected in tests, as are the spend `limits`."""
-    app = FastAPI(title="Canon", docs_url=None, redoc_url=None)
+def create_app(
+    *, graph_for: Callable | None = None, ask_fn: Callable | None = None, cloud=None, limits: Limits | None = None
+) -> FastAPI:
+    """`graph_for(slug)` returns a workspace graph or None; `ask_fn(graph, question)` yields Ask events; `cloud`
+    holds accounts and jobs (`canon.cloud.Cloud`); `limits` bounds model spend. All default to the real ones and
+    are injected in tests.
+
+    Every route with `{ws}` in its path, here or in an included router, passes `workspace_access` first: public
+    workspaces are open to anyone, private ones to their members only."""
+    from canon.api import accounts_routes
+    from canon.cloud import Cloud
+    from canon.cloud.access import workspace_access
+
+    app = FastAPI(title="Canon", docs_url=None, redoc_url=None, dependencies=[Depends(workspace_access)])
+    app.state.cloud = cloud or Cloud.from_env()
+    app.include_router(accounts_routes.router)
     limits = limits or Limits()
     graph_for = graph_for or _default_graph
 

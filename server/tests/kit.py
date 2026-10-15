@@ -4,7 +4,7 @@ from canon.graph.db import ensure_schema
 from canon.graph.writer import write_batch
 from canon.types import Area, Batch, Doc, Fact, Passage, Person, Team
 
-AUTHORITY = {"ownership_map": 3, "team_page": 2, "rfc": 2, "handbook": 1, "pull": 1, "issue": 0, "forum": 0}
+AUTHORITY = {"ownership_map": 3, "team_page": 2, "rfc": 2, "handbook": 1, "doc": 1, "pull": 1, "issue": 0, "forum": 0}
 
 
 class Kit:

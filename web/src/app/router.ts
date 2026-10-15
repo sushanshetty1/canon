@@ -20,6 +20,7 @@ export const ROUTES = {
   whoKnows: '/app/who-knows',
   busFactor: '/app/bus-factor',
   fixQueue: '/app/fixes',
+  newWorkspace: '/app/new',
 } as const
 
 export type Screen = keyof typeof ROUTES

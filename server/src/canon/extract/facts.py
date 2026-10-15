@@ -18,7 +18,7 @@ import hashlib
 import json
 import random
 import re
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -27,7 +27,7 @@ import anthropic
 from canon.extract.predicates import AUTHORITY, PREDICATES, SHAPES, merge_topics, normalise_topic
 from canon.types import Batch, Doc, Fact, Passage
 
-EXTRACT_KINDS = ("handbook", "team_page", "rfc")
+EXTRACT_KINDS = ("handbook", "doc", "team_page", "rfc")
 MAX_PHRASE = 160
 
 
@@ -328,8 +328,10 @@ async def extract(
     client=None,
     effort: str = "low",
     usage: Usage | None = None,
+    on_passage: Callable[[], None] | None = None,
 ) -> list[Fact]:
-    """Extract facts from passages. Model answers are cached per passage text under `cache_dir`."""
+    """Extract facts from passages. Model answers are cached per passage text under `cache_dir`. `on_passage` is
+    called as each passage finishes, for progress."""
     docs = docs if isinstance(docs, Mapping) else {d.id: d for d in docs}
     usage = usage if usage is not None else Usage()
     system = system_prompt(entities)
@@ -361,7 +363,14 @@ async def extract(
         usage.passages_with_facts += bool(kept)
         return [(passage, doc, r) for r in kept]
 
-    results = await asyncio.gather(*(one(p) for p in passages))
+    async def counted(passage: Passage) -> list[tuple[Passage, Doc, dict]]:
+        try:
+            return await one(passage)
+        finally:
+            if on_passage:
+                on_passage()
+
+    results = await asyncio.gather(*(counted(p) for p in passages))
     return to_facts([row for rows in results for row in rows])
 
 

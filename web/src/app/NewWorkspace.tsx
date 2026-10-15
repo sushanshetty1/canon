@@ -1,0 +1,248 @@
+// New workspace from GitHub: name a public repository, then watch it read into a graph of its own.
+
+import { ArrowRight, GithubLogo } from '@phosphor-icons/react'
+import { motion, useReducedMotion } from 'motion/react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { createWorkspace, signInUrl, syncWorkspace, useJob, type Job, type Me } from './account'
+import { IngestDrawing, Legend } from './IngestDrawing'
+import { plural } from './text'
+import type { Workspace } from './workspaces'
+
+const ease = [0.22, 1, 0.36, 1] as const
+const EXAMPLES = ['cli/cli', 'pallets/flask', 'astral-sh/ruff']
+
+function slugFromUrl(): string | null {
+  try {
+    return new URLSearchParams(window.location.search).get('ws')
+  } catch {
+    return null
+  }
+}
+
+function RepoField({ me, onCreate, busy, error }: { me: Me | null; onCreate: (repo: string) => void; busy: boolean; error: string | null }) {
+  const [value, setValue] = useState('')
+  const field = useRef<HTMLInputElement>(null)
+  const signedIn = !!me?.user
+  const signIn = signInUrl(me, '/app/new')
+  useEffect(() => {
+    if (signedIn) field.current?.focus({ preventScroll: true })
+  }, [signedIn])
+
+  const submit = (e?: FormEvent) => {
+    e?.preventDefault()
+    if (value.trim() && signedIn && !busy) onCreate(value.trim())
+  }
+
+  return (
+    <form onSubmit={submit}>
+      <label htmlFor="repo" className="text-[15px] text-muted">
+        A public GitHub repository
+      </label>
+      <div className="mt-3 flex items-end gap-4 border-b-[1.5px] border-line-strong pb-4 transition-colors focus-within:border-ink">
+        <input
+          id="repo"
+          ref={field}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          disabled={!signedIn}
+          autoComplete="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          maxLength={200}
+          placeholder="owner/name"
+          className="display min-w-0 flex-1 bg-transparent text-[34px] leading-[1.08] text-ink caret-cobalt outline-none placeholder:text-[#b9bdc5] disabled:cursor-not-allowed sm:text-[52px] lg:text-[60px]"
+        />
+        <button
+          type="submit"
+          disabled={!value.trim() || !signedIn || busy}
+          aria-label="Make the workspace"
+          className="mb-1 grid size-12 shrink-0 place-items-center rounded-full bg-ink text-paper transition-[background-color,opacity,transform] duration-200 hover:bg-[#23252d] active:translate-y-px disabled:opacity-20 sm:size-14"
+        >
+          <ArrowRight size={20} weight="bold" />
+        </button>
+      </div>
+      {error && <p className="mt-4 text-[16px] text-proof">{error}</p>}
+      {signedIn ? (
+        <div className="mt-6 flex flex-col items-start gap-2.5 text-[16px] sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-7">
+          <span className="text-faint">Try</span>
+          {EXAMPLES.map((r) => (
+            <button
+              key={r}
+              type="button"
+              onClick={() => setValue(r)}
+              className="rounded text-left text-muted underline decoration-line-strong decoration-1 underline-offset-[5px] transition-colors hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cobalt"
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-7">
+          {signIn ? (
+            <a
+              href={signIn}
+              className="inline-flex h-12 items-center gap-2.5 rounded-full bg-ink px-6 text-[15px] font-semibold text-paper transition-colors hover:bg-[#23252d]"
+            >
+              <GithubLogo size={18} weight="bold" />
+              {me?.signin ? 'Sign in with GitHub' : 'Sign in for development'}
+            </a>
+          ) : (
+            <p className="text-[16px] text-muted">{me ? 'Sign-in is not set up on this server yet.' : ''}</p>
+          )}
+          {signIn && <p className="mt-3 text-[14.5px] text-faint">A workspace belongs to the person who makes it.</p>}
+        </div>
+      )}
+    </form>
+  )
+}
+
+/** What the job is doing now, in a sentence, and how far along it is. */
+function Status({ job, repo }: { job: Job | null; repo: string }) {
+  const reduce = useReducedMotion()
+  const c = job?.counts ?? {}
+  let line = 'Starting'
+  let detail = ''
+  if (job?.status === 'failed') {
+    line = 'Stopped'
+    detail = job.error ?? 'Something went wrong.'
+  } else if (job?.status === 'done') {
+    line = `${repo} is ready`
+    detail = [plural(c.documents ?? 0, 'document'), plural(c.facts ?? 0, 'fact'), plural(c.people ?? 0, 'person', 'people')].join(', ')
+    if (c.stale) detail += `. ${plural(c.stale, 'statement')} already out of date.`
+  } else if (job) {
+    line = job.step_label
+    if (job.step === 'extract' && c.to_extract) detail = `${(c.extracted ?? 0).toLocaleString()} of ${plural(c.to_extract, 'passage')}`
+    else if (c.documents) detail = `${plural(c.documents, 'document')} in the graph`
+  }
+  const value = job?.status === 'done' ? 1 : Math.max(0.03, job?.progress ?? 0)
+  return (
+    <div>
+      <div role="status" aria-live="polite" className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+        <h2 className={`display text-[30px] sm:text-[40px] ${job?.status === 'failed' ? 'text-proof' : 'text-ink'}`}>{line}</h2>
+        {detail && <p className="text-[15px] text-muted tabular-nums">{detail}</p>}
+      </div>
+      <div className="relative mt-4 h-px overflow-hidden bg-line" aria-hidden="true">
+        <motion.div
+          className="absolute inset-y-0 left-0 w-full origin-left"
+          initial={false}
+          animate={{ scaleX: value, backgroundColor: job?.status === 'running' ? 'var(--ink)' : 'var(--line-strong)' }}
+          transition={{ duration: reduce ? 0 : 0.6, ease }}
+        />
+      </div>
+    </div>
+  )
+}
+
+export function NewWorkspace({
+  me,
+  own,
+  onOpen,
+  onCreated,
+}: {
+  me: Me | null
+  own: Workspace[]
+  onOpen: (w: Workspace) => void
+  onCreated: () => void
+}) {
+  const [slug, setSlug] = useState<string | null>(slugFromUrl)
+  const [repo, setRepo] = useState<string>('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const { job, kick, setJob } = useJob(slug)
+  const reduce = useReducedMotion()
+
+  // Opened from a link with ?ws=: the repository's name comes from the workspace list.
+  const known = own.find((w) => w.slug === slug)
+  const name = repo || known?.repo || known?.name || slug || ''
+
+  const create = (text: string) => {
+    setBusy(true)
+    setError(null)
+    createWorkspace(text).then(
+      ({ workspace, job }) => {
+        setRepo(workspace.repo ?? workspace.name)
+        setJob(job)
+        setSlug(workspace.slug)
+        window.history.replaceState(null, '', `/app/new?ws=${encodeURIComponent(workspace.slug)}`)
+        onCreated()
+        setBusy(false)
+      },
+      (e: Error) => {
+        setError(e.message)
+        setBusy(false)
+      },
+    )
+  }
+
+  const retry = () => {
+    if (!slug) return
+    syncWorkspace(slug).then(
+      ({ job }) => {
+        setJob(job)
+        kick()
+      },
+      (e: Error) => setError(e.message),
+    )
+  }
+
+  const workspace: Workspace | null = slug ? (known ?? { slug, name, label: name, suggestions: [], own: true, repo: name }) : null
+
+  return (
+    <main className="slab relative flex min-w-0 flex-1 flex-col bg-paper">
+      {!slug ? (
+        <div className="flex flex-1 flex-col px-6 pt-10 pb-8 sm:px-12 lg:px-16">
+          <div className="mx-auto w-full max-w-[880px] pt-[10vh] pb-16 sm:pt-[16vh]">
+            <h1 className="display text-[40px] text-balance text-ink sm:text-[56px]">New workspace from GitHub</h1>
+            <p className="mt-5 max-w-[560px] text-[17px] leading-relaxed text-pretty text-muted">
+              Canon reads the repository&rsquo;s Markdown docs, the history of its CODEOWNERS file, recent issues and pull requests, and its
+              contributors, into a graph of its own.
+            </p>
+            <div className="mt-14">
+              <RepoField me={me} onCreate={create} busy={busy} error={error} />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <motion.div
+          className="mx-auto flex w-full max-w-[1080px] flex-1 flex-col px-5 pt-8 pb-10 sm:px-12 sm:pt-12"
+          initial={reduce ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease }}
+        >
+          <p className="text-[15px] text-muted">
+            New workspace from{' '}
+            <a href={`https://github.com/${name}`} target="_blank" rel="noreferrer" className="font-semibold text-ink hover:text-cobalt">
+              {name}
+            </a>
+          </p>
+          <div className="mt-8 sm:mt-10">
+            <IngestDrawing job={job} repo={name} />
+          </div>
+          <div className="mt-8 sm:mt-10">
+            <Status job={job} repo={name} />
+          </div>
+          <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            {job?.status === 'done' && workspace ? (
+              <button
+                type="button"
+                onClick={() => onOpen(workspace)}
+                className="inline-flex h-12 w-fit items-center gap-2.5 rounded-full bg-ink px-6 text-[15px] font-semibold text-paper transition-colors hover:bg-[#23252d]"
+              >
+                Ask {name} a question
+                <ArrowRight size={17} weight="bold" />
+              </button>
+            ) : job?.status === 'failed' ? (
+              <button type="button" onClick={retry} className="w-fit text-[15px] font-semibold text-cobalt hover:text-cobalt-deep">
+                Try again
+              </button>
+            ) : (
+              <p className="text-[14.5px] text-faint">This runs on the server. You can leave and come back.</p>
+            )}
+            <Legend />
+          </div>
+          {error && <p className="mt-4 text-[15px] text-proof">{error}</p>}
+        </motion.div>
+      )}
+    </main>
+  )
+}

@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from canon.cloud import session
 from canon.fixes import STATUSES, TransitionError, approve, dismiss, list_fixes, totals
+from canon.fixes.queue import file_copy
 from canon.fixes.issues import FilingError, dry_run
 
 router = APIRouter()
@@ -36,12 +37,14 @@ def _graph(request: Request, ws: str):
     return request.app.state.workspace(ws)
 
 
-def _member(ws: str, user):
+def _role(request: Request, ws: str, user) -> str:
+    """'public', 'owner' or 'member'. Writes need a signed-in user; on a private workspace, a member."""
+    from canon.cloud.access import access
+
     if user is None:
-        raise HTTPException(401, "Sign in to approve or dismiss fixes.")
-    is_member = getattr(session, "is_member", None)
-    if is_member is not None and not is_member(user, ws):
-        raise HTTPException(403, "Only members of this workspace can approve or dismiss its fixes.")
+        raise HTTPException(401, "Sign in with GitHub to file or dismiss fixes.")
+    # The app-wide check has already worked out the role for this request.
+    return getattr(request.state, "workspace_access", None) or access(request, ws)
 
 
 @router.get("/api/w/{ws}/fixes")
@@ -55,8 +58,11 @@ def fixes_route(ws: str, request: Request, status: str = Query("open")) -> dict:
 @router.post("/api/w/{ws}/fixes/{fix_id}/approve")
 def approve_route(ws: str, fix_id: str, body: ApproveBody, request: Request, user=Depends(signed_in)) -> dict:
     graph = _graph(request, ws)
-    _member(ws, user)
+    role = _role(request, ws, user)
     try:
+        # On a public workspace a visitor files the issue in their own repository; the shared queue stays as it is.
+        if role == "public":
+            return file_copy(graph, fix_id, repo=body.repo, user=user)
         return approve(graph, fix_id, repo=body.repo, user=user)
     except KeyError:
         raise HTTPException(404, "No such fix.") from None
@@ -71,7 +77,8 @@ def approve_route(ws: str, fix_id: str, body: ApproveBody, request: Request, use
 @router.post("/api/w/{ws}/fixes/{fix_id}/dismiss")
 def dismiss_route(ws: str, fix_id: str, body: DismissBody, request: Request, user=Depends(signed_in)) -> dict:
     graph = _graph(request, ws)
-    _member(ws, user)
+    if _role(request, ws, user) == "public":
+        raise HTTPException(403, "Fixes on a public workspace stay in its queue. Create your own workspace to manage fixes.")
     try:
         return dismiss(graph, fix_id, reason=body.reason, user=user)
     except KeyError:

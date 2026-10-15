@@ -3,6 +3,7 @@ import json
 
 import httpx
 import pytest
+from fastapi import Request
 from fastapi.testclient import TestClient
 
 from canon.api import fixes_routes
@@ -19,7 +20,7 @@ from kit import AUTHORITY, Kit
 PAGE = "handbook:ai-products"
 MCP_LINE = "The PostHog AI team [owns](/handbook/ownership) the MCP server, with Josh as the support contact."
 PASSAGE = f"Current status\nMCP is in general availability. {MCP_LINE} We are working on tool discovery."
-ME = User(login="dev", token="t0ken")
+ME = User(id="1", login="dev", name="dev", token="t0ken")
 
 
 def _page(kit, doc_id, title, text, facts, *, on="2026-09-23", kind="handbook", areas=(), author=None):
@@ -354,7 +355,14 @@ def test_dismiss_needs_a_reason(graph):
 
 
 def _client(graph, user=None):
-    app = create_app(graph_for=lambda ws: graph if ws == "demo" else None, ask_fn=lambda g, q: None)
+    """The graph is served as "team" (private, `user` a member) and as "demo" (public)."""
+    from canon.cloud import access
+
+    app = create_app(graph_for=lambda w: graph if w in ("demo", "team") else None, ask_fn=lambda g, q: None)
+    def role(request: Request) -> None:
+        request.state.workspace_access = "public" if request.path_params.get("ws") == "demo" else "member"
+
+    app.dependency_overrides[access.workspace_access] = role
     app.dependency_overrides[fixes_routes.signed_in] = lambda: user
     return TestClient(app)
 
@@ -373,21 +381,31 @@ def test_api_lists_fixes_with_counts(graph):
 def test_api_writes_need_a_signed_in_member(graph, monkeypatch):
     monkeypatch.setenv("CANON_ISSUES_DRY_RUN", "1")
     fix = drafted(graph)
-    url = f"/api/w/demo/fixes/{fix['id']}"
+    url = f"/api/w/team/fixes/{fix['id']}"
     assert _client(graph).post(f"{url}/approve", json={"repo": "me/docs"}).status_code == 401
     assert _client(graph).post(f"{url}/dismiss", json={"reason": "no"}).status_code == 401
 
     client = _client(graph, ME)
     assert client.post(f"{url}/approve", json={"repo": "PostHog/posthog.com"}).status_code == 422
-    assert client.post("/api/w/demo/fixes/fix-nope/approve", json={"repo": "me/docs"}).status_code == 404
+    assert client.post("/api/w/team/fixes/fix-nope/approve", json={"repo": "me/docs"}).status_code == 404
     res = client.post(f"{url}/approve", json={"repo": "me/docs"})
     assert res.status_code == 200 and res.json()["status"] == "filed" and res.json()["issue"]["dry_run"] is True
     assert client.post(f"{url}/dismiss", json={"reason": "late"}).status_code == 409
-    assert client.get("/api/w/demo/fixes?status=filed").json()["counts"]["filed"] == 1
+    assert client.get("/api/w/team/fixes?status=filed").json()["counts"]["filed"] == 1
 
 
 def test_api_dismiss(graph):
     built(graph)
     [fix] = list_fixes(graph)
-    res = _client(graph, ME).post(f"/api/w/demo/fixes/{fix['id']}/dismiss", json={"reason": "Archived page."})
+    res = _client(graph, ME).post(f"/api/w/team/fixes/{fix['id']}/dismiss", json={"reason": "Archived page."})
     assert res.status_code == 200 and res.json()["dismissed"]["reason"] == "Archived page."
+
+
+def test_public_workspace_files_a_copy_and_keeps_the_queue(graph, monkeypatch):
+    monkeypatch.setenv("CANON_ISSUES_DRY_RUN", "1")
+    fix = drafted(graph)
+    client = _client(graph, ME)
+    res = client.post(f"/api/w/demo/fixes/{fix['id']}/approve", json={"repo": "me/docs"})
+    assert res.status_code == 200 and res.json()["issue"]["url"].startswith("dry-run://") and res.json()["shared"] is False
+    assert get_fix(graph, fix["id"])["status"] == "open"
+    assert client.post(f"/api/w/demo/fixes/{fix['id']}/dismiss", json={"reason": "no"}).status_code == 403

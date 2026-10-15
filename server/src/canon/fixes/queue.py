@@ -389,6 +389,26 @@ def approve(graph, fid: str, *, repo: str, user, dry_run: bool | None = None, tr
     return _require(graph, fid)
 
 
+def file_copy(graph, fid: str, *, repo: str, user, dry_run: bool | None = None, transport=None) -> dict:
+    """Files a fix's issue in the user's own repository without changing the shared queue. For public workspaces,
+    where a visitor may file a fix to try it, but only members decide what happens to the fix itself."""
+    from canon.fixes import issues
+
+    fix = _require(graph, fid)
+    if fix["status"] not in LIVE or not fix["new"]:
+        raise TransitionError("This fix has no checked correction to file.")
+    repo = issues.check_repo(repo)
+    dry = issues.dry_run() if dry_run is None else dry_run
+    title, body = issues.issue_title(fix), issues.issue_body(fix)
+    url = (
+        f"dry-run://github.com/{repo}/issues/{fid}"
+        if dry
+        else issues.file_issue(repo, title, body, token=user.token, transport=transport)["url"]
+    )
+    issue = {"repo": repo, "url": url, "title": title, "body": body, "dry_run": dry, "error": None, "filed_at": _now()}
+    return {**fix, "status": "filed", "issue": issue, "shared": False}
+
+
 def dismiss(graph, fid: str, *, reason: str, user) -> dict:
     """open or approved -> dismissed, with the reason a person gave."""
     fix = _require(graph, fid)

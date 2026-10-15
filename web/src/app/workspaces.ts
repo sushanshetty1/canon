@@ -1,4 +1,6 @@
-export type Workspace = { slug: string; name: string; label: string; suggestions: string[] }
+import type { ServerWorkspace } from './account'
+
+export type Workspace = { slug: string; name: string; label: string; suggestions: string[]; own?: boolean; repo?: string | null }
 
 export const WORKSPACES: Workspace[] = [
   {
@@ -15,12 +17,29 @@ export const WORKSPACES: Workspace[] = [
   },
 ]
 
+/** A workspace the server lists, in the shape the screens use. Public ones keep their written suggestions. */
+export function fromServer(w: ServerWorkspace): Workspace {
+  const known = WORKSPACES.find((k) => k.slug === w.slug)
+  if (known && w.public) return known
+  return {
+    slug: w.slug,
+    name: w.repo ?? w.name,
+    label: w.repo ?? w.name,
+    suggestions: w.suggestions ?? [],
+    own: !w.public,
+    repo: w.repo,
+  }
+}
+
 const KEY = 'canon-workspace'
 
 export function savedWorkspace(): Workspace {
   try {
-    const slug = window.localStorage.getItem(KEY)
-    return WORKSPACES.find((w) => w.slug === slug) ?? WORKSPACES[0]
+    const raw = window.localStorage.getItem(KEY)
+    const known = WORKSPACES.find((w) => w.slug === raw)
+    if (known) return known
+    const saved = raw?.startsWith('{') ? (JSON.parse(raw) as Workspace) : null
+    return saved?.slug ? saved : WORKSPACES[0]
   } catch {
     return WORKSPACES[0]
   }
@@ -28,7 +47,7 @@ export function savedWorkspace(): Workspace {
 
 export function saveWorkspace(w: Workspace) {
   try {
-    window.localStorage.setItem(KEY, w.slug)
+    window.localStorage.setItem(KEY, w.own ? JSON.stringify(w) : w.slug)
   } catch {
     // private window: the choice lasts this visit
   }
