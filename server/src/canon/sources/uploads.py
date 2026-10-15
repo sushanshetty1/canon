@@ -13,7 +13,8 @@ compress, so a small zip that unpacks to gigabytes is refused before it is read.
 - **Notion or Confluence** (Markdown or HTML pages). Each page is a document (kind `notion` or `confluence`) dated by
   the date it carries ("Last edited time", "last modified on"), or by the day it was read when it carries none.
 
-`parse(kind, data)` returns a `Batch`; `canon.ingest.ingest_upload` writes it and extracts facts like any source.
+`parse(kind, data)` returns a `Batch`. `ExportUpload` is the connector (kind "upload") that `canon.ingest` runs
+through the shared pipeline, like any source.
 """
 
 import html
@@ -26,6 +27,7 @@ from datetime import UTC, date, datetime
 from html.parser import HTMLParser
 from pathlib import PurePosixPath
 
+from canon.sources.connector import Report, Result
 from canon.sources.text import Turn, clean_mdx, day, frontmatter, passages_of, slugify, split_passages, turn_passages
 from canon.types import Activity, Batch, Doc, Person
 
@@ -214,7 +216,7 @@ def parse_slack(files: dict[str, bytes], *, max_threads: int = MAX_THREADS) -> B
         snippet = snippet if len(snippet) <= 70 else snippet[:67].rsplit(" ", 1)[0] + "..."
         doc = Doc(
             id=f"slack:{t.channel}/{t.key}",
-            kind="slack",
+            kind="slack_thread",
             title=f"#{t.channel}: {snippet}",
             url="",
             updated_at=day(turns[-1].at),
@@ -377,9 +379,11 @@ def parse_pages(files: dict[str, bytes], *, today: str | None = None) -> Batch:
             meta, body = frontmatter(raw)
             text = clean_mdx(body)
         title = _page_title(path, meta, text, html_title)
+        if is_html and " : " in title:
+            title = title.split(" : ", 1)[1].strip()  # Confluence titles pages "Space : Page"
         when = page_date(f"{json.dumps(meta)}\n{text}") or today
-        kind = "confluence" if confluence else "notion"
-        body = re.sub(rf"^\s*#\s+{re.escape(title)}\s*$", "", text, count=1, flags=re.M).strip()
+        kind = "confluence_page" if confluence else "notion_page"
+        body = re.sub(rf"^\s*#\s+(.+ : )?{re.escape(title)}\s*$", "", text, count=1, flags=re.M).strip()
         if not body:
             continue
         doc = Doc(f"{kind}:{path}", kind, title, "", when)  # type: ignore[arg-type]
@@ -397,3 +401,28 @@ def parse(kind: str, data: bytes) -> Batch:
     if kind == "pages":
         return parse_pages(read_zip(data, (".md", ".markdown", ".html", ".htm")))
     raise UploadError("Upload a Slack export, or a Notion or Confluence export.")
+
+
+LABELS = {"slack": "Slack export", "pages": "Notion or Confluence export"}
+
+
+@dataclass
+class ExportUpload:
+    """An uploaded export as a connector: one read, no cursor (an export is read whole)."""
+
+    format: str  # "slack" or "pages"
+    data: bytes = field(repr=False)
+    filename: str = ""
+    kind = "upload"
+
+    @property
+    def label(self) -> str:
+        return LABELS.get(self.format, "Upload")
+
+    def read(self, *, cursor: str | None, report: Report) -> Result:
+        report(step="unpack")
+        batch = parse(self.format, self.data)
+        unit = "threads" if self.format == "slack" else "pages"
+        report(step="upload", counts={unit: len(batch.docs)})
+        notes = [] if self.format != "slack" else ["Direct messages and private groups in the export were left out."]
+        return Result(batch, None, notes)

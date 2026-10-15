@@ -170,7 +170,7 @@ def ingest_posthog(args) -> int:
     from canon.graph.writer import write_batch, write_facts
     from canon.sources.cache import data_dir
     from canon.sources.posthog import load_posthog
-    from canon.types import family
+    from canon.sources.connector import group_of
 
     batch = load_posthog(data_dir() / "raw" / "posthog")
     kinds = Counter(d.kind for d in batch.docs)
@@ -178,7 +178,7 @@ def ingest_posthog(args) -> int:
     chosen, later = choose(batch, entities, limit=args.limit_extract, conversations=args.conversations)
     current = sum(f.valid_to is None for f in batch.facts)
     kind_of = {d.id: d.kind for d in batch.docs}
-    picked = Counter(family(kind_of.get(p.doc_id)) for p in chosen)
+    picked = Counter(group_of(kind_of.get(p.doc_id) or '') for p in chosen)
     print(f"Documents: {len(batch.docs)} ({', '.join(f'{k} {n}' for k, n in sorted(kinds.items()))})")
     print(f"Passages: {len(batch.passages)}, worth extracting: {len(chosen) + len(later)}, chosen: {len(chosen)} "
           f"({', '.join(f'{k} {n}' for k, n in sorted(picked.items()))})")
@@ -208,7 +208,7 @@ def ingest_posthog(args) -> int:
         write_facts(graph, facts)
         predicates = Counter(f.predicate for f in facts)
         doc_of = {p.id: p.doc_id for p in batch.passages}
-        families = Counter(family(kind_of.get(doc_of.get(f.passage_id))) for f in facts)
+        families = Counter(group_of(kind_of.get(doc_of.get(f.passage_id)) or '') for f in facts)
         print(f"Extracted facts: {len(facts)} ({', '.join(f'{k} {n}' for k, n in sorted(predicates.items()))})")
         print(f"Facts by source: {', '.join(f'{k} {n}' for k, n in sorted(families.items()))}")
         print(

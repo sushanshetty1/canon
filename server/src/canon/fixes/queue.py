@@ -23,7 +23,8 @@ import hashlib
 from datetime import UTC, datetime
 
 from canon.graph import read
-from canon.types import CONVERSATIONS, entity
+from canon.extract.facts import CONVERSATIONS
+from canon.types import entity
 
 LIVE = ("open", "approved")  # statuses a person has not finished with
 STATUSES = ("open", "approved", "filed", "dismissed", "resolved")
@@ -159,7 +160,8 @@ def reroute(graph, fid: str) -> None:
 
 
 def build(graph) -> dict[str, int]:
-    stale = {fid: (subject, pid, doc) for fid, subject, pid, doc in graph.query(STALE, {"conversations": list(CONVERSATIONS)}).result_set}
+    rows = graph.query(STALE, {"conversations": list(CONVERSATIONS)}).result_set
+    stale = {fid: (subject, pid, doc) for fid, subject, pid, doc in rows}
     ends = read.chain_ends(graph, list(stale))
 
     fixes: dict[str, dict] = {}

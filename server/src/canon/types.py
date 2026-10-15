@@ -3,9 +3,14 @@
 from dataclasses import dataclass, field
 from typing import Literal
 
+# Document kinds, grouped as `canon.sources.connector.KIND_GROUPS` groups them (docs, tickets, chats, decisions,
+# structure).
 Kind = Literal[
-    "handbook", "doc", "team_page", "ownership_map", "rfc", "adr", "wiki", "release", "notion", "confluence",
-    "issue", "pull", "forum", "discussion", "thread", "slack",
+    "handbook", "team_page", "doc", "wiki", "notion_page", "confluence_page", "upload",
+    "issue", "pull", "linear_issue", "jira_issue",
+    "forum", "discussion", "comment_thread", "slack_thread",
+    "rfc", "adr", "release",
+    "ownership_map", "roster",
 ]
 Verdict = Literal["verified", "stale", "disputed", "unsupported"]
 ActivityRel = Literal["AUTHORED", "REVIEWED", "COMMENTED", "DECIDED"]
@@ -89,33 +94,6 @@ class Batch:
     teams: list[Team] = field(default_factory=list)
     areas: list[Area] = field(default_factory=list)
     activity: list[Activity] = field(default_factory=list)
-
-
-# What kind of source each document kind is. The app groups sources this way, and extraction treats a conversation
-# (a ticket or a chat) differently from a page someone keeps up to date.
-FAMILY: dict[str, str] = {
-    "handbook": "docs",
-    "doc": "docs",
-    "team_page": "docs",
-    "wiki": "docs",
-    "release": "docs",
-    "notion": "docs",
-    "confluence": "docs",
-    "rfc": "decisions",
-    "adr": "decisions",
-    "ownership_map": "code_owners",
-    "issue": "tickets",
-    "pull": "tickets",
-    "forum": "chats",
-    "discussion": "chats",
-    "thread": "chats",
-    "slack": "chats",
-}
-CONVERSATIONS = tuple(k for k, f in FAMILY.items() if f in ("tickets", "chats"))
-
-
-def family(kind: str | None) -> str:
-    return FAMILY.get(kind or "", "docs")
 
 
 ENTITY_LABELS = {"area": "Area", "team": "Team", "person": "Person", "topic": "Topic"}

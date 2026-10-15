@@ -33,9 +33,12 @@ from pathlib import Path
 import anthropic
 
 from canon.extract.predicates import AUTHORITY, PREDICATES, SHAPES, merge_topics, normalise_topic
-from canon.types import CONVERSATIONS, Batch, Doc, Fact, Passage
+from canon.sources.connector import KIND_GROUPS
+from canon.types import Batch, Doc, Fact, Passage
 
-PAGE_KINDS = ("handbook", "doc", "team_page", "rfc", "adr", "wiki", "release", "notion", "confluence")
+# Pages someone keeps up to date, and conversations: what someone said on a day (tickets and chats).
+CONVERSATIONS = KIND_GROUPS["tickets"] + KIND_GROUPS["chats"]
+PAGE_KINDS = tuple(k for g in ("docs", "decisions", "structure") for k in KIND_GROUPS[g] if k != "ownership_map")
 EXTRACT_KINDS = PAGE_KINDS + CONVERSATIONS
 MAX_PHRASE = 160
 
@@ -383,13 +386,13 @@ def _fact_id(subject: str, predicate: str, value: str, passage_id: str) -> str:
 KIND_WORDS = {
     "adr": "decision record",
     "pull": "pull request",
-    "thread": "comment thread",
+    "comment_thread": "comment thread",
     "discussion": "discussion",
     "forum": "forum thread",
-    "slack": "Slack thread",
+    "slack_thread": "Slack thread",
     "wiki": "wiki page",
-    "notion": "Notion page",
-    "confluence": "Confluence page",
+    "notion_page": "Notion page",
+    "confluence_page": "Confluence page",
 }
 
 

@@ -12,12 +12,16 @@ again. Pages come first; tickets and chats with a signal get their own budget pe
 for the next run. Then the whole graph is linked through time, decision records become decisions, and changed
 topics are judged for disputes.
 
-Uploads (`canon.sources.uploads`) end the same way: `extract_new` and `finish` are shared.
+Every other source is a connector (`canon.sources.connector`) and goes through `ingest_connector`, the shared
+pipeline: read, write, extract, link, decisions, judge, then people and fixes. An uploaded export is one such
+connector (`canon.sources.uploads.ExportUpload`, kind "upload"). A repository run keeps its own reading (it syncs by
+commit and time) and shares `extract_new` and `finish`; it is recorded as a connection of kind "github" too.
 
 `report(step=..., counts=..., progress=...)` is called as the run moves on, for the job's progress.
 """
 
 import asyncio
+import json
 from collections.abc import Callable
 from dataclasses import asdict
 from datetime import UTC, date, datetime
@@ -41,6 +45,7 @@ STEPS = {
     "discussions": "Reading discussions",
     "releases": "Reading releases",
     "people": "Reading contributors",
+    "read": "Reading the source",
     "unpack": "Unpacking the export",
     "upload": "Reading the export",
     "write": "Writing the graph",
@@ -208,7 +213,101 @@ def pull_rows(graph) -> list[dict]:
     ]
 
 
-UPLOAD_LABELS = {"slack": "Slack export", "pages": "Notion or Confluence export"}
+def _calm(e: Exception) -> str:
+    from canon.cloud.jobs import _calm as calm
+
+    return calm(e)
+
+
+def ingest_connector(
+    graph,
+    connector,
+    *,
+    connection_id: str | None = None,
+    config: dict | None = None,
+    cursor: str | None = None,
+    report: Report = lambda **_: None,
+    extract_model: str | None = None,
+    extract_cache: Path | None = None,
+    check=None,
+    extract_client=None,
+    extract_limit: int = EXTRACT_LIMIT,
+    conversation_budget: int = 250,
+    decisions=None,
+    refresh: bool = True,
+) -> dict:
+    """The pipeline every connector shares (`canon.sources.connector`): read, write, extract, link, decisions, judge,
+    then refresh who knows what and the fix queue.
+
+    The connection is kept as `(:Connection {id, kind, label, config, status, last_synced_at, cursor, error})`:
+    `reading` while it runs, then `done` with the connector's new cursor, or `failed` with a calm reason. `config`
+    is JSON; the counts of what was read are added to it. `decisions(model)` builds decisions after linking, when the
+    source has decision records. `refresh` False skips people and fixes (a caller that runs them itself)."""
+    import secrets
+
+    ensure_schema(graph)
+    started = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    cid = connection_id or f"{connector.kind}-{secrets.token_hex(5)}"
+    graph.query(
+        """MERGE (c:Connection {id: $id}) SET c.kind = $kind, c.label = $label, c.status = 'reading', c.error = NULL,
+           c.config = coalesce($config, c.config, '{}')""",
+        {"id": cid, "kind": connector.kind, "label": connector.label, "config": json.dumps(config) if config else None},
+    )
+    read: dict[str, int] = {}
+
+    def progress(*, step: str | None = None, done: int | None = None, total: int | None = None, counts: dict | None = None,
+                 **_) -> None:
+        if counts:
+            read.update(counts)
+        if done is not None:
+            read["read"] = done
+        if total is not None:
+            read["to_read"] = total
+        report(step=step if step in STEPS else ("read" if step else None), counts=dict(read))
+
+    try:
+        report(step="read", progress=0.04)
+        result = connector.read(cursor=cursor, report=progress)
+        batch = result.batch
+        found = {"documents": len(batch.docs), "passages": len(batch.passages), "people": len(batch.people)}
+        report(step="write", counts={**read, **found}, progress=0.25)
+        written = write_batch(graph, batch)
+        graph.query(
+            "MATCH (c:Connection {id: $id}) SET c.config = $config",
+            {"id": cid, "config": json.dumps({**(config or {}), **found})},
+        )
+        base = {**read, **found}
+        report(counts={**base, **graph_counts(graph)})
+
+        usage = Usage()
+        extracted = 0
+        if extract_model:
+            extracted, usage = extract_new(
+                graph, model=extract_model, cache=extract_cache, client=extract_client, report=report, base=base,
+                limit=extract_limit, conversations=conversation_budget,
+            )
+        done = finish(graph, check=check, report=report, counts=base, decisions=decisions)
+        if refresh:
+            from canon.fixes import build as build_fixes
+            from canon.people import recompute
+
+            done["people"] = recompute(graph)
+            done["fixes"] = build_fixes(graph)
+    except Exception as e:
+        graph.query(
+            "MATCH (c:Connection {id: $id}) SET c.status = 'failed', c.error = $error",
+            {"id": cid, "error": _calm(e)},
+        )
+        raise
+    graph.query(
+        """MATCH (c:Connection {id: $id}) SET c.status = 'done', c.last_synced_at = $at, c.cursor = $cursor,
+           c.error = NULL, c.notes = $notes""",
+        {"id": cid, "at": started, "cursor": result.cursor, "notes": json.dumps(result.notes)},
+    )
+    counts = {**base, **graph_counts(graph), "extracted_facts": extracted}
+    report(counts=counts, progress=1.0)
+    return {"connection": cid, "counts": counts, "written": written, "notes": result.notes, **done,
+            "usage": asdict(usage)}
 
 
 def ingest_upload(
@@ -219,52 +318,14 @@ def ingest_upload(
     filename: str = "",
     by: str | None = None,
     report: Report = lambda **_: None,
-    extract_model: str | None = None,
-    extract_cache: Path | None = None,
-    check=None,
-    extract_client=None,
-    extract_limit: int = EXTRACT_LIMIT,
-    conversation_budget: int = 250,
+    **pipeline,
 ) -> dict:
-    """Read an uploaded export into `graph`: unpack it safely, write its threads or pages, extract facts within the
-    run's budget, then link and judge like any run. `(:Upload {id, kind, filename, by, at, documents, passages})`
-    records it for the Sources screen."""
-    import secrets
+    """An uploaded export (`kind` "slack" or "pages") through the shared pipeline, as a connection of kind "upload"."""
+    from canon.sources.uploads import ExportUpload
 
-    from canon.sources.uploads import parse
-
-    ensure_schema(graph)
-    started = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-    report(step="unpack", progress=0.04)
-    batch = parse(kind, data)
-    unit = "threads" if kind == "slack" else "pages"
-    read = {unit: len(batch.docs), "passages_read": len(batch.passages)}
-    if kind == "slack":
-        read["speakers"] = len(batch.people)
-    report(step="upload", counts=read, progress=0.15)
-
-    report(step="write", progress=0.25)
-    written = write_batch(graph, batch)
-    graph.query(
-        """CREATE (:Upload {id: $id, kind: $kind, label: $label, filename: $filename, by: $by, at: $at,
-                            documents: $documents, passages: $passages, people: $people})""",
-        {"id": secrets.token_hex(6), "kind": kind, "label": UPLOAD_LABELS.get(kind, kind), "filename": filename[:200],
-         "by": by, "at": started, "documents": len(batch.docs), "passages": len(batch.passages),
-         "people": len(batch.people)},
-    )
-    report(counts={**read, **graph_counts(graph)})
-
-    usage = Usage()
-    extracted = 0
-    if extract_model:
-        extracted, usage = extract_new(
-            graph, model=extract_model, cache=extract_cache, client=extract_client, report=report, base=read,
-            limit=extract_limit, conversations=conversation_budget,
-        )
-    done = finish(graph, check=check, report=report, counts=read)
-    counts = {**read, **graph_counts(graph), "extracted_facts": extracted}
-    report(counts=counts, progress=1.0)
-    return {"counts": counts, "written": written, **done, "usage": asdict(usage)}
+    upload = ExportUpload(kind, data, filename)
+    config = {"format": kind, "filename": filename[:200], "by": by}
+    return ingest_connector(graph, upload, config=config, report=report, **pipeline)
 
 
 def ingest_repo(
@@ -335,6 +396,12 @@ def ingest_repo(
     graph.query(
         "MERGE (s:Source {repo: $repo}) SET s.head = $head, s.synced_at = $at",
         {"repo": repo, "head": head, "at": started},
+    )
+    # The repository is the workspace's GitHub connection, listed with any others on the Sources screen.
+    graph.query(
+        """MERGE (c:Connection {id: 'github'}) SET c.kind = 'github', c.label = 'GitHub', c.status = 'done',
+           c.last_synced_at = $at, c.cursor = $head, c.error = NULL, c.config = $config""",
+        {"at": started, "head": head, "config": json.dumps({"repo": repo})},
     )
     counts = {**read, **graph_counts(graph), "decision_records": len(records), "extracted_facts": extracted,
               "removed_docs": len(gone)}

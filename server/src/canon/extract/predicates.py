@@ -36,21 +36,25 @@ SHAPES: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
 AUTHORITY: dict[Kind, int] = {
     "ownership_map": 3,
     "team_page": 2,
+    "roster": 2,
     "rfc": 2,
     "adr": 2,  # a decision record in a repository, like an RFC
     "handbook": 1,
     "doc": 1,  # a Markdown page in a repository
     "wiki": 1,
     "release": 1,
-    "notion": 1,
-    "confluence": 1,
+    "notion_page": 1,
+    "confluence_page": 1,
+    "upload": 1,  # a page someone uploaded
     "pull": 1,
     # Tickets and chats: what someone said in a conversation ranks below any page.
     "issue": 0,
+    "linear_issue": 0,
+    "jira_issue": 0,
     "forum": 0,
     "discussion": 0,
-    "thread": 0,
-    "slack": 0,
+    "comment_thread": 0,
+    "slack_thread": 0,
 }
 
 STOPWORDS = frozenset(

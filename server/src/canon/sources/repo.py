@@ -370,7 +370,7 @@ def load_repo(repo: str, fetch: Fetch) -> Batch:
             # The conversation under it: who said what, and when, one passage per comment.
             said = [c for c in r.get("comments") or [] if (c.get("body") or "").strip() and c.get("at")]
             if said:
-                thread = Doc(f"thread:{kind}:{r['number']}", "thread", r["title"], r["url"], day(said[-1]["at"]),
+                thread = Doc(f"thread:{kind}:{r['number']}", "comment_thread", r["title"], r["url"], day(said[-1]["at"]),
                              doc.author, doc.areas)
                 batch.docs.append(thread)
                 batch.passages += turn_passages(thread.id, [turn(c) for c in said])

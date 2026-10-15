@@ -1,18 +1,23 @@
 """What a workspace reads: each kind of source with its documents, passages and facts, and when it was last read.
 
-The Sources screen draws this. Source kinds group document kinds (`canon.types.FAMILY`):
+The Sources screen draws this. Document kinds are grouped as every connector groups them
+(`canon.sources.connector.group_of`: docs, tickets, chats, decisions, structure), with structure shown as what it
+holds: the code owners (an ownership map or CODEOWNERS history, with the areas it covers) and the people (who the
+graph knows, and the roster facts that say who leads and belongs to which team).
 
-- **docs**: handbook, docs, team pages, wiki pages, releases, Notion and Confluence pages;
-- **tickets**: issues and pull requests;
+- **docs**: handbook, docs, team pages, wiki pages, Notion and Confluence pages, uploaded pages;
+- **tickets**: issues and pull requests, Linear and Jira issues;
 - **chats**: comment threads, discussions, forum and Slack threads;
-- **decisions**: RFCs and decision records, with the Decisions built from them;
-- **code_owners**: the ownership map or CODEOWNERS history, with the areas it covers;
-- **people**: who the graph knows, and the roster facts that say who leads and belongs to which team.
+- **decisions**: RFCs, decision records and releases, with the Decisions built from them;
+- **code_owners** and **people**: the structure group.
 
+It also lists the workspace's connections (`(:Connection)`, see `canon.sources.connector`), never their secrets.
 All counts are graph queries. Every aggregation groups on a coalesced key (FalkorDB 6.0.2 crashes grouping on null).
 """
 
-from canon.types import FAMILY
+import json
+
+from canon.sources.connector import group_of
 
 FAMILIES = ("docs", "tickets", "chats", "decisions", "code_owners", "people")
 
@@ -49,12 +54,29 @@ OWNED = """
 MATCH (a:Area)<-[:ABOUT]-(f:Fact {predicate: 'owned_by'}) WHERE f.valid_to IS NULL AND NOT (f)-[:SUPERSEDED_BY]->()
 RETURN count(DISTINCT a)
 """
-UPLOADS = """
-MATCH (u:Upload)
-RETURN coalesce(u.kind, ''), coalesce(u.label, ''), coalesce(u.filename, ''), coalesce(u.at, ''),
-       coalesce(u.documents, 0), coalesce(u.passages, 0), coalesce(u.people, 0), coalesce(u.by, '')
-ORDER BY coalesce(u.at, '') DESC LIMIT 20
+CONNECTIONS = """
+MATCH (c:Connection)
+RETURN coalesce(c.id, ''), coalesce(c.kind, ''), coalesce(c.label, ''), coalesce(c.status, ''),
+       coalesce(c.last_synced_at, ''), coalesce(c.error, ''), coalesce(c.config, '{}')
+ORDER BY coalesce(c.last_synced_at, '') DESC LIMIT 50
 """
+
+
+def _family(kind: str) -> str:
+    """The screen's source kind for a document kind: its group, with structure split into code owners and people."""
+    group = group_of(kind)
+    if group == "structure":
+        return "people" if kind == "roster" else "code_owners"
+    return group
+
+
+def _config(raw: str) -> dict:
+    """What the app may show of a connection's config: plain values only."""
+    try:
+        value = json.loads(raw or "{}")
+    except json.JSONDecodeError:
+        return {}
+    return {k: v for k, v in value.items() if isinstance(v, (str, int, float, bool)) and "secret" not in k and "token" not in k} if isinstance(value, dict) else {}
 
 
 def _one(graph, query: str):
@@ -84,7 +106,7 @@ def summary(graph) -> dict:
     for row in sorted(by_kind.values(), key=lambda r: -r["documents"]):
         if not row["kind"] or not row["documents"]:
             continue
-        fam = families[FAMILY.get(row["kind"], "docs")]
+        fam = families[_family(row["kind"])]
         fam["kinds"].append(row)
         for key in ("documents", "passages", "facts", "current_facts"):
             fam[key] += row[key]
@@ -106,15 +128,15 @@ def summary(graph) -> dict:
     reads = [f["last_read"] for f in families.values() if f["last_read"]]
     people["last_read"] = max(reads) if reads else None
 
-    uploads = [
-        {"kind": k, "label": label, "filename": filename, "at": at or None, "documents": docs, "passages": passages,
-         "people": n_people, "by": by or None}
-        for k, label, filename, at, docs, passages, n_people, by in graph.query(UPLOADS).result_set
+    connections = [
+        {"id": cid, "kind": kind_, "label": label, "status": status or None, "last_synced_at": synced or None,
+         "error": error or None, "config": _config(config)}
+        for cid, kind_, label, status, synced, error, config in graph.query(CONNECTIONS).result_set
     ]
     source = _one(graph, "MATCH (s:Source) RETURN s.repo, s.synced_at LIMIT 1")
     return {
         "families": [families[f] for f in FAMILIES],
-        "uploads": uploads,
+        "connections": connections,
         "repo": {"repo": source[0], "synced_at": source[1]} if source else None,
         "totals": {
             "documents": sum(f["documents"] for f in families.values()),

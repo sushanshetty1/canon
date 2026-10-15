@@ -412,7 +412,7 @@ def load_posthog(
         if not issue or not said:
             continue
         areas = tuple(sorted({own.label_to_area[l] for l in issue.get("labels", []) if l in own.label_to_area}))
-        thread = Doc(f"thread:issue:{number}", "thread", issue["title"], issue["url"], _day(said[-1]["at"]), areas=areas)
+        thread = Doc(f"thread:issue:{number}", "comment_thread", issue["title"], issue["url"], _day(said[-1]["at"]), areas=areas)
         batch.docs.append(thread)
         batch.passages += turn_passages(thread.id, [turn(c.get("author"), c["at"], c["body"]) for c in said])
         for c in said:
