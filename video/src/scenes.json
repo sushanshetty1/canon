@@ -1,7 +1,7 @@
 {
   "voiceAt": { "none": 1.0, "stretch": 0.35, "card": 0.35, "lift": 0.25, "sweep": 0.2 },
   "overlap": { "none": 0, "sweep": 0.8, "lift": 0.8, "stretch": 0.7, "card": 0.55 },
-  "breath": 0.14,
+  "breath": 0.12,
   "hold": 1.8,
   "scenes": [
     { "id": "open", "into": { "kind": "none" } },

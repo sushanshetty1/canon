@@ -61,12 +61,17 @@ and calls `POST /v1/text-to-speech/{voice}/with-timestamps` once per scene (or o
 with the model and voice in `narration/script.json` (Eric, `eleven_v4`). Only text that changed is generated again;
 a part whose exact words an earlier take of the scene already speaks is cut out of that take instead.
 
-The narration plays as one continuous read. Each clip is trimmed to its speech (silence found in the audio, with
-6 ms fades at every cut), any pause between words longer than 0.3 s is shortened to 0.3 s, and `src/scenes.json`
-starts each scene's line a breath (0.14 s plus the clips' own 0.13 s of head and tail) after the previous one, with
-one deliberate 1 s pause before the benchmark. Transitions play under the voice. `node scripts/gaps.mjs <file>`
-lists every silence of 0.4 s or more below -40 dB. `npm run voice:draft` uses macOS `say` instead (writes files,
-plays nothing).
+The narration plays as one continuous read. Each clip is loudness-matched, then trimmed to its sound (a 10 ms window
+with no sample at -35 dBFS is silence), with 6 ms fades at every cut. A burst of sound under 0.12 s between two
+pauses (a click, a breath, the start of a cut-off word) is removed with the silence around it; a pause between
+phrases is shortened to 0.26 s, and to 0.12 s next to a single short word, so no two audible pauses sit close
+together. `src/scenes.json` starts each scene's line a breath after the previous one, with one deliberate 1 s pause
+before the benchmark, and the transitions play under the voice.
+
+Checks: `node scripts/mix.mjs` writes the narration track alone (`out/voice-mix.wav`) as the video places it;
+`node scripts/breaks.mjs <file>` groups silences of 0.15 s or more below -35 dB that sit within 0.5 s of each other
+and reports every group of two, or any group over 0.4 s; `node scripts/gaps.mjs <file>` lists single silences of
+0.4 s or more below -40 dB. `npm run voice:draft` uses macOS `say` instead (writes files, plays nothing).
 
 ## Review
 

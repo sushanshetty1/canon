@@ -27,10 +27,15 @@ const CACHE = path.join(ROOT, 'voice/cache')
 const OUT = path.join(ROOT, 'public/voice')
 const RATE = 48000
 const PACE = script.pace ?? {}
-const MAX_GAP = PACE.max_gap ?? 0.3 // longest silence allowed between two words
-const PART_GAP = PACE.part_gap ?? 0.26 // the breath between parts of a scene
-const HEAD = 0.03 // kept before the first word
-const TAIL = 0.1 // kept after the last word, for its release
+const SILENT_DB = PACE.silent_db ?? -35 // a window with no sample this loud is silence (the listen-check's level)
+const MAX_GAP = PACE.max_gap ?? 0.26 // longest pause kept between two phrases
+const SHORT_GAP = PACE.short_gap ?? 0.12 // longest pause kept next to a single short word or a breath
+const SHORT_WORD = 0.55 // sound shorter than this, between two pauses, is a short word or a breath
+const BLIP = 0.12 // sound shorter than this, between two pauses, is a click: it becomes silence
+const PAUSE = 0.15 // a silence this long is heard as a pause (the listen-check counts from here)
+const PART_GAP = PACE.part_gap ?? 0.2 // silence put between parts of a scene before the pauses are evened out
+const HEAD = 0.02 // kept before the first sound
+const TAIL = 0.06 // kept after the last sound, for its release
 const FADE = 0.006
 fs.mkdirSync(CACHE, { recursive: true })
 fs.mkdirSync(OUT, { recursive: true })
@@ -128,6 +133,16 @@ function loudnorm(file) {
   fs.renameSync(tmp, file)
 }
 
+/** The samples, loudness-matched (via a temporary file). */
+function normalise(pcm) {
+  const tmp = path.join(os.tmpdir(), `canon-voice-${process.pid}.wav`)
+  fs.writeFileSync(tmp, wav16(pcm))
+  loudnorm(tmp)
+  const out = decode(tmp)
+  fs.rmSync(tmp, { force: true })
+  return out
+}
+
 /** A cached take of this scene that already speaks `text`: the slice of it, with its own alignment. */
 function reuse(sceneId, text) {
   for (const f of fs.readdirSync(CACHE)) {
@@ -139,7 +154,10 @@ function reuse(sceneId, text) {
     const base = path.join(CACHE, f.replace(/\.json$/, ''))
     const audioFile = ['mp3', 'wav'].map((e) => `${base}.${e}`).find((p) => fs.existsSync(p))
     const from = Math.max(0, a.character_start_times_seconds[at] - 0.05)
-    const to = a.character_end_times_seconds[at + text.length - 1] + 0.15
+    // End in the silence after the text, before the next word of the old take starts to sound.
+    const next = a.characters.findIndex((ch, k) => k >= at + text.length && /[\p{L}\p{N}]/u.test(ch))
+    const lastEnd = a.character_end_times_seconds[at + text.length - 1]
+    const to = next > 0 ? Math.min(lastEnd + 0.15, a.character_start_times_seconds[next] - 0.08) : lastEnd + 0.15
     const pcm = decode(audioFile).subarray(Math.round(from * RATE), Math.round(to * RATE))
     const slice = (arr) => arr.slice(at, at + text.length).map((x) => +(x - from).toFixed(4))
     return {
@@ -216,39 +234,55 @@ for (const [si, scene] of script.scenes.entries()) {
     words.push({ a, b, start: s0, end: e0, w: m[0].replace(/[^\w'-]/g, '') })
   }
 
-  // What to keep: from just before the first word to just after the last, with every long pause shortened.
-  // Silence is found in the audio itself (10 ms windows more than 37 dB under the loudest), since the alignment
-  // stretches a sentence's last letters over the pause that follows them.
+  // Loudness first, so silence is judged at the level the viewer hears.
+  pcm = normalise(pcm)
+
+  // What to keep. Silence is found in the audio itself, since the alignment stretches a sentence's last letters
+  // over the pause after it: a 10 ms window is silent when no sample in it reaches SILENT_DB (the level the
+  // listen-check uses). Then, as an ear hears it:
+  // - a burst shorter than BLIP between two silences (a breath, a click, the first sound of a cut-off word) is
+  //   silence, so the two pauses around it become one;
+  // - a pause is shortened to MAX_GAP, or to SHORT_GAP when the sound on either side of it is a single short word,
+  //   so a quick "So," never sits between two full pauses;
+  // - the speech starts HEAD before its first sound and ends TAIL after its last.
   const WIN = Math.round(0.01 * RATE)
-  const db = []
+  const floor = 10 ** (SILENT_DB / 20)
+  const voiced = []
   for (let i = 0; i + WIN <= pcm.length; i += WIN) {
-    let sum = 0
-    for (let j = i; j < i + WIN; j++) sum += pcm[j] * pcm[j]
-    db.push(10 * Math.log10(sum / WIN + 1e-12))
+    let peak = 0
+    for (let j = i; j < i + WIN; j++) peak = Math.max(peak, Math.abs(pcm[j]))
+    voiced.push(peak >= floor)
   }
-  const loudest = Math.max(...db)
-  const voiced = db.map((x) => x > Math.max(loudest - 37, -65))
-  const firstV = voiced.indexOf(true)
-  const lastV = voiced.lastIndexOf(true)
+  // Runs of voiced and silent windows, in seconds.
+  let runs = []
+  for (let k = 0; k < voiced.length; k++) {
+    const last = runs.at(-1)
+    if (last && last.v === voiced[k]) last.b = (k + 1) * 0.01
+    else runs.push({ v: voiced[k], a: k * 0.01, b: (k + 1) * 0.01 })
+  }
+  const merge = (rs) => rs.reduce((out, r) => {
+    const last = out.at(-1)
+    if (last && last.v === r.v) last.b = r.b
+    else out.push({ ...r })
+    return out
+  }, [])
+  runs = merge(runs.map((r, i) => (r.v && r.b - r.a < BLIP && i > 0 && i < runs.length - 1 ? { ...r, v: false } : r)))
+  const firstV = runs.find((r) => r.v)
+  const lastV = [...runs].reverse().find((r) => r.v)
+  // Pauses are silences long enough to hear; the gaps inside a word (a stop, a breath of air) are left alone.
+  const pauses = runs.filter((r) => !r.v && r.a >= firstV.b && r.b <= lastV.a && r.b - r.a >= PAUSE)
   const keep = []
-  let from = Math.max(0, firstV * 0.01 - HEAD)
-  let run = -1
-  for (let k = firstV; k <= lastV; k++) {
-    if (!voiced[k]) {
-      if (run < 0) run = k
-      continue
+  let from = Math.max(0, firstV.a - HEAD)
+  pauses.forEach((r, i) => {
+    const soundBefore = r.a - (i > 0 ? pauses[i - 1].b : firstV.a)
+    const soundAfter = (i < pauses.length - 1 ? pauses[i + 1].a : lastV.b) - r.b
+    const allowed = soundBefore < SHORT_WORD || soundAfter < SHORT_WORD ? SHORT_GAP : MAX_GAP
+    if (r.b - r.a > allowed) {
+      keep.push([from, r.a + allowed / 2])
+      from = r.b - allowed / 2
     }
-    if (run >= 0) {
-      const a = run * 0.01
-      const b = k * 0.01
-      if (b - a > MAX_GAP) {
-        keep.push([from, a + MAX_GAP / 2])
-        from = b - MAX_GAP / 2
-      }
-      run = -1
-    }
-  }
-  keep.push([from, Math.min(pcm.length / RATE, (lastV + 1) * 0.01 + TAIL)])
+  })
+  keep.push([from, Math.min(pcm.length / RATE, lastV.b + TAIL)])
 
   // Map a source time to the output time.
   const mapTime = (t) => {
@@ -293,7 +327,6 @@ for (const [si, scene] of script.scenes.entries()) {
 
   const file = path.join(OUT, `${scene.id}.wav`)
   fs.writeFileSync(file, wav16(out))
-  loudnorm(file)
   timing.scenes[scene.id] = {
     file: `voice/${scene.id}.wav`,
     duration: +(total / RATE).toFixed(3),
