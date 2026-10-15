@@ -1,0 +1,2550 @@
+{
+ "provider": "elevenlabs",
+ "voice": "Eric (eleven_v4)",
+ "rate": 48000,
+ "scenes": {
+  "open": {
+   "file": "voice/open.wav",
+   "duration": 7.2,
+   "lead": 0.8,
+   "chunks": [
+    {
+     "text": "Every company brain can find a page and cite it.",
+     "start": 0.8,
+     "end": 4.08
+    },
+    {
+     "text": "None of them checks whether that page is still true.",
+     "start": 4.52,
+     "end": 7
+    }
+   ],
+   "words": [
+    {
+     "w": "Every",
+     "start": 0.8,
+     "end": 1.12
+    },
+    {
+     "w": "company",
+     "start": 1.2,
+     "end": 1.52
+    },
+    {
+     "w": "brain",
+     "start": 1.6,
+     "end": 1.92
+    },
+    {
+     "w": "can",
+     "start": 2.04,
+     "end": 2.16
+    },
+    {
+     "w": "find",
+     "start": 2.28,
+     "end": 2.4
+    },
+    {
+     "w": "a",
+     "start": 2.44,
+     "end": 2.48
+    },
+    {
+     "w": "page",
+     "start": 2.56,
+     "end": 2.88
+    },
+    {
+     "w": "and",
+     "start": 3,
+     "end": 3.12
+    },
+    {
+     "w": "cite",
+     "start": 3.24,
+     "end": 3.36
+    },
+    {
+     "w": "it",
+     "start": 3.44,
+     "end": 4.08
+    },
+    {
+     "w": "None",
+     "start": 4.52,
+     "end": 4.68
+    },
+    {
+     "w": "of",
+     "start": 4.72,
+     "end": 4.76
+    },
+    {
+     "w": "them",
+     "start": 4.84,
+     "end": 5
+    },
+    {
+     "w": "checks",
+     "start": 5.16,
+     "end": 5.32
+    },
+    {
+     "w": "whether",
+     "start": 5.44,
+     "end": 5.56
+    },
+    {
+     "w": "that",
+     "start": 5.64,
+     "end": 5.8
+    },
+    {
+     "w": "page",
+     "start": 5.92,
+     "end": 6.04
+    },
+    {
+     "w": "is",
+     "start": 6.08,
+     "end": 6.12
+    },
+    {
+     "w": "still",
+     "start": 6.2,
+     "end": 6.44
+    },
+    {
+     "w": "true",
+     "start": 6.52,
+     "end": 7
+    }
+   ]
+  },
+  "problem": {
+   "file": "voice/problem.wav",
+   "duration": 15.47,
+   "lead": 0.3,
+   "chunks": [
+    {
+     "text": "PostHog's handbook says the PostHog AI team owns the MCP server.",
+     "start": 0.3,
+     "end": 5.473
+    },
+    {
+     "text": "In September, the ownership map moved it to the Context and MCP team.",
+     "start": 5.772,
+     "end": 10.745
+    },
+    {
+     "text": "A tool that finds that page and cites it is confidently wrong.",
+     "start": 11.03,
+     "end": 15.35
+    }
+   ],
+   "words": [
+    {
+     "w": "PostHog's",
+     "start": 0.3,
+     "end": 0.94
+    },
+    {
+     "w": "handbook",
+     "start": 1.1,
+     "end": 1.5
+    },
+    {
+     "w": "says",
+     "start": 1.62,
+     "end": 1.74
+    },
+    {
+     "w": "the",
+     "start": 1.82,
+     "end": 1.9
+    },
+    {
+     "w": "PostHog",
+     "start": 2.06,
+     "end": 2.46
+    },
+    {
+     "w": "AI",
+     "start": 2.54,
+     "end": 2.86
+    },
+    {
+     "w": "team",
+     "start": 3.06,
+     "end": 3.26
+    },
+    {
+     "w": "owns",
+     "start": 3.34,
+     "end": 3.58
+    },
+    {
+     "w": "the",
+     "start": 3.66,
+     "end": 3.74
+    },
+    {
+     "w": "MCP",
+     "start": 3.82,
+     "end": 4.3
+    },
+    {
+     "w": "server",
+     "start": 4.38,
+     "end": 5.473
+    },
+    {
+     "w": "In",
+     "start": 5.772,
+     "end": 5.825
+    },
+    {
+     "w": "September",
+     "start": 6.265,
+     "end": 6.758
+    },
+    {
+     "w": "the",
+     "start": 6.812,
+     "end": 6.865
+    },
+    {
+     "w": "ownership",
+     "start": 7.105,
+     "end": 7.345
+    },
+    {
+     "w": "map",
+     "start": 7.505,
+     "end": 7.665
+    },
+    {
+     "w": "moved",
+     "start": 7.785,
+     "end": 7.905
+    },
+    {
+     "w": "it",
+     "start": 7.985,
+     "end": 8.065
+    },
+    {
+     "w": "to",
+     "start": 8.105,
+     "end": 8.145
+    },
+    {
+     "w": "the",
+     "start": 8.225,
+     "end": 8.305
+    },
+    {
+     "w": "Context",
+     "start": 8.385,
+     "end": 8.865
+    },
+    {
+     "w": "and",
+     "start": 8.945,
+     "end": 9.025
+    },
+    {
+     "w": "MCP",
+     "start": 9.185,
+     "end": 9.665
+    },
+    {
+     "w": "team",
+     "start": 9.745,
+     "end": 10.745
+    },
+    {
+     "w": "A",
+     "start": 11.03,
+     "end": 11.07
+    },
+    {
+     "w": "tool",
+     "start": 11.11,
+     "end": 11.27
+    },
+    {
+     "w": "that",
+     "start": 11.35,
+     "end": 11.51
+    },
+    {
+     "w": "finds",
+     "start": 11.63,
+     "end": 11.83
+    },
+    {
+     "w": "that",
+     "start": 11.91,
+     "end": 11.99
+    },
+    {
+     "w": "page",
+     "start": 12.07,
+     "end": 12.31
+    },
+    {
+     "w": "and",
+     "start": 12.39,
+     "end": 12.55
+    },
+    {
+     "w": "cites",
+     "start": 12.63,
+     "end": 12.87
+    },
+    {
+     "w": "it",
+     "start": 12.95,
+     "end": 13.19
+    },
+    {
+     "w": "is",
+     "start": 13.27,
+     "end": 13.43
+    },
+    {
+     "w": "confidently",
+     "start": 13.51,
+     "end": 14.23
+    },
+    {
+     "w": "wrong",
+     "start": 14.75,
+     "end": 15.35
+    }
+   ]
+  },
+  "idea": {
+   "file": "voice/idea.wav",
+   "duration": 13.1,
+   "lead": 0.3,
+   "chunks": [
+    {
+     "text": "Canon reads a company's docs, tickets and chats into one FalkorDB graph",
+     "start": 0.3,
+     "end": 5.66
+    },
+    {
+     "text": "that knows when each fact held.",
+     "start": 5.74,
+     "end": 8.247
+    },
+    {
+     "text": "Then it checks every sentence of an answer against it, before you see it.",
+     "start": 8.633,
+     "end": 12.98
+    }
+   ],
+   "words": [
+    {
+     "w": "Canon",
+     "start": 0.3,
+     "end": 0.62
+    },
+    {
+     "w": "reads",
+     "start": 0.7,
+     "end": 0.86
+    },
+    {
+     "w": "a",
+     "start": 0.94,
+     "end": 1.02
+    },
+    {
+     "w": "company's",
+     "start": 1.22,
+     "end": 1.5
+    },
+    {
+     "w": "docs",
+     "start": 1.74,
+     "end": 2.22
+    },
+    {
+     "w": "tickets",
+     "start": 2.42,
+     "end": 2.62
+    },
+    {
+     "w": "and",
+     "start": 2.7,
+     "end": 2.86
+    },
+    {
+     "w": "chats",
+     "start": 2.94,
+     "end": 3.42
+    },
+    {
+     "w": "into",
+     "start": 3.5,
+     "end": 3.82
+    },
+    {
+     "w": "one",
+     "start": 3.9,
+     "end": 4.14
+    },
+    {
+     "w": "Falkor",
+     "start": 4.22,
+     "end": 4.62
+    },
+    {
+     "w": "DB",
+     "start": 4.7,
+     "end": 5.02
+    },
+    {
+     "w": "graph",
+     "start": 5.34,
+     "end": 5.66
+    },
+    {
+     "w": "that",
+     "start": 5.74,
+     "end": 5.82
+    },
+    {
+     "w": "knows",
+     "start": 5.9,
+     "end": 6.22
+    },
+    {
+     "w": "when",
+     "start": 6.34,
+     "end": 6.46
+    },
+    {
+     "w": "each",
+     "start": 6.54,
+     "end": 6.78
+    },
+    {
+     "w": "fact",
+     "start": 6.86,
+     "end": 7.1
+    },
+    {
+     "w": "held",
+     "start": 7.18,
+     "end": 8.247
+    },
+    {
+     "w": "Then",
+     "start": 8.633,
+     "end": 8.74
+    },
+    {
+     "w": "it",
+     "start": 8.82,
+     "end": 8.9
+    },
+    {
+     "w": "checks",
+     "start": 9.1,
+     "end": 9.3
+    },
+    {
+     "w": "every",
+     "start": 9.38,
+     "end": 9.62
+    },
+    {
+     "w": "sentence",
+     "start": 9.82,
+     "end": 10.02
+    },
+    {
+     "w": "of",
+     "start": 10.06,
+     "end": 10.1
+    },
+    {
+     "w": "an",
+     "start": 10.18,
+     "end": 10.26
+    },
+    {
+     "w": "answer",
+     "start": 10.34,
+     "end": 10.58
+    },
+    {
+     "w": "against",
+     "start": 10.66,
+     "end": 10.98
+    },
+    {
+     "w": "it",
+     "start": 11.06,
+     "end": 11.593
+    },
+    {
+     "w": "before",
+     "start": 11.727,
+     "end": 11.86
+    },
+    {
+     "w": "you",
+     "start": 11.94,
+     "end": 12.02
+    },
+    {
+     "w": "see",
+     "start": 12.1,
+     "end": 12.18
+    },
+    {
+     "w": "it",
+     "start": 12.26,
+     "end": 12.98
+    }
+   ]
+  },
+  "graph": {
+   "file": "voice/graph.wav",
+   "duration": 23.55,
+   "lead": 0.3,
+   "chunks": [
+    {
+     "text": "Each sentence links to its passage, and the fact that passage states.",
+     "start": 0.3,
+     "end": 4.86
+    },
+    {
+     "text": "When a newer source replaces that fact, the graph records an edge.",
+     "start": 5.15,
+     "end": 9.35
+    },
+    {
+     "text": "So still true is a path:",
+     "start": 9.635,
+     "end": 12.075
+    },
+    {
+     "text": "follow SUPERSEDED_BY to whatever holds today.",
+     "start": 12.185,
+     "end": 15.665
+    },
+    {
+     "text": "FalkorDB runs that check on every sentence.",
+     "start": 16.055,
+     "end": 19.468
+    },
+    {
+     "text": "The model writes the words. The graph decides what is current.",
+     "start": 19.697,
+     "end": 23.43
+    }
+   ],
+   "words": [
+    {
+     "w": "Each",
+     "start": 0.3,
+     "end": 0.54
+    },
+    {
+     "w": "sentence",
+     "start": 0.62,
+     "end": 1.02
+    },
+    {
+     "w": "links",
+     "start": 1.1,
+     "end": 1.34
+    },
+    {
+     "w": "to",
+     "start": 1.42,
+     "end": 1.5
+    },
+    {
+     "w": "its",
+     "start": 1.58,
+     "end": 1.66
+    },
+    {
+     "w": "passage",
+     "start": 1.74,
+     "end": 2.46
+    },
+    {
+     "w": "and",
+     "start": 2.5,
+     "end": 2.54
+    },
+    {
+     "w": "the",
+     "start": 2.62,
+     "end": 2.7
+    },
+    {
+     "w": "fact",
+     "start": 2.78,
+     "end": 3.1
+    },
+    {
+     "w": "that",
+     "start": 3.18,
+     "end": 3.26
+    },
+    {
+     "w": "passage",
+     "start": 3.34,
+     "end": 3.82
+    },
+    {
+     "w": "states",
+     "start": 4.06,
+     "end": 4.86
+    },
+    {
+     "w": "When",
+     "start": 5.15,
+     "end": 5.23
+    },
+    {
+     "w": "a",
+     "start": 5.27,
+     "end": 5.31
+    },
+    {
+     "w": "newer",
+     "start": 5.39,
+     "end": 5.63
+    },
+    {
+     "w": "source",
+     "start": 5.71,
+     "end": 5.95
+    },
+    {
+     "w": "replaces",
+     "start": 6.03,
+     "end": 6.59
+    },
+    {
+     "w": "that",
+     "start": 6.67,
+     "end": 6.83
+    },
+    {
+     "w": "fact",
+     "start": 6.91,
+     "end": 7.47
+    },
+    {
+     "w": "the",
+     "start": 7.51,
+     "end": 7.55
+    },
+    {
+     "w": "graph",
+     "start": 7.63,
+     "end": 7.95
+    },
+    {
+     "w": "records",
+     "start": 8.15,
+     "end": 8.35
+    },
+    {
+     "w": "an",
+     "start": 8.43,
+     "end": 8.51
+    },
+    {
+     "w": "edge",
+     "start": 8.59,
+     "end": 9.35
+    },
+    {
+     "w": "So",
+     "start": 9.635,
+     "end": 10.195
+    },
+    {
+     "w": "still",
+     "start": 10.275,
+     "end": 10.515
+    },
+    {
+     "w": "true",
+     "start": 10.595,
+     "end": 10.915
+    },
+    {
+     "w": "is",
+     "start": 10.995,
+     "end": 11.075
+    },
+    {
+     "w": "a",
+     "start": 11.155,
+     "end": 11.195
+    },
+    {
+     "w": "path",
+     "start": 11.235,
+     "end": 12.075
+    },
+    {
+     "w": "follow",
+     "start": 12.185,
+     "end": 12.505
+    },
+    {
+     "w": "superseded-by",
+     "start": 12.585,
+     "end": 13.825
+    },
+    {
+     "w": "to",
+     "start": 13.865,
+     "end": 13.945
+    },
+    {
+     "w": "whatever",
+     "start": 14.145,
+     "end": 14.345
+    },
+    {
+     "w": "holds",
+     "start": 14.505,
+     "end": 14.665
+    },
+    {
+     "w": "today",
+     "start": 14.745,
+     "end": 15.665
+    },
+    {
+     "w": "Falkor",
+     "start": 16.055,
+     "end": 16.455
+    },
+    {
+     "w": "DB",
+     "start": 16.535,
+     "end": 16.935
+    },
+    {
+     "w": "runs",
+     "start": 17.015,
+     "end": 17.255
+    },
+    {
+     "w": "that",
+     "start": 17.375,
+     "end": 17.495
+    },
+    {
+     "w": "check",
+     "start": 17.655,
+     "end": 17.815
+    },
+    {
+     "w": "on",
+     "start": 17.895,
+     "end": 18.135
+    },
+    {
+     "w": "every",
+     "start": 18.215,
+     "end": 18.455
+    },
+    {
+     "w": "sentence",
+     "start": 18.535,
+     "end": 19.468
+    },
+    {
+     "w": "The",
+     "start": 19.697,
+     "end": 19.75
+    },
+    {
+     "w": "model",
+     "start": 19.91,
+     "end": 20.07
+    },
+    {
+     "w": "writes",
+     "start": 20.23,
+     "end": 20.39
+    },
+    {
+     "w": "the",
+     "start": 20.43,
+     "end": 20.47
+    },
+    {
+     "w": "words",
+     "start": 20.55,
+     "end": 21.23
+    },
+    {
+     "w": "The",
+     "start": 21.27,
+     "end": 21.35
+    },
+    {
+     "w": "graph",
+     "start": 21.43,
+     "end": 21.75
+    },
+    {
+     "w": "decides",
+     "start": 21.83,
+     "end": 22.23
+    },
+    {
+     "w": "what",
+     "start": 22.31,
+     "end": 22.39
+    },
+    {
+     "w": "is",
+     "start": 22.47,
+     "end": 22.55
+    },
+    {
+     "w": "current",
+     "start": 22.63,
+     "end": 23.43
+    }
+   ]
+  },
+  "ask": {
+   "file": "voice/ask.wav",
+   "duration": 24.555,
+   "lead": 0.3,
+   "chunks": [
+    {
+     "text": "Here's Canon on PostHog: its handbook, ownership history and 28,000 pull requests.",
+     "start": 0.3,
+     "end": 7.22
+    },
+    {
+     "text": "Each sentence is checked as it lands.",
+     "start": 7.54,
+     "end": 10.06
+    },
+    {
+     "text": "Open one for its sources, and the fact's history:",
+     "start": 10.415,
+     "end": 13.562
+    },
+    {
+     "text": "PostHog AI, Signals, Self-Driving, and since September, Context and MCP.",
+     "start": 13.773,
+     "end": 20.48
+    },
+    {
+     "text": "One sentence had nothing behind it, so Canon removed it.",
+     "start": 20.835,
+     "end": 24.435
+    }
+   ],
+   "words": [
+    {
+     "w": "Here's",
+     "start": 0.3,
+     "end": 0.54
+    },
+    {
+     "w": "Canon",
+     "start": 0.62,
+     "end": 0.94
+    },
+    {
+     "w": "on",
+     "start": 1.02,
+     "end": 1.1
+    },
+    {
+     "w": "PostHog",
+     "start": 1.26,
+     "end": 2.3
+    },
+    {
+     "w": "its",
+     "start": 2.42,
+     "end": 2.54
+    },
+    {
+     "w": "handbook",
+     "start": 2.66,
+     "end": 3.26
+    },
+    {
+     "w": "ownership",
+     "start": 3.34,
+     "end": 3.74
+    },
+    {
+     "w": "history",
+     "start": 3.82,
+     "end": 4.3
+    },
+    {
+     "w": "and",
+     "start": 4.38,
+     "end": 4.62
+    },
+    {
+     "w": "twenty-eight",
+     "start": 4.78,
+     "end": 5.18
+    },
+    {
+     "w": "thousand",
+     "start": 5.34,
+     "end": 5.74
+    },
+    {
+     "w": "pull",
+     "start": 5.82,
+     "end": 5.98
+    },
+    {
+     "w": "requests",
+     "start": 6.58,
+     "end": 7.22
+    },
+    {
+     "w": "Each",
+     "start": 7.54,
+     "end": 7.78
+    },
+    {
+     "w": "sentence",
+     "start": 7.98,
+     "end": 8.18
+    },
+    {
+     "w": "is",
+     "start": 8.26,
+     "end": 8.42
+    },
+    {
+     "w": "checked",
+     "start": 8.5,
+     "end": 8.74
+    },
+    {
+     "w": "as",
+     "start": 8.82,
+     "end": 8.9
+    },
+    {
+     "w": "it",
+     "start": 8.98,
+     "end": 9.06
+    },
+    {
+     "w": "lands",
+     "start": 9.54,
+     "end": 10.06
+    },
+    {
+     "w": "Open",
+     "start": 10.415,
+     "end": 10.735
+    },
+    {
+     "w": "one",
+     "start": 10.815,
+     "end": 10.975
+    },
+    {
+     "w": "for",
+     "start": 11.015,
+     "end": 11.055
+    },
+    {
+     "w": "its",
+     "start": 11.135,
+     "end": 11.295
+    },
+    {
+     "w": "sources",
+     "start": 11.615,
+     "end": 11.975
+    },
+    {
+     "w": "and",
+     "start": 12.015,
+     "end": 12.095
+    },
+    {
+     "w": "the",
+     "start": 12.135,
+     "end": 12.175
+    },
+    {
+     "w": "fact's",
+     "start": 12.255,
+     "end": 12.495
+    },
+    {
+     "w": "history",
+     "start": 12.575,
+     "end": 13.562
+    },
+    {
+     "w": "PostHog",
+     "start": 13.773,
+     "end": 14.12
+    },
+    {
+     "w": "AI",
+     "start": 14.28,
+     "end": 15.04
+    },
+    {
+     "w": "Signals",
+     "start": 15.08,
+     "end": 15.8
+    },
+    {
+     "w": "Self-Driving",
+     "start": 15.88,
+     "end": 16.88
+    },
+    {
+     "w": "and",
+     "start": 16.92,
+     "end": 17.16
+    },
+    {
+     "w": "since",
+     "start": 17.24,
+     "end": 17.4
+    },
+    {
+     "w": "September",
+     "start": 17.84,
+     "end": 18.32
+    },
+    {
+     "w": "Context",
+     "start": 18.36,
+     "end": 18.92
+    },
+    {
+     "w": "and",
+     "start": 19,
+     "end": 19.08
+    },
+    {
+     "w": "MCP",
+     "start": 19.24,
+     "end": 20.48
+    },
+    {
+     "w": "One",
+     "start": 20.835,
+     "end": 20.995
+    },
+    {
+     "w": "sentence",
+     "start": 21.195,
+     "end": 21.395
+    },
+    {
+     "w": "had",
+     "start": 21.515,
+     "end": 21.635
+    },
+    {
+     "w": "nothing",
+     "start": 21.795,
+     "end": 21.955
+    },
+    {
+     "w": "behind",
+     "start": 22.075,
+     "end": 22.275
+    },
+    {
+     "w": "it",
+     "start": 22.355,
+     "end": 22.782
+    },
+    {
+     "w": "so",
+     "start": 22.888,
+     "end": 22.995
+    },
+    {
+     "w": "Canon",
+     "start": 23.155,
+     "end": 23.315
+    },
+    {
+     "w": "removed",
+     "start": 23.475,
+     "end": 23.635
+    },
+    {
+     "w": "it",
+     "start": 23.715,
+     "end": 24.435
+    }
+   ]
+  },
+  "dispute": {
+   "file": "voice/dispute.wav",
+   "duration": 11.32,
+   "lead": 0.3,
+   "chunks": [
+    {
+     "text": "When two current pages disagree, Canon doesn't pick one.",
+     "start": 0.3,
+     "end": 4.34
+    },
+    {
+     "text": "One says growth reviews happen every four weeks. Another says quarterly.",
+     "start": 4.59,
+     "end": 9.19
+    },
+    {
+     "text": "Canon shows both.",
+     "start": 9.44,
+     "end": 11.2
+    }
+   ],
+   "words": [
+    {
+     "w": "When",
+     "start": 0.3,
+     "end": 0.54
+    },
+    {
+     "w": "two",
+     "start": 0.66,
+     "end": 0.78
+    },
+    {
+     "w": "current",
+     "start": 0.86,
+     "end": 1.1
+    },
+    {
+     "w": "pages",
+     "start": 1.18,
+     "end": 1.58
+    },
+    {
+     "w": "disagree",
+     "start": 1.7,
+     "end": 2.5
+    },
+    {
+     "w": "Canon",
+     "start": 2.54,
+     "end": 2.86
+    },
+    {
+     "w": "doesn't",
+     "start": 2.94,
+     "end": 3.26
+    },
+    {
+     "w": "pick",
+     "start": 3.38,
+     "end": 3.5
+    },
+    {
+     "w": "one",
+     "start": 3.58,
+     "end": 4.34
+    },
+    {
+     "w": "One",
+     "start": 4.59,
+     "end": 4.75
+    },
+    {
+     "w": "says",
+     "start": 4.83,
+     "end": 5.07
+    },
+    {
+     "w": "growth",
+     "start": 5.15,
+     "end": 5.39
+    },
+    {
+     "w": "reviews",
+     "start": 5.47,
+     "end": 5.87
+    },
+    {
+     "w": "happen",
+     "start": 5.95,
+     "end": 6.27
+    },
+    {
+     "w": "every",
+     "start": 6.43,
+     "end": 6.59
+    },
+    {
+     "w": "four",
+     "start": 6.71,
+     "end": 6.83
+    },
+    {
+     "w": "weeks",
+     "start": 7.15,
+     "end": 7.51
+    },
+    {
+     "w": "Another",
+     "start": 7.55,
+     "end": 7.87
+    },
+    {
+     "w": "says",
+     "start": 7.95,
+     "end": 8.19
+    },
+    {
+     "w": "quarterly",
+     "start": 8.35,
+     "end": 9.19
+    },
+    {
+     "w": "Canon",
+     "start": 9.44,
+     "end": 9.76
+    },
+    {
+     "w": "shows",
+     "start": 9.84,
+     "end": 10.08
+    },
+    {
+     "w": "both",
+     "start": 10.16,
+     "end": 11.2
+    }
+   ]
+  },
+  "fix": {
+   "file": "voice/fix.wav",
+   "duration": 16.66,
+   "lead": 0.3,
+   "chunks": [
+    {
+     "text": "Answering is half the job. The other half is fixing the page.",
+     "start": 0.3,
+     "end": 4.74
+    },
+    {
+     "text": "The fix queue strikes each line the graph knows has changed,",
+     "start": 5.025,
+     "end": 8.585
+    },
+    {
+     "text": "drafts a checked correction,",
+     "start": 8.66,
+     "end": 10.393
+    },
+    {
+     "text": "and routes it to the team that owns the area.",
+     "start": 10.482,
+     "end": 13.135
+    },
+    {
+     "text": "Approve it, and Canon files a GitHub issue.",
+     "start": 13.42,
+     "end": 16.54
+    }
+   ],
+   "words": [
+    {
+     "w": "Answering",
+     "start": 0.3,
+     "end": 0.86
+    },
+    {
+     "w": "is",
+     "start": 0.94,
+     "end": 1.1
+    },
+    {
+     "w": "half",
+     "start": 1.18,
+     "end": 1.42
+    },
+    {
+     "w": "the",
+     "start": 1.46,
+     "end": 1.5
+    },
+    {
+     "w": "job",
+     "start": 1.58,
+     "end": 2.38
+    },
+    {
+     "w": "The",
+     "start": 2.42,
+     "end": 2.46
+    },
+    {
+     "w": "other",
+     "start": 2.54,
+     "end": 2.7
+    },
+    {
+     "w": "half",
+     "start": 2.78,
+     "end": 3.02
+    },
+    {
+     "w": "is",
+     "start": 3.1,
+     "end": 3.26
+    },
+    {
+     "w": "fixing",
+     "start": 3.38,
+     "end": 3.58
+    },
+    {
+     "w": "the",
+     "start": 3.62,
+     "end": 3.66
+    },
+    {
+     "w": "page",
+     "start": 3.74,
+     "end": 4.74
+    },
+    {
+     "w": "The",
+     "start": 5.025,
+     "end": 5.105
+    },
+    {
+     "w": "fix",
+     "start": 5.185,
+     "end": 5.425
+    },
+    {
+     "w": "queue",
+     "start": 5.505,
+     "end": 5.745
+    },
+    {
+     "w": "strikes",
+     "start": 5.825,
+     "end": 6.225
+    },
+    {
+     "w": "each",
+     "start": 6.305,
+     "end": 6.465
+    },
+    {
+     "w": "line",
+     "start": 6.545,
+     "end": 6.785
+    },
+    {
+     "w": "the",
+     "start": 6.825,
+     "end": 6.865
+    },
+    {
+     "w": "graph",
+     "start": 6.945,
+     "end": 7.185
+    },
+    {
+     "w": "knows",
+     "start": 7.265,
+     "end": 7.545
+    },
+    {
+     "w": "has",
+     "start": 7.585,
+     "end": 7.745
+    },
+    {
+     "w": "changed",
+     "start": 7.825,
+     "end": 8.585
+    },
+    {
+     "w": "drafts",
+     "start": 8.66,
+     "end": 9.06
+    },
+    {
+     "w": "a",
+     "start": 9.14,
+     "end": 9.22
+    },
+    {
+     "w": "checked",
+     "start": 9.34,
+     "end": 9.46
+    },
+    {
+     "w": "correction",
+     "start": 9.54,
+     "end": 10.393
+    },
+    {
+     "w": "and",
+     "start": 10.482,
+     "end": 10.535
+    },
+    {
+     "w": "routes",
+     "start": 10.615,
+     "end": 10.855
+    },
+    {
+     "w": "it",
+     "start": 10.895,
+     "end": 10.935
+    },
+    {
+     "w": "to",
+     "start": 11.015,
+     "end": 11.095
+    },
+    {
+     "w": "the",
+     "start": 11.175,
+     "end": 11.255
+    },
+    {
+     "w": "team",
+     "start": 11.375,
+     "end": 11.495
+    },
+    {
+     "w": "that",
+     "start": 11.575,
+     "end": 11.735
+    },
+    {
+     "w": "owns",
+     "start": 11.815,
+     "end": 11.975
+    },
+    {
+     "w": "the",
+     "start": 12.055,
+     "end": 12.135
+    },
+    {
+     "w": "area",
+     "start": 12.215,
+     "end": 13.135
+    },
+    {
+     "w": "Approve",
+     "start": 13.42,
+     "end": 13.74
+    },
+    {
+     "w": "it",
+     "start": 13.9,
+     "end": 14.1
+    },
+    {
+     "w": "and",
+     "start": 14.14,
+     "end": 14.3
+    },
+    {
+     "w": "Canon",
+     "start": 14.5,
+     "end": 14.7
+    },
+    {
+     "w": "files",
+     "start": 14.86,
+     "end": 15.02
+    },
+    {
+     "w": "a",
+     "start": 15.06,
+     "end": 15.1
+    },
+    {
+     "w": "GitHub",
+     "start": 15.3,
+     "end": 15.5
+    },
+    {
+     "w": "issue",
+     "start": 15.98,
+     "end": 16.54
+    }
+   ]
+  },
+  "whoknows": {
+   "file": "voice/whoknows.wav",
+   "duration": 9.75,
+   "lead": 0.3,
+   "chunks": [
+    {
+     "text": "Who knows an area comes from what people did: wrote, reviewed, decided, said.",
+     "start": 0.3,
+     "end": 6.74
+    },
+    {
+     "text": "Every name opens to its evidence.",
+     "start": 6.99,
+     "end": 9.63
+    }
+   ],
+   "words": [
+    {
+     "w": "Who",
+     "start": 0.3,
+     "end": 0.46
+    },
+    {
+     "w": "knows",
+     "start": 0.58,
+     "end": 0.753
+    },
+    {
+     "w": "an",
+     "start": 0.807,
+     "end": 0.86
+    },
+    {
+     "w": "area",
+     "start": 0.94,
+     "end": 1.34
+    },
+    {
+     "w": "comes",
+     "start": 1.42,
+     "end": 1.66
+    },
+    {
+     "w": "from",
+     "start": 1.74,
+     "end": 1.9
+    },
+    {
+     "w": "what",
+     "start": 1.98,
+     "end": 2.14
+    },
+    {
+     "w": "people",
+     "start": 2.3,
+     "end": 2.46
+    },
+    {
+     "w": "did",
+     "start": 2.54,
+     "end": 3.3
+    },
+    {
+     "w": "wrote",
+     "start": 3.34,
+     "end": 3.94
+    },
+    {
+     "w": "reviewed",
+     "start": 3.98,
+     "end": 4.887
+    },
+    {
+     "w": "decided",
+     "start": 4.993,
+     "end": 5.74
+    },
+    {
+     "w": "said",
+     "start": 5.82,
+     "end": 6.74
+    },
+    {
+     "w": "Every",
+     "start": 6.99,
+     "end": 7.31
+    },
+    {
+     "w": "name",
+     "start": 7.39,
+     "end": 7.79
+    },
+    {
+     "w": "opens",
+     "start": 7.87,
+     "end": 8.19
+    },
+    {
+     "w": "to",
+     "start": 8.27,
+     "end": 8.35
+    },
+    {
+     "w": "its",
+     "start": 8.43,
+     "end": 8.51
+    },
+    {
+     "w": "evidence",
+     "start": 8.59,
+     "end": 9.63
+    }
+   ]
+  },
+  "busfactor": {
+   "file": "voice/busfactor.wav",
+   "duration": 15.14,
+   "lead": 0.3,
+   "chunks": [
+    {
+     "text": "The bus factor is a maximum flow in FalkorDB,",
+     "start": 0.3,
+     "end": 4.14
+    },
+    {
+     "text": "from an area, through its documents, to the people who hold it.",
+     "start": 4.255,
+     "end": 8.255
+    },
+    {
+     "text": "The minimum cut is who it hinges on.",
+     "start": 8.545,
+     "end": 11.105
+    },
+    {
+     "text": "36 PostHog areas rest on one person.",
+     "start": 11.54,
+     "end": 15.02
+    }
+   ],
+   "words": [
+    {
+     "w": "The",
+     "start": 0.3,
+     "end": 0.38
+    },
+    {
+     "w": "bus",
+     "start": 0.46,
+     "end": 0.7
+    },
+    {
+     "w": "factor",
+     "start": 0.78,
+     "end": 1.18
+    },
+    {
+     "w": "is",
+     "start": 1.26,
+     "end": 1.34
+    },
+    {
+     "w": "a",
+     "start": 1.42,
+     "end": 1.5
+    },
+    {
+     "w": "maximum",
+     "start": 1.58,
+     "end": 1.98
+    },
+    {
+     "w": "flow",
+     "start": 2.14,
+     "end": 2.46
+    },
+    {
+     "w": "in",
+     "start": 2.54,
+     "end": 2.7
+    },
+    {
+     "w": "Falkor",
+     "start": 2.74,
+     "end": 3.18
+    },
+    {
+     "w": "DB",
+     "start": 3.26,
+     "end": 4.14
+    },
+    {
+     "w": "from",
+     "start": 4.255,
+     "end": 4.415
+    },
+    {
+     "w": "an",
+     "start": 4.495,
+     "end": 4.575
+    },
+    {
+     "w": "area",
+     "start": 4.775,
+     "end": 5.215
+    },
+    {
+     "w": "through",
+     "start": 5.335,
+     "end": 5.455
+    },
+    {
+     "w": "its",
+     "start": 5.535,
+     "end": 5.615
+    },
+    {
+     "w": "documents",
+     "start": 5.695,
+     "end": 6.415
+    },
+    {
+     "w": "to",
+     "start": 6.495,
+     "end": 6.575
+    },
+    {
+     "w": "the",
+     "start": 6.615,
+     "end": 6.655
+    },
+    {
+     "w": "people",
+     "start": 6.735,
+     "end": 6.975
+    },
+    {
+     "w": "who",
+     "start": 7.055,
+     "end": 7.215
+    },
+    {
+     "w": "hold",
+     "start": 7.295,
+     "end": 7.455
+    },
+    {
+     "w": "it",
+     "start": 7.535,
+     "end": 8.255
+    },
+    {
+     "w": "The",
+     "start": 8.545,
+     "end": 8.625
+    },
+    {
+     "w": "minimum",
+     "start": 8.705,
+     "end": 9.025
+    },
+    {
+     "w": "cut",
+     "start": 9.105,
+     "end": 9.425
+    },
+    {
+     "w": "is",
+     "start": 9.505,
+     "end": 9.585
+    },
+    {
+     "w": "who",
+     "start": 9.665,
+     "end": 9.745
+    },
+    {
+     "w": "it",
+     "start": 9.825,
+     "end": 9.905
+    },
+    {
+     "w": "hinges",
+     "start": 10.012,
+     "end": 10.225
+    },
+    {
+     "w": "on",
+     "start": 10.385,
+     "end": 11.105
+    },
+    {
+     "w": "Thirty-six",
+     "start": 11.54,
+     "end": 12.06
+    },
+    {
+     "w": "PostHog",
+     "start": 12.14,
+     "end": 12.62
+    },
+    {
+     "w": "areas",
+     "start": 12.7,
+     "end": 13.1
+    },
+    {
+     "w": "rest",
+     "start": 13.26,
+     "end": 13.42
+    },
+    {
+     "w": "on",
+     "start": 13.5,
+     "end": 13.74
+    },
+    {
+     "w": "one",
+     "start": 13.82,
+     "end": 13.98
+    },
+    {
+     "w": "person",
+     "start": 14.06,
+     "end": 15.02
+    }
+   ]
+  },
+  "decisions": {
+   "file": "voice/decisions.wav",
+   "duration": 11.09,
+   "lead": 0.3,
+   "chunks": [
+    {
+     "text": "Decisions traces every design doc from proposal to replacement.",
+     "start": 0.3,
+     "end": 4.82
+    },
+    {
+     "text": "Been away? Drag back to the day you left,",
+     "start": 5.14,
+     "end": 7.58
+    },
+    {
+     "text": "and get everything since, checked the same way.",
+     "start": 7.69,
+     "end": 10.97
+    }
+   ],
+   "words": [
+    {
+     "w": "Decisions",
+     "start": 0.3,
+     "end": 0.94
+    },
+    {
+     "w": "traces",
+     "start": 1.02,
+     "end": 1.5
+    },
+    {
+     "w": "every",
+     "start": 1.58,
+     "end": 1.82
+    },
+    {
+     "w": "design",
+     "start": 2.02,
+     "end": 2.22
+    },
+    {
+     "w": "doc",
+     "start": 2.3,
+     "end": 2.54
+    },
+    {
+     "w": "from",
+     "start": 2.62,
+     "end": 2.78
+    },
+    {
+     "w": "proposal",
+     "start": 3.1,
+     "end": 3.42
+    },
+    {
+     "w": "to",
+     "start": 3.5,
+     "end": 3.58
+    },
+    {
+     "w": "replacement",
+     "start": 4.18,
+     "end": 4.82
+    },
+    {
+     "w": "Been",
+     "start": 5.14,
+     "end": 5.22
+    },
+    {
+     "w": "away",
+     "start": 5.3,
+     "end": 6.06
+    },
+    {
+     "w": "Drag",
+     "start": 6.1,
+     "end": 6.34
+    },
+    {
+     "w": "back",
+     "start": 6.42,
+     "end": 6.58
+    },
+    {
+     "w": "to",
+     "start": 6.62,
+     "end": 6.66
+    },
+    {
+     "w": "the",
+     "start": 6.74,
+     "end": 6.82
+    },
+    {
+     "w": "day",
+     "start": 6.9,
+     "end": 6.98
+    },
+    {
+     "w": "you",
+     "start": 7.06,
+     "end": 7.14
+    },
+    {
+     "w": "left",
+     "start": 7.34,
+     "end": 7.58
+    },
+    {
+     "w": "and",
+     "start": 7.69,
+     "end": 7.77
+    },
+    {
+     "w": "get",
+     "start": 7.85,
+     "end": 8.01
+    },
+    {
+     "w": "everything",
+     "start": 8.09,
+     "end": 8.57
+    },
+    {
+     "w": "since",
+     "start": 8.65,
+     "end": 9.17
+    },
+    {
+     "w": "checked",
+     "start": 9.21,
+     "end": 9.45
+    },
+    {
+     "w": "the",
+     "start": 9.53,
+     "end": 9.69
+    },
+    {
+     "w": "same",
+     "start": 9.81,
+     "end": 9.93
+    },
+    {
+     "w": "way",
+     "start": 10.01,
+     "end": 10.97
+    }
+   ]
+  },
+  "connect": {
+   "file": "voice/connect.wav",
+   "duration": 15.525,
+   "lead": 0.3,
+   "chunks": [
+    {
+     "text": "Canon reads your company too:",
+     "start": 0.3,
+     "end": 2.46
+    },
+    {
+     "text": "GitHub, private repositories included, Slack, Notion, Linear, Jira, Confluence and files,",
+     "start": 2.645,
+     "end": 10.245
+    },
+    {
+     "text": "read again every hour.",
+     "start": 10.36,
+     "end": 12.28
+    },
+    {
+     "text": "Start from a repository, and invite your team.",
+     "start": 12.605,
+     "end": 15.325
+    }
+   ],
+   "words": [
+    {
+     "w": "Canon",
+     "start": 0.3,
+     "end": 0.62
+    },
+    {
+     "w": "reads",
+     "start": 0.7,
+     "end": 0.94
+    },
+    {
+     "w": "your",
+     "start": 1.02,
+     "end": 1.1
+    },
+    {
+     "w": "company",
+     "start": 1.34,
+     "end": 1.58
+    },
+    {
+     "w": "too",
+     "start": 1.74,
+     "end": 2.46
+    },
+    {
+     "w": "GitHub",
+     "start": 2.645,
+     "end": 3.365
+    },
+    {
+     "w": "private",
+     "start": 3.525,
+     "end": 3.685
+    },
+    {
+     "w": "repositories",
+     "start": 4.045,
+     "end": 4.405
+    },
+    {
+     "w": "included",
+     "start": 4.485,
+     "end": 5.365
+    },
+    {
+     "w": "Slack",
+     "start": 5.525,
+     "end": 6.165
+    },
+    {
+     "w": "Notion",
+     "start": 6.245,
+     "end": 6.965
+    },
+    {
+     "w": "Linear",
+     "start": 7.045,
+     "end": 7.685
+    },
+    {
+     "w": "Jira",
+     "start": 7.765,
+     "end": 8.405
+    },
+    {
+     "w": "Confluence",
+     "start": 8.525,
+     "end": 9.045
+    },
+    {
+     "w": "and",
+     "start": 9.125,
+     "end": 9.285
+    },
+    {
+     "w": "files",
+     "start": 9.365,
+     "end": 10.245
+    },
+    {
+     "w": "read",
+     "start": 10.36,
+     "end": 10.44
+    },
+    {
+     "w": "again",
+     "start": 10.52,
+     "end": 10.92
+    },
+    {
+     "w": "every",
+     "start": 11,
+     "end": 11.32
+    },
+    {
+     "w": "hour",
+     "start": 11.4,
+     "end": 12.28
+    },
+    {
+     "w": "Start",
+     "start": 12.605,
+     "end": 12.845
+    },
+    {
+     "w": "from",
+     "start": 12.925,
+     "end": 13.005
+    },
+    {
+     "w": "a",
+     "start": 13.085,
+     "end": 13.125
+    },
+    {
+     "w": "repository",
+     "start": 13.165,
+     "end": 14.005
+    },
+    {
+     "w": "and",
+     "start": 14.045,
+     "end": 14.125
+    },
+    {
+     "w": "invite",
+     "start": 14.285,
+     "end": 14.445
+    },
+    {
+     "w": "your",
+     "start": 14.485,
+     "end": 14.525
+    },
+    {
+     "w": "team",
+     "start": 14.605,
+     "end": 15.325
+    }
+   ]
+  },
+  "numbers": {
+   "file": "voice/numbers.wav",
+   "duration": 17.395,
+   "lead": 0.3,
+   "chunks": [
+    {
+     "text": "On 56 PostHog questions with known answers,",
+     "start": 0.3,
+     "end": 3.58
+    },
+    {
+     "text": "Canon was right 98 percent of the time, and never stated an out-of-date answer as current.",
+     "start": 3.695,
+     "end": 9.495
+    },
+    {
+     "text": "On the 13 where the handbook is out of date,",
+     "start": 9.815,
+     "end": 12.255
+    },
+    {
+     "text": "Canon got all 13.",
+     "start": 12.365,
+     "end": 14.525
+    },
+    {
+     "text": "Search and summarise got none.",
+     "start": 14.955,
+     "end": 17.275
+    }
+   ],
+   "words": [
+    {
+     "w": "On",
+     "start": 0.3,
+     "end": 0.46
+    },
+    {
+     "w": "fifty-six",
+     "start": 0.54,
+     "end": 1.1
+    },
+    {
+     "w": "PostHog",
+     "start": 1.18,
+     "end": 1.74
+    },
+    {
+     "w": "questions",
+     "start": 1.98,
+     "end": 2.22
+    },
+    {
+     "w": "with",
+     "start": 2.3,
+     "end": 2.38
+    },
+    {
+     "w": "known",
+     "start": 2.46,
+     "end": 2.62
+    },
+    {
+     "w": "answers",
+     "start": 2.78,
+     "end": 3.58
+    },
+    {
+     "w": "Canon",
+     "start": 3.695,
+     "end": 3.935
+    },
+    {
+     "w": "was",
+     "start": 4.015,
+     "end": 4.175
+    },
+    {
+     "w": "right",
+     "start": 4.335,
+     "end": 4.495
+    },
+    {
+     "w": "ninety-eight",
+     "start": 4.575,
+     "end": 5.055
+    },
+    {
+     "w": "percent",
+     "start": 5.215,
+     "end": 5.375
+    },
+    {
+     "w": "of",
+     "start": 5.415,
+     "end": 5.455
+    },
+    {
+     "w": "the",
+     "start": 5.535,
+     "end": 5.615
+    },
+    {
+     "w": "time",
+     "start": 5.895,
+     "end": 6.255
+    },
+    {
+     "w": "and",
+     "start": 6.335,
+     "end": 6.415
+    },
+    {
+     "w": "never",
+     "start": 6.495,
+     "end": 6.735
+    },
+    {
+     "w": "stated",
+     "start": 6.815,
+     "end": 7.135
+    },
+    {
+     "w": "an",
+     "start": 7.215,
+     "end": 7.295
+    },
+    {
+     "w": "out-of-date",
+     "start": 7.375,
+     "end": 7.855
+    },
+    {
+     "w": "answer",
+     "start": 7.935,
+     "end": 8.255
+    },
+    {
+     "w": "as",
+     "start": 8.335,
+     "end": 8.415
+    },
+    {
+     "w": "current",
+     "start": 8.495,
+     "end": 9.495
+    },
+    {
+     "w": "On",
+     "start": 9.815,
+     "end": 9.895
+    },
+    {
+     "w": "the",
+     "start": 9.935,
+     "end": 9.975
+    },
+    {
+     "w": "thirteen",
+     "start": 10.055,
+     "end": 10.535
+    },
+    {
+     "w": "where",
+     "start": 10.615,
+     "end": 10.695
+    },
+    {
+     "w": "the",
+     "start": 10.775,
+     "end": 10.855
+    },
+    {
+     "w": "handbook",
+     "start": 10.975,
+     "end": 11.175
+    },
+    {
+     "w": "is",
+     "start": 11.255,
+     "end": 11.335
+    },
+    {
+     "w": "out",
+     "start": 11.415,
+     "end": 11.495
+    },
+    {
+     "w": "of",
+     "start": 11.575,
+     "end": 11.655
+    },
+    {
+     "w": "date",
+     "start": 11.935,
+     "end": 12.255
+    },
+    {
+     "w": "Canon",
+     "start": 12.365,
+     "end": 12.685
+    },
+    {
+     "w": "got",
+     "start": 12.765,
+     "end": 13.005
+    },
+    {
+     "w": "all",
+     "start": 13.085,
+     "end": 13.325
+    },
+    {
+     "w": "thirteen",
+     "start": 13.365,
+     "end": 14.525
+    },
+    {
+     "w": "Search",
+     "start": 14.955,
+     "end": 15.195
+    },
+    {
+     "w": "and",
+     "start": 15.275,
+     "end": 15.355
+    },
+    {
+     "w": "summarise",
+     "start": 15.435,
+     "end": 16.075
+    },
+    {
+     "w": "got",
+     "start": 16.195,
+     "end": 16.315
+    },
+    {
+     "w": "none",
+     "start": 16.395,
+     "end": 17.275
+    }
+   ]
+  },
+  "close": {
+   "file": "voice/close.wav",
+   "duration": 10.415,
+   "lead": 0.3,
+   "chunks": [
+    {
+     "text": "Canon. Every answer, checked against what's true today.",
+     "start": 0.3,
+     "end": 4.38
+    },
+    {
+     "text": "Built on FalkorDB. Open source, and live at canon.sushans.dev.",
+     "start": 4.775,
+     "end": 10.295
+    }
+   ],
+   "words": [
+    {
+     "w": "Canon",
+     "start": 0.3,
+     "end": 1.18
+    },
+    {
+     "w": "Every",
+     "start": 1.34,
+     "end": 1.5
+    },
+    {
+     "w": "answer",
+     "start": 1.58,
+     "end": 2.22
+    },
+    {
+     "w": "checked",
+     "start": 2.3,
+     "end": 2.46
+    },
+    {
+     "w": "against",
+     "start": 2.54,
+     "end": 2.86
+    },
+    {
+     "w": "what's",
+     "start": 2.94,
+     "end": 3.18
+    },
+    {
+     "w": "true",
+     "start": 3.26,
+     "end": 3.5
+    },
+    {
+     "w": "today",
+     "start": 3.7,
+     "end": 4.38
+    },
+    {
+     "w": "Built",
+     "start": 4.775,
+     "end": 4.935
+    },
+    {
+     "w": "on",
+     "start": 5.015,
+     "end": 5.175
+    },
+    {
+     "w": "Falkor",
+     "start": 5.255,
+     "end": 5.655
+    },
+    {
+     "w": "DB",
+     "start": 5.735,
+     "end": 6.615
+    },
+    {
+     "w": "Open",
+     "start": 6.695,
+     "end": 6.935
+    },
+    {
+     "w": "source",
+     "start": 7.015,
+     "end": 7.495
+    },
+    {
+     "w": "and",
+     "start": 7.575,
+     "end": 7.655
+    },
+    {
+     "w": "live",
+     "start": 7.735,
+     "end": 7.975
+    },
+    {
+     "w": "at",
+     "start": 8.055,
+     "end": 8.215
+    },
+    {
+     "w": "canon",
+     "start": 8.335,
+     "end": 8.615
+    },
+    {
+     "w": "dot",
+     "start": 8.695,
+     "end": 8.855
+    },
+    {
+     "w": "sushans",
+     "start": 8.935,
+     "end": 9.415
+    },
+    {
+     "w": "dot",
+     "start": 9.495,
+     "end": 9.735
+    },
+    {
+     "w": "dev",
+     "start": 9.895,
+     "end": 10.295
+    }
+   ]
+  }
+ },
+ "order": [
+  "open",
+  "problem",
+  "idea",
+  "graph",
+  "ask",
+  "dispute",
+  "fix",
+  "whoknows",
+  "busfactor",
+  "decisions",
+  "connect",
+  "numbers",
+  "close"
+ ],
+ "total": 191.17
+}

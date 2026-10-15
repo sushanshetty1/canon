@@ -1,0 +1,112 @@
+[
+  {
+    "full_name": "sushanshetty1/canon",
+    "name": "canon",
+    "private": true,
+    "description": "A company brain that checks its own answers.",
+    "pushed_at": "2026-10-15T08:10:00Z",
+    "owner": "sushanshetty1",
+    "owner_kind": "user",
+    "archived": false
+  },
+  {
+    "full_name": "sushanshetty1/diffcut",
+    "name": "diffcut",
+    "private": true,
+    "description": "",
+    "pushed_at": "2026-10-12T17:40:00Z",
+    "owner": "sushanshetty1",
+    "owner_kind": "user",
+    "archived": false
+  },
+  {
+    "full_name": "sushanshetty1/framevault",
+    "name": "framevault",
+    "private": false,
+    "description": "Your cinematic archive. Local. Searchable. Yours. A fork of Cinekive.",
+    "pushed_at": "2026-08-28T14:09:07Z",
+    "owner": "sushanshetty1",
+    "owner_kind": "user",
+    "archived": false
+  },
+  {
+    "full_name": "sushanshetty1/Holo",
+    "name": "Holo",
+    "private": false,
+    "description": "",
+    "pushed_at": "2026-07-19T17:14:19Z",
+    "owner": "sushanshetty1",
+    "owner_kind": "user",
+    "archived": false
+  },
+  {
+    "full_name": "sushanshetty1/cachet-cli",
+    "name": "cachet-cli",
+    "private": false,
+    "description": "Turn runtime API failures into structured AI-debugging context with memory.",
+    "pushed_at": "2026-07-03T15:36:33Z",
+    "owner": "sushanshetty1",
+    "owner_kind": "user",
+    "archived": false
+  },
+  {
+    "full_name": "sushanshetty1/fluxcode-final",
+    "name": "fluxcode-final",
+    "private": false,
+    "description": "FluxCode is a long-term coding contest platform built with the T3 stack 💻🚀 that automatically assigns LeetCode topics 📚, tracks progress 📈, and displays real-time leaderboards 🏆⚡",
+    "pushed_at": "2026-03-01T09:52:41Z",
+    "owner": "sushanshetty1",
+    "owner_kind": "user",
+    "archived": false
+  },
+  {
+    "full_name": "sushanshetty1/LoanSage",
+    "name": "LoanSage",
+    "private": false,
+    "description": "",
+    "pushed_at": "2026-02-27T17:28:39Z",
+    "owner": "sushanshetty1",
+    "owner_kind": "user",
+    "archived": false
+  },
+  {
+    "full_name": "sushanshetty1/spring-ai-agents",
+    "name": "spring-ai-agents",
+    "private": false,
+    "description": "Autonomous CLI agent integrations for the Spring AI ecosystem with Claude Code, Gemini CLI, and secure sandbox execution",
+    "pushed_at": "2025-11-18T15:19:42Z",
+    "owner": "sushanshetty1",
+    "owner_kind": "user",
+    "archived": false
+  },
+  {
+    "full_name": "sushanshetty1/chaaiPoint-Production",
+    "name": "chaaiPoint-Production",
+    "private": false,
+    "description": "",
+    "pushed_at": "2025-08-16T18:57:48Z",
+    "owner": "sushanshetty1",
+    "owner_kind": "user",
+    "archived": false
+  },
+  {
+    "full_name": "sushanshetty1/startup-success",
+    "name": "startup-success",
+    "private": false,
+    "description": "",
+    "pushed_at": "2025-06-30T16:10:13Z",
+    "owner": "sushanshetty1",
+    "owner_kind": "user",
+    "archived": false
+  },
+  {
+    "full_name": "sushanshetty1/Sustain-Earth",
+    "name": "Sustain-Earth",
+    "private": false,
+    "description": "Empowering sustainability through technology, addressing UN SDGs like No Hunger, Quality Education, and Economic Growth. Features include food redistribution, education platforms, and a sustainable ma",
+    "pushed_at": "2025-03-09T16:57:51Z",
+    "owner": "sushanshetty1",
+    "owner_kind": "user",
+    "archived": false
+  }
+]

@@ -1,0 +1,288 @@
+{
+  "voice": {
+    "provider": "elevenlabs",
+    "voice_id": "cjVigY5qzO86Huf0OWal",
+    "voice_name": "Eric",
+    "model_id": "eleven_v4",
+    "output_format": "mp3_44100_192",
+    "settings": {
+      "stability": 0.55,
+      "similarity_boost": 0.75,
+      "style": 0.0,
+      "use_speaker_boost": true,
+      "speed": 1.03
+    },
+    "draft_voice": "Samantha"
+  },
+  "pace": {
+    "pause_scale": 0.7,
+    "tail": 0.2
+  },
+  "scenes": [
+    {
+      "id": "open",
+      "lead": 0.8,
+      "chunks": [
+        {
+          "text": "Every company brain can find a page and cite it.",
+          "pause": 0.4
+        },
+        {
+          "text": "None of them checks whether that page is still true."
+        }
+      ]
+    },
+    {
+      "id": "problem",
+      "lead": 0.3,
+      "chunks": [
+        {
+          "text": "PostHog's handbook says the PostHog AI team owns the MCP server.",
+          "pause": 0.35
+        },
+        {
+          "text": "In September, the ownership map moved it to the Context and MCP team.",
+          "pause": 0.35
+        },
+        {
+          "text": "A tool that finds that page and cites it is confidently wrong."
+        }
+      ]
+    },
+    {
+      "id": "idea",
+      "lead": 0.3,
+      "chunks": [
+        {
+          "text": "Canon reads a company's docs, tickets and chats into one FalkorDB graph",
+          "speak": "Canon reads a company's docs, tickets and chats into one Falkor DB graph",
+          "pause": 0.0
+        },
+        {
+          "text": "that knows when each fact held.",
+          "pause": 0.4
+        },
+        {
+          "text": "Then it checks every sentence of an answer against it, before you see it."
+        }
+      ]
+    },
+    {
+      "id": "graph",
+      "lead": 0.3,
+      "chunks": [
+        {
+          "text": "Each sentence links to its passage, and the fact that passage states.",
+          "pause": 0.3
+        },
+        {
+          "text": "When a newer source replaces that fact, the graph records an edge.",
+          "pause": 0.35
+        },
+        {
+          "text": "So still true is a path:",
+          "speak": "So, still true is a path:",
+          "pause": 0.1
+        },
+        {
+          "text": "follow SUPERSEDED_BY to whatever holds today.",
+          "speak": "follow superseded-by, to whatever holds today.",
+          "pause": 0.5
+        },
+        {
+          "text": "FalkorDB runs that check on every sentence.",
+          "speak": "Falkor DB runs that check on every sentence.",
+          "pause": 0.25
+        },
+        {
+          "text": "The model writes the words. The graph decides what is current."
+        }
+      ]
+    },
+    {
+      "id": "ask",
+      "lead": 0.3,
+      "chunks": [
+        {
+          "text": "Here's Canon on PostHog: its handbook, ownership history and 28,000 pull requests.",
+          "speak": "Here's Canon on PostHog: its handbook, ownership history and twenty-eight thousand pull requests.",
+          "pause": 0.4
+        },
+        {
+          "text": "Each sentence is checked as it lands.",
+          "pause": 0.45
+        },
+        {
+          "text": "Open one for its sources, and the fact's history:",
+          "pause": 0.15
+        },
+        {
+          "text": "PostHog AI, Signals, Self-Driving, and since September, Context and MCP.",
+          "pause": 0.45
+        },
+        {
+          "text": "One sentence had nothing behind it, so Canon removed it."
+        }
+      ]
+    },
+    {
+      "id": "dispute",
+      "lead": 0.3,
+      "chunks": [
+        {
+          "text": "When two current pages disagree, Canon doesn't pick one.",
+          "pause": 0.3
+        },
+        {
+          "text": "One says growth reviews happen every four weeks. Another says quarterly.",
+          "pause": 0.3
+        },
+        {
+          "text": "Canon shows both."
+        }
+      ]
+    },
+    {
+      "id": "fix",
+      "lead": 0.3,
+      "chunks": [
+        {
+          "text": "Answering is half the job. The other half is fixing the page.",
+          "pause": 0.35
+        },
+        {
+          "text": "The fix queue strikes each line the graph knows has changed,",
+          "pause": 0.05
+        },
+        {
+          "text": "drafts a checked correction,",
+          "pause": 0.05
+        },
+        {
+          "text": "and routes it to the team that owns the area.",
+          "pause": 0.35
+        },
+        {
+          "text": "Approve it, and Canon files a GitHub issue."
+        }
+      ]
+    },
+    {
+      "id": "whoknows",
+      "lead": 0.3,
+      "chunks": [
+        {
+          "text": "Who knows an area comes from what people did: wrote, reviewed, decided, said.",
+          "pause": 0.3
+        },
+        {
+          "text": "Every name opens to its evidence."
+        }
+      ]
+    },
+    {
+      "id": "busfactor",
+      "lead": 0.3,
+      "chunks": [
+        {
+          "text": "The bus factor is a maximum flow in FalkorDB,",
+          "speak": "The bus factor is a maximum flow in Falkor DB,",
+          "pause": 0.05
+        },
+        {
+          "text": "from an area, through its documents, to the people who hold it.",
+          "pause": 0.3
+        },
+        {
+          "text": "The minimum cut is who it hinges on.",
+          "pause": 0.45
+        },
+        {
+          "text": "36 PostHog areas rest on one person.",
+          "speak": "Thirty-six PostHog areas rest on one person."
+        }
+      ]
+    },
+    {
+      "id": "decisions",
+      "lead": 0.3,
+      "chunks": [
+        {
+          "text": "Decisions traces every design doc from proposal to replacement.",
+          "pause": 0.4
+        },
+        {
+          "text": "Been away? Drag back to the day you left,",
+          "pause": 0.1
+        },
+        {
+          "text": "and get everything since, checked the same way."
+        }
+      ]
+    },
+    {
+      "id": "connect",
+      "lead": 0.3,
+      "chunks": [
+        {
+          "text": "Canon reads your company too:",
+          "pause": 0.15
+        },
+        {
+          "text": "GitHub, private repositories included, Slack, Notion, Linear, Jira, Confluence and files,",
+          "pause": 0.05
+        },
+        {
+          "text": "read again every hour.",
+          "pause": 0.35
+        },
+        {
+          "text": "Start from a repository, and invite your team."
+        }
+      ]
+    },
+    {
+      "id": "numbers",
+      "lead": 0.3,
+      "chunks": [
+        {
+          "text": "On 56 PostHog questions with known answers,",
+          "speak": "On fifty-six PostHog questions with known answers,",
+          "pause": 0.05
+        },
+        {
+          "text": "Canon was right 98 percent of the time, and never stated an out-of-date answer as current.",
+          "speak": "Canon was right ninety-eight percent of the time, and never stated an out-of-date answer as current.",
+          "pause": 0.4
+        },
+        {
+          "text": "On the 13 where the handbook is out of date,",
+          "speak": "On the thirteen where the handbook is out of date,",
+          "pause": 0.1
+        },
+        {
+          "text": "Canon got all 13.",
+          "speak": "Canon got all thirteen.",
+          "pause": 0.5
+        },
+        {
+          "text": "Search and summarise got none."
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "lead": 0.3,
+      "chunks": [
+        {
+          "text": "Canon. Every answer, checked against what's true today.",
+          "pause": 0.45
+        },
+        {
+          "text": "Built on FalkorDB. Open source, and live at canon.sushans.dev.",
+          "speak": "Built on Falkor DB. Open source, and live at canon dot sushans dot dev."
+        }
+      ]
+    }
+  ]
+}

@@ -11,3 +11,12 @@ dist/
 .pytest_cache/
 *.log
 /snapshots/
+
+# Demo video: renders, dependencies, raw captures and generated audio (npm run voice rebuilds it)
+video/out/
+video/node_modules/
+video/public/captures/
+video/public/voice/
+video/.explore/
+video/.audition/
+video/.stack-data/
