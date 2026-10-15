@@ -43,6 +43,7 @@ RFC_REPO = "PostHog/requests-for-comments-public"
 MAIN_REPO = "PostHog/posthog"
 MAX_ISSUE_THREADS = 400  # issues whose comment threads are read in full
 OWNERSHIP_PATH = "src/hooks/useFeatureOwnership.tsx"
+PULLS_SINCE = "2026-04-15"  # merged pull requests from here on are evidence of who knows what
 STRAPI = "https://better-animal-d658c56969.strapiapp.com/api"
 SITE = "https://posthog.com"
 
@@ -261,10 +262,14 @@ def load_posthog(
     *,
     issues_since: str = "2025-10-01",
     max_pulls: int = 1500,
+    pulls_since: str = PULLS_SINCE,
+    days_per_week: int = 7,
     fetch: Fetch | None = None,
 ) -> Batch:
     """Everything PostHog publishes about how it works, as one batch for the graph writer."""
-    fetch = fetch or LiveSource(cache_dir, issues_since=issues_since, max_pulls=max_pulls)
+    fetch = fetch or LiveSource(
+        cache_dir, issues_since=issues_since, max_pulls=max_pulls, pulls_since=pulls_since, days_per_week=days_per_week
+    )
     batch = Batch()
 
     # People and teams first: every other source maps names and handles onto them.
@@ -371,9 +376,20 @@ def load_posthog(
 
     # Pull requests and issues: activity and evidence. `feature/*` labels name the area, and so do the directories
     # a pull request changed.
+    # Older merged pull requests (`pulls_history`) are evidence of who worked on what, not sources for answers: they
+    # become documents with activity and areas, but no passages, so retrieval keeps to the recent ones.
     attributor = Attributor(own.names)
-    pull_files: dict[str, list[str]] = fetch("pull_files") or {}
-    for kind, rows in (("pull", fetch("pulls") or []), ("issue", fetch("issues") or [])):
+    pull_files: dict[str, list[str]] = dict(fetch("pull_files") or {})
+    pulls = fetch("pulls") or []
+    recent = {r["number"] for r in pulls}
+    history = [r for r in fetch("pulls_history") or [] if r["number"] not in recent]
+    for r in history:
+        pull_files.setdefault(str(r["number"]), r.get("files") or [])
+    for kind, rows, with_text in (
+        ("pull", pulls, True),
+        ("pull", history, False),
+        ("issue", fetch("issues") or [], True),
+    ):
         for r in rows:
             areas_set = {own.label_to_area[l] for l in r.get("labels", []) if l in own.label_to_area}
             if kind == "pull":
@@ -390,7 +406,8 @@ def load_posthog(
                 areas=areas,
             )
             batch.docs.append(doc)
-            batch.passages += passages_of(doc.id, [_snippet(r["title"], r.get("body"))])
+            if with_text:
+                batch.passages += passages_of(doc.id, [_snippet(r["title"], r.get("body"))])
             act(r.get("author"), doc.id, "AUTHORED", r.get("created_at"))
             for rev in r.get("reviews") or []:
                 rel = "REVIEWED" if rev["state"] in ("APPROVED", "CHANGES_REQUESTED") else "COMMENTED"
@@ -489,11 +506,39 @@ query($owner: String!, $name: String!, $cursor: String) {
 _login = gh.login_of
 
 
+def _history_row(n: dict) -> dict:
+    return {
+        "number": n["number"],
+        "title": n["title"],
+        "url": n["url"],
+        "created_at": n["createdAt"],
+        "merged_at": n["mergedAt"],
+        "author": _login(n["author"]),
+        "labels": [l["name"] for l in n["labels"]["nodes"]],
+        "reviews": [
+            {"author": _login(r["author"]), "state": r["state"], "at": r["submittedAt"]}
+            for r in n["reviews"]["nodes"]
+            if _login(r["author"]) and r["submittedAt"]
+        ],
+        "files": [f["path"] for f in (n.get("files") or {}).get("nodes") or []],
+    }
+
+
 class LiveSource:
     """Fetches PostHog's raw data from git, GitHub and the site's public API, caching each piece."""
 
-    def __init__(self, cache_dir: Path, *, issues_since: str = "2025-10-01", max_pulls: int = 1500):
+    def __init__(
+        self,
+        cache_dir: Path,
+        *,
+        issues_since: str = "2025-10-01",
+        max_pulls: int = 1500,
+        pulls_since: str = PULLS_SINCE,
+        days_per_week: int = 7,
+    ):
         self.root = Path(cache_dir)
+        self.pulls_since = pulls_since
+        self.days_per_week = days_per_week
         self.cache = Cache(self.root)
         self.issues_since = issues_since
         self.max_pulls = max_pulls
@@ -816,5 +861,57 @@ class LiveSource:
 
         return self.cache.json("pull_files", read)
 
+    def _pulls_history(self) -> list[dict]:
+        """Merged pull requests since `pulls_since`, with reviews, labels and changed paths, cached a day at a time
+        under `pulls_history/<day>.json` so an interrupted fetch picks up where it stopped. Today is left out until
+        it is over."""
+        owner, name = MAIN_REPO.split("/")
+        rows: list[dict] = []
+        for day in history_days(self.pulls_since, date.today().isoformat(), self.days_per_week):
+
+            def read(day: str = day) -> list[dict]:
+                out, cursor = [], None
+                query = f"repo:{owner}/{name} is:pr is:merged merged:{day}"
+                while True:
+                    data = self.github.graphql(_DAY_PULLS, {"q": query, "cursor": cursor})["search"]
+                    out += [_history_row(n) for n in data["nodes"] if n.get("number")]
+                    if not data["pageInfo"]["hasNextPage"]:
+                        return out
+                    cursor = data["pageInfo"]["endCursor"]
+
+            rows += self.cache.json(f"pulls_history/{day}", read)
+        return rows
+
 
 _FILES_PER_QUERY = 25  # pull requests per GraphQL query; each asks for up to 100 paths
+
+# Merged pull requests by day, through search: a day of PostHog is a few hundred, well under search's 1,000 cap.
+_DAY_PULLS = """
+query($q: String!, $cursor: String) {
+  search(query: $q, type: ISSUE, first: 50, after: $cursor) {
+    issueCount
+    pageInfo { hasNextPage endCursor }
+    nodes {
+      ... on PullRequest {
+        number title url createdAt mergedAt
+        author { login __typename }
+        labels(first: 20) { nodes { name } }
+        reviews(first: 30) { nodes { author { login __typename } state submittedAt } }
+        files(first: 100) { nodes { path } }
+      }
+    }
+  }
+}"""
+
+
+def history_days(since: str, until: str, per_week: int = 7) -> list[str]:
+    """The days from `since` up to, not including, `until`. With `per_week` below 7, that many days of each week,
+    spread evenly through it (2 gives Monday and Friday of every week), so a sample covers the whole window."""
+    start, end = date.fromisoformat(since), date.fromisoformat(until)
+    keep = {round(i * 7 / per_week) for i in range(per_week)} if per_week < 7 else set(range(7))
+    days, d = [], start
+    while d < end:
+        if d.weekday() in keep:
+            days.append(d.isoformat())
+        d += timedelta(days=1)
+    return days

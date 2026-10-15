@@ -150,13 +150,25 @@ export type AreaSummary = {
   slug: string
   name: string
   owners: Owner[]
+  /** The maximum flow: people who each hold the area through evidence of their own. */
   bus_factor: number
+  /** People above the bar for knowing it. */
   knowers: number
+  /** Documents in the flow network. */
+  evidence_docs: number
   evidence: number
+  /** Everyone in the flow network: how many documents they hold, and the one the flow routed to them. */
+  network: FlowPerson[]
+  /** The minimum cut: people, and documents several people know the area only through. */
   depends_on: Knower[]
+  hinges_on: (DocRef & { people: string[] })[]
   people: Knower[]
   others: number
 }
+
+export type DocRef = { id: string; title: string | null; url: string | null; kind: string | null }
+
+export type FlowPerson = { handle: string; name: string; docs: number; via: DocRef | null; cut: boolean }
 
 export type Act = { rel: 'decided' | 'authored' | 'reviewed' | 'commented'; at: string | null }
 

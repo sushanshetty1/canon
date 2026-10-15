@@ -71,6 +71,8 @@ def main(argv: list[str] | None = None) -> int:
         help="of which at most this many come from issues, comment threads and forum threads, chosen by signal",
     )
     ingest.add_argument("--concurrency", type=int, default=8)
+    ingest.add_argument("--pulls-since", default=None, help="merged pull requests from this date are evidence (default 2026-04-15)")
+    ingest.add_argument("--days-per-week", type=int, default=7, help="sample this many days of each week of pull requests")
 
     ask = sub.add_parser("ask", help="ask a question and print each claim with its verdict")
     ask.add_argument("question")
@@ -172,7 +174,13 @@ def ingest_posthog(args) -> int:
     from canon.sources.posthog import load_posthog
     from canon.sources.connector import group_of
 
-    batch = load_posthog(data_dir() / "raw" / "posthog")
+    from canon.sources.posthog import PULLS_SINCE
+
+    batch = load_posthog(
+        data_dir() / "raw" / "posthog",
+        pulls_since=args.pulls_since or PULLS_SINCE,
+        days_per_week=args.days_per_week,
+    )
     kinds = Counter(d.kind for d in batch.docs)
     entities = Entities.from_batch(batch)
     chosen, later = choose(batch, entities, limit=args.limit_extract, conversations=args.conversations)
