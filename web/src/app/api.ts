@@ -101,9 +101,12 @@ export async function ask(ws: string, question: string, onEvent: (e: AskEvent) =
     throw new Error('Canon could not be reached. Try again in a moment.')
   }
   if (!res.ok || !res.body) throw await failure(res)
+  return readEvents(res.body, onEvent)
+}
 
-  // Server-sent events: blocks separated by a blank line, each with `data:` lines.
-  const reader = res.body.pipeThrough(new TextDecoderStream()).getReader()
+/** Server-sent events: blocks separated by a blank line, each with `data:` lines. Ask and the brief share them. */
+async function readEvents(body: ReadableStream<BufferSource>, onEvent: (e: AskEvent) => void): Promise<void> {
+  const reader = body.pipeThrough(new TextDecoderStream()).getReader()
   let buffer = ''
   for (;;) {
     const { value, done } = await reader.read()
@@ -142,4 +145,82 @@ export async function stats(ws: string, signal?: AbortSignal): Promise<Stats> {
     if (recorded && (e as Error).name !== 'AbortError') return recorded
     throw e
   }
+}
+
+// --- Decisions and catch me up ---------------------------------------------------------------------
+
+export type DecisionStatus = 'proposed' | 'accepted' | 'withdrawn' | 'rejected' | 'retired' | 'superseded'
+
+export type DecisionLink = {
+  id: string
+  reason: string | null
+  by: 'reference' | 'model' | null
+  title?: string | null
+  status?: DecisionStatus | null
+  decided_at?: string | null
+}
+
+/** A decision as `GET /api/w/{ws}/decisions` lists it (see `server/src/canon/decisions/read.py`). */
+export type Decision = {
+  id: string
+  title: string
+  status: DecisionStatus
+  proposed_at: string | null
+  decided_at: string | null
+  replaced_at: string | null
+  closed_at?: string | null
+  summary: string
+  url: string | null
+  doc_id: string | null
+  author: string | null
+  people: { handle: string; name: string; role: string | null; how: 'approved' | 'merged'; at: string | null }[]
+  areas: { slug: string; name: string }[]
+  pulls: { id: string; title: string; url: string; merged_at: string | null; author: string | null; how: 'link' | 'title' }[]
+  superseded_by: DecisionLink[]
+  supersedes: DecisionLink[]
+}
+
+export type DecisionDetail = Decision & { facts: Source[]; passages: number }
+
+export type Decisions = { today: string; counts: Partial<Record<DecisionStatus, number>>; decisions: Decision[] }
+
+export type ChangeKind = 'ownership' | 'decision' | 'page' | 'stale' | 'dispute'
+
+export type Change = {
+  id: string
+  kind: ChangeKind
+  date: string
+  title: string
+  detail: string
+  fact_ids: string[]
+  sources: { doc_id: string; title: string | null; url: string | null; kind: string | null; date: string | null }[]
+  area?: string
+  areas?: string[]
+  decision_id?: string
+}
+
+export type Changes = { since: string; today: string; counts: Record<ChangeKind, number>; changes: Change[] }
+
+export const decisions = (ws: string, signal?: AbortSignal) => getJson<Decisions>(`/api/w/${encodeURIComponent(ws)}/decisions`, signal)
+
+export const decision = (ws: string, id: string, signal?: AbortSignal) =>
+  getJson<DecisionDetail>(`/api/w/${encodeURIComponent(ws)}/decisions/${encodeURIComponent(id)}`, signal)
+
+export const changes = (ws: string, since: string, signal?: AbortSignal) =>
+  getJson<Changes>(`/api/w/${encodeURIComponent(ws)}/changes?since=${encodeURIComponent(since)}`, signal)
+
+/** The catch-up brief: the same events as Ask, so the answer reads the same way. */
+export async function brief(ws: string, since: string, onEvent: (e: AskEvent) => void, signal?: AbortSignal): Promise<void> {
+  let res: Response
+  try {
+    res = await fetch(`/api/w/${encodeURIComponent(ws)}/changes/brief?since=${encodeURIComponent(since)}`, {
+      headers: { accept: 'text/event-stream' },
+      signal,
+    })
+  } catch (e) {
+    if ((e as Error).name === 'AbortError') throw e
+    throw new Error('Canon could not be reached. Try again in a moment.')
+  }
+  if (!res.ok || !res.body) throw await failure(res)
+  return readEvents(res.body, onEvent)
 }

@@ -2,11 +2,13 @@
 
 import { Bus, CaretUpDown, Check, ClockCounterClockwise, Question, Signpost, UsersThree, Wrench, type Icon } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { Wordmark } from '../ui'
 import { isMock, stats as getStats, type Stats } from './api'
 import { Ask } from './Ask'
-import { navigate } from './router'
+import { CatchUp } from './CatchUp'
+import { Decisions } from './Decisions'
+import { navigate, ROUTES, screenOf, usePath } from './router'
 import { plural } from './text'
 import { saveWorkspace, savedWorkspace, WORKSPACES, type Workspace } from './workspaces'
 import './app.css'
@@ -15,8 +17,8 @@ const NAV: { label: string; icon: Icon; soon?: boolean }[] = [
   { label: 'Ask', icon: Question },
   { label: 'Who knows', icon: UsersThree, soon: true },
   { label: 'Bus factor', icon: Bus, soon: true },
-  { label: 'Decisions', icon: Signpost, soon: true },
-  { label: 'Catch me up', icon: ClockCounterClockwise, soon: true },
+  { label: 'Decisions', icon: Signpost },
+  { label: 'Catch me up', icon: ClockCounterClockwise },
   { label: 'Fix queue', icon: Wrench, soon: true },
 ]
 
@@ -119,7 +121,36 @@ function GraphStats({ ws }: { ws: Workspace }) {
   )
 }
 
-function Rail({ ws, onWorkspace }: { ws: Workspace; onWorkspace: (w: Workspace) => void }) {
+function go(label: string) {
+  return (e: MouseEvent) => {
+    e.preventDefault()
+    navigate(ROUTES[label] ?? '/app')
+  }
+}
+
+/** On a narrow screen the rail folds into a row of the screens under the header. */
+function ScreenTabs({ current }: { current: string }) {
+  return (
+    <nav aria-label="Canon" className="-mx-2 overflow-x-auto px-2 min-[900px]:hidden">
+      <ul className="flex gap-1.5 pb-1">
+        {NAV.filter((n) => !n.soon).map(({ label }) => (
+          <li key={label}>
+            <a
+              href={ROUTES[label] ?? '/app'}
+              aria-current={label === current ? 'page' : undefined}
+              onClick={go(label)}
+              className={`flex h-9 items-center rounded-full px-3.5 text-[14px] whitespace-nowrap transition-colors ${label === current ? 'bg-paper font-semibold text-ink' : 'text-muted hover:text-ink'}`}
+            >
+              {label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
+function Rail({ ws, onWorkspace, current }: { ws: Workspace; onWorkspace: (w: Workspace) => void; current: string }) {
   return (
     <aside className="sticky top-3 hidden h-[calc(100dvh-24px)] w-[228px] shrink-0 flex-col min-[900px]:flex">
       <a href="/" className="flex h-12 items-center px-3 text-ink" aria-label="Canon home">
@@ -140,15 +171,12 @@ function Rail({ ws, onWorkspace }: { ws: Workspace; onWorkspace: (w: Workspace) 
                 </span>
               ) : (
                 <a
-                  href="/app"
-                  aria-current="page"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    navigate('/app')
-                  }}
-                  className="flex h-10 items-center gap-3 rounded-[12px] bg-paper px-3 text-[14.5px] font-semibold text-ink"
+                  href={ROUTES[label] ?? '/app'}
+                  aria-current={label === current ? 'page' : undefined}
+                  onClick={go(label)}
+                  className={`flex h-10 items-center gap-3 rounded-[12px] px-3 text-[14.5px] transition-colors ${label === current ? 'bg-paper font-semibold text-ink' : 'text-muted hover:bg-paper/60 hover:text-ink'}`}
                 >
-                  <Glyph size={17} weight="bold" className="shrink-0 text-cobalt" />
+                  <Glyph size={17} weight={label === current ? 'bold' : 'regular'} className={`shrink-0 ${label === current ? 'text-cobalt' : ''}`} />
                   {label}
                 </a>
               )}
@@ -171,6 +199,7 @@ function Rail({ ws, onWorkspace }: { ws: Workspace; onWorkspace: (w: Workspace) 
 
 export default function CanonApp() {
   const [ws, setWs] = useState(savedWorkspace)
+  const screen = screenOf(usePath())
   const change = (w: Workspace) => {
     saveWorkspace(w)
     setWs(w)
@@ -178,7 +207,7 @@ export default function CanonApp() {
 
   return (
     <div className="flex min-h-[100dvh] gap-3 bg-page p-2 sm:p-3">
-      <Rail ws={ws} onWorkspace={change} />
+      <Rail ws={ws} onWorkspace={change} current={screen} />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <header className="flex h-12 items-center justify-between px-2 min-[900px]:hidden">
           <a href="/" className="text-ink" aria-label="Canon home">
@@ -186,8 +215,15 @@ export default function CanonApp() {
           </a>
           <WorkspaceSwitcher ws={ws} onChange={change} compact />
         </header>
+        <ScreenTabs current={screen} />
         <div className="flex min-w-0 flex-1">
-          <Ask key={ws.slug} ws={ws} />
+          {screen === 'Decisions' ? (
+            <Decisions key={ws.slug} ws={ws} />
+          ) : screen === 'Catch me up' ? (
+            <CatchUp key={ws.slug} ws={ws} />
+          ) : (
+            <Ask key={ws.slug} ws={ws} />
+          )}
         </div>
       </div>
     </div>
